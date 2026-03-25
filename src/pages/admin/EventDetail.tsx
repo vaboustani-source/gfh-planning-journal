@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import OverviewTab from "./tabs/Overview";
@@ -9,6 +9,7 @@ import VendorsTab from "./tabs/Vendors";
 import AdminMessages from "./tabs/AdminMessages";
 import FinancialsTab from "./tabs/Financials";
 import LodgingTab from "./tabs/Lodging";
+import CeremonyTab from "./tabs/CeremonyTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -18,6 +19,7 @@ const TABS = [
   { id: "messages", label: "Messages" },
   { id: "financials", label: "Financials" },
   { id: "lodging", label: "Lodging" },
+  { id: "ceremony", label: "Ceremony" },
 ];
 
 export interface EventData {
