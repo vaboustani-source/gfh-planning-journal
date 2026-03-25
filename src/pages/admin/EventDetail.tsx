@@ -180,6 +180,7 @@ export default function EventDetail() {
         {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
         {activeTab === "financials" && <FinancialsTab eventId={event.id} />}
         {activeTab === "lodging" && <LodgingTab eventId={event.id} />}
+        {activeTab === "ceremony" && <CeremonyTab eventId={event.id} />}
       </main>
     </div>
   );
