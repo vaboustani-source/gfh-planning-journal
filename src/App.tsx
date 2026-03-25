@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import EventDetail from "./pages/admin/EventDetail";
+import AdminSettings from "./pages/admin/AdminSettings";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
@@ -44,6 +45,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <EventDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettings />
                 </ProtectedRoute>
               }
             />

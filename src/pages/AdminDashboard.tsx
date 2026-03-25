@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, MessageCircle, Clock, ChevronRight, LogOut, Plus,
-  AlertCircle, CreditCard,
+  AlertCircle, CreditCard, Settings,
 } from "lucide-react";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 
@@ -223,6 +223,14 @@ export default function AdminDashboard() {
               <p className="font-body text-xs text-muted-foreground">Signed in as</p>
               <p className="font-body text-sm font-medium text-foreground">{profile?.first_name || "Brandon"}</p>
             </div>
+            <button
+              onClick={() => navigate("/admin/settings")}
+              title="Settings"
+              className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Settings size={15} />
+              <span className="hidden sm:inline">Settings</span>
+            </button>
             <button onClick={() => signOut().then(() => navigate("/login"))}
               className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
               <LogOut size={14} />Sign out
