@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import EventDetail from "./pages/admin/EventDetail";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
