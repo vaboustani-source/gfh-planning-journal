@@ -34,12 +34,17 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
+  // Keep a stable ref so realtime callbacks can read latest event titles
+  // without the subscription needing to re-register on every state change
+  const eventsRef = useRef<EventCard[]>([]);
+  useEffect(() => { eventsRef.current = events; }, [events]);
+
   useEffect(() => {
     fetchEvents();
     fetchAttention();
   }, []);
 
-  // Real-time unread badge updates
+  // Real-time unread badge updates — single stable subscription
   useEffect(() => {
     const channel = supabase
       .channel("admin-dashboard-messages")
@@ -47,23 +52,20 @@ export default function AdminDashboard() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
-          const msg = payload.new as { event_id: string | null; read_at: string | null; sender_id: string | null };
+          const msg = payload.new as { event_id: string | null; read_at: string | null };
           if (!msg.event_id || msg.read_at !== null) return;
-          // New unread message — bump the badge for that event card
+
+          // Bump badge on the matching card
           setEvents(prev =>
             prev.map(e =>
-              e.id === msg.event_id
-                ? { ...e, unread_count: e.unread_count + 1 }
-                : e
+              e.id === msg.event_id ? { ...e, unread_count: e.unread_count + 1 } : e
             )
           );
-          // Also add to Today's Attention if not already there
+
+          // Surface in Today's Attention if not already present
           setAttention(prev => {
-            const alreadyThere = prev.some(
-              a => a.event_id === msg.event_id && a.type === "message"
-            );
-            if (alreadyThere) return prev;
-            const eventTitle = events.find(e => e.id === msg.event_id)?.couple_names ?? "Event";
+            if (prev.some(a => a.event_id === msg.event_id && a.type === "message")) return prev;
+            const eventTitle = eventsRef.current.find(e => e.id === msg.event_id)?.couple_names ?? "Event";
             return [
               { event_id: msg.event_id!, event_title: eventTitle, tab: "messages", type: "message", label: "Unread messages" },
               ...prev,
@@ -77,7 +79,8 @@ export default function AdminDashboard() {
         (payload) => {
           const msg = payload.new as { event_id: string | null; read_at: string | null };
           if (!msg.event_id || msg.read_at === null) return;
-          // Message was marked read — re-fetch the accurate count for that event
+
+          // Message read — re-query accurate count for that event
           supabase
             .from("messages")
             .select("id", { count: "exact", head: true })
@@ -95,7 +98,7 @@ export default function AdminDashboard() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [events]);
+  }, []); // stable — no deps needed, uses ref for event lookup
 
   const fetchEvents = async () => {
     try {
