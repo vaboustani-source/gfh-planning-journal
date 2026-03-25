@@ -39,6 +39,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/events/:eventId"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <EventDetail />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Couple Portal — nested */}
             <Route
