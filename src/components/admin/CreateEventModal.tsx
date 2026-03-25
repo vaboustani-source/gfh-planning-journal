@@ -117,10 +117,10 @@ export default function CreateEventModal({ onClose }: Props) {
                 Partner One
               </p>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <Field label="First Name" field="partner1_first_name" placeholder="Jane" />
-                <Field label="Last Name" field="partner1_last_name" placeholder="Smith" />
+                <Field label="First Name" value={form.partner1_first_name} onChange={v => set("partner1_first_name", v)} placeholder="Jane" />
+                <Field label="Last Name" value={form.partner1_last_name} onChange={v => set("partner1_last_name", v)} placeholder="Smith" />
               </div>
-              <Field label="Email Address *" field="partner1_email" type="email" placeholder="jane@example.com" />
+              <Field label="Email Address *" value={form.partner1_email} onChange={v => set("partner1_email", v)} type="email" placeholder="jane@example.com" />
             </div>
 
             <div className="h-px bg-border" />
@@ -132,10 +132,10 @@ export default function CreateEventModal({ onClose }: Props) {
                 Partner Two
               </p>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <Field label="First Name" field="partner2_first_name" placeholder="Alex" />
-                <Field label="Last Name" field="partner2_last_name" placeholder="Johnson" />
+                <Field label="First Name" value={form.partner2_first_name} onChange={v => set("partner2_first_name", v)} placeholder="Alex" />
+                <Field label="Last Name" value={form.partner2_last_name} onChange={v => set("partner2_last_name", v)} placeholder="Johnson" />
               </div>
-              <Field label="Email Address *" field="partner2_email" type="email" placeholder="alex@example.com" />
+              <Field label="Email Address *" value={form.partner2_email} onChange={v => set("partner2_email", v)} type="email" placeholder="alex@example.com" />
             </div>
 
             <div className="h-px bg-border" />
@@ -144,9 +144,9 @@ export default function CreateEventModal({ onClose }: Props) {
             <div>
               <p className="font-display text-base font-light text-foreground mb-3">Event Dates</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Field label="Wedding Date" field="wedding_date" type="date" />
-                <Field label="Arrival Date" field="arrival_date" type="date" />
-                <Field label="Departure Date" field="departure_date" type="date" />
+                <Field label="Wedding Date" value={form.wedding_date} onChange={v => set("wedding_date", v)} type="date" />
+                <Field label="Arrival Date" value={form.arrival_date} onChange={v => set("arrival_date", v)} type="date" />
+                <Field label="Departure Date" value={form.departure_date} onChange={v => set("departure_date", v)} type="date" />
               </div>
             </div>
 
