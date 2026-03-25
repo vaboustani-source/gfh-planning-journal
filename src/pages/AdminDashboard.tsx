@@ -356,7 +356,17 @@ export default function AdminDashboard() {
                             <h3 className="font-display text-2xl font-light text-foreground group-hover:text-sage-dark transition-colors leading-tight">{event.couple_names}</h3>
                             <p className="font-body text-xs text-muted-foreground mt-0.5">{event.title}</p>
                           </div>
-                          <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-1 flex-shrink-0" />
+                          <div className="flex items-center gap-2 mt-1 flex-shrink-0">
+                            {event.unread_count > 0 && (
+                              <span className="relative flex h-5 min-w-5 items-center justify-center">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-40" />
+                                <span className="relative inline-flex items-center justify-center rounded-full h-5 min-w-5 px-1 bg-primary text-primary-foreground font-body text-[10px] font-bold">
+                                  {event.unread_count}
+                                </span>
+                              </span>
+                            )}
+                            <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                          </div>
                         </div>
                         <div className="h-px bg-border mb-4" />
                         <div className="flex items-center gap-2 mb-3">
