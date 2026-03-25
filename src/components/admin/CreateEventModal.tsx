@@ -13,6 +13,30 @@ const PACKAGE_TIERS = [
   { value: "full", label: "Full" },
 ];
 
+interface FieldProps {
+  label: string;
+  field: string;
+  type?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function Field({ label, type = "text", placeholder, value, onChange }: FieldProps) {
+  return (
+    <div>
+      <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">{label}</p>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full border border-border rounded-lg px-3 py-2.5 font-body text-sm bg-background text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+      />
+    </div>
+  );
+}
+
 export default function CreateEventModal({ onClose }: Props) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
