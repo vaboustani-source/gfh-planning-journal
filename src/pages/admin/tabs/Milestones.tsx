@@ -113,7 +113,7 @@ export default function MilestonesTab({ eventId }: { eventId: string }) {
                       {m.title}
                     </p>
                     {overdue && (
-                      <span className="flex items-center gap-1 font-body text-[10px] text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                      <span className="flex items-center gap-1 font-body text-[10px] text-destructive bg-destructive/10 border border-destructive/20 rounded-full px-2 py-0.5">
                         <AlertCircle size={9} />
                         Overdue
                       </span>
