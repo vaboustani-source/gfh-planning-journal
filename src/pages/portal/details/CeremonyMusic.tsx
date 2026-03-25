@@ -86,9 +86,9 @@ export function CeremonyMusic() {
           setOfficiantName(data.officiant_name ?? "");
           setOfficiantRelationship(data.officiant_relationship ?? "");
           setOfficiantAttending(data.officiant_attending_rehearsal ?? false);
-          setProcessional((data.processional_order as ProcessionalEntry[] | null) ?? []);
+          setProcessional((data.processional_order as unknown as ProcessionalEntry[] | null) ?? []);
           setFirstDance(data.first_dance_song ?? "");
-          setParentDances((data.parent_dances as DanceEntry[] | null) ?? []);
+          setParentDances((data.parent_dances as unknown as DanceEntry[] | null) ?? []);
           setRecessionalSong(data.recessional_song ?? "");
           setLastDanceSong(data.last_dance_song ?? "");
           setSpecialNotes(data.special_notes ?? "");
