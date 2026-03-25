@@ -1,0 +1,1024 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
+  public: {
+    Tables: {
+      ceremony_details: {
+        Row: {
+          cake_cutting_song: string | null
+          ceremony_music_vendor: string | null
+          dj_band_vendor: string | null
+          event_id: string | null
+          finalized: boolean | null
+          first_dance_song: string | null
+          id: string
+          intro_order: Json | null
+          last_dance_song: string | null
+          locked_by_brandon: boolean | null
+          microphone_type: string | null
+          officiant_attending_rehearsal: boolean | null
+          officiant_name: string | null
+          officiant_relationship: string | null
+          parent_dances: Json | null
+          processional_order: Json | null
+          recessional_song: string | null
+          script_sent_to_brandon: boolean | null
+          special_notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cake_cutting_song?: string | null
+          ceremony_music_vendor?: string | null
+          dj_band_vendor?: string | null
+          event_id?: string | null
+          finalized?: boolean | null
+          first_dance_song?: string | null
+          id?: string
+          intro_order?: Json | null
+          last_dance_song?: string | null
+          locked_by_brandon?: boolean | null
+          microphone_type?: string | null
+          officiant_attending_rehearsal?: boolean | null
+          officiant_name?: string | null
+          officiant_relationship?: string | null
+          parent_dances?: Json | null
+          processional_order?: Json | null
+          recessional_song?: string | null
+          script_sent_to_brandon?: boolean | null
+          special_notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cake_cutting_song?: string | null
+          ceremony_music_vendor?: string | null
+          dj_band_vendor?: string | null
+          event_id?: string | null
+          finalized?: boolean | null
+          first_dance_song?: string | null
+          id?: string
+          intro_order?: Json | null
+          last_dance_song?: string | null
+          locked_by_brandon?: boolean | null
+          microphone_type?: string | null
+          officiant_attending_rehearsal?: boolean | null
+          officiant_name?: string | null
+          officiant_relationship?: string | null
+          parent_dances?: Json | null
+          processional_order?: Json | null
+          recessional_song?: string | null
+          script_sent_to_brandon?: boolean | null
+          special_notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ceremony_details_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_items: {
+        Row: {
+          completed_at: string | null
+          event_id: string | null
+          id: string
+          label: string
+          milestone_id: string | null
+          notes: string | null
+          owner: string | null
+          paced_send_date: string | null
+          requires_addon: string | null
+          section: string
+          sort_order: number | null
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          event_id?: string | null
+          id?: string
+          label: string
+          milestone_id?: string | null
+          notes?: string | null
+          owner?: string | null
+          paced_send_date?: string | null
+          requires_addon?: string | null
+          section: string
+          sort_order?: number | null
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          event_id?: string | null
+          id?: string
+          label?: string
+          milestone_id?: string | null
+          notes?: string | null
+          owner?: string | null
+          paced_send_date?: string | null
+          requires_addon?: string | null
+          section?: string
+          sort_order?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_items_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decor_items: {
+        Row: {
+          brandon_notes: string | null
+          confirmed_by_brandon: boolean | null
+          couple_notes: string | null
+          created_at: string | null
+          event_id: string | null
+          event_section: string | null
+          id: string
+          item_name: string
+          ordered: boolean | null
+          provided_by: string | null
+          quantity: number | null
+          selection_notes: string | null
+          unit_price: number | null
+        }
+        Insert: {
+          brandon_notes?: string | null
+          confirmed_by_brandon?: boolean | null
+          couple_notes?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          event_section?: string | null
+          id?: string
+          item_name: string
+          ordered?: boolean | null
+          provided_by?: string | null
+          quantity?: number | null
+          selection_notes?: string | null
+          unit_price?: number | null
+        }
+        Update: {
+          brandon_notes?: string | null
+          confirmed_by_brandon?: boolean | null
+          couple_notes?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          event_section?: string | null
+          id?: string
+          item_name?: string
+          ordered?: boolean | null
+          provided_by?: string | null
+          quantity?: number | null
+          selection_notes?: string | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decor_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          document_type: string | null
+          event_id: string | null
+          file_name: string
+          file_url: string
+          id: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          document_type?: string | null
+          event_id?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          document_type?: string | null
+          event_id?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_addons: {
+        Row: {
+          addon: string
+          event_id: string | null
+          id: string
+          included: boolean | null
+        }
+        Insert: {
+          addon: string
+          event_id?: string | null
+          id?: string
+          included?: boolean | null
+        }
+        Update: {
+          addon?: string
+          event_id?: string | null
+          id?: string
+          included?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_addons_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_users: {
+        Row: {
+          event_id: string | null
+          id: string
+          role_in_event: string
+          user_id: string | null
+        }
+        Insert: {
+          event_id?: string | null
+          id?: string
+          role_in_event: string
+          user_id?: string | null
+        }
+        Update: {
+          event_id?: string | null
+          id?: string
+          role_in_event?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_users_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          arrival_date: string | null
+          ceremony_location: string | null
+          cocktail_hour_location: string | null
+          count_at_30_days: number | null
+          count_at_90_days: number | null
+          created_at: string | null
+          created_by: string | null
+          departure_date: string | null
+          estimated_guest_count: number | null
+          event_type: string
+          how_heard: string | null
+          id: string
+          package_tier: string | null
+          rehearsal_dinner_location: string | null
+          status: string
+          tasting_date: string | null
+          title: string
+          wedding_date: string | null
+        }
+        Insert: {
+          arrival_date?: string | null
+          ceremony_location?: string | null
+          cocktail_hour_location?: string | null
+          count_at_30_days?: number | null
+          count_at_90_days?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          departure_date?: string | null
+          estimated_guest_count?: number | null
+          event_type?: string
+          how_heard?: string | null
+          id?: string
+          package_tier?: string | null
+          rehearsal_dinner_location?: string | null
+          status?: string
+          tasting_date?: string | null
+          title: string
+          wedding_date?: string | null
+        }
+        Update: {
+          arrival_date?: string | null
+          ceremony_location?: string | null
+          cocktail_hour_location?: string | null
+          count_at_30_days?: number | null
+          count_at_90_days?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          departure_date?: string | null
+          estimated_guest_count?: number | null
+          event_type?: string
+          how_heard?: string | null
+          id?: string
+          package_tier?: string | null
+          rehearsal_dinner_location?: string | null
+          status?: string
+          tasting_date?: string | null
+          title?: string
+          wedding_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financials: {
+        Row: {
+          catering_estimate: number | null
+          catering_paid: number | null
+          event_id: string | null
+          id: string
+          notes: string | null
+          site_fee_paid: number | null
+          site_fee_total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          catering_estimate?: number | null
+          catering_paid?: number | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          site_fee_paid?: number | null
+          site_fee_total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          catering_estimate?: number | null
+          catering_paid?: number | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          site_fee_paid?: number | null
+          site_fee_total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financials_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lodging_assignments: {
+        Row: {
+          assigned_guest_email: string | null
+          assigned_guest_name: string | null
+          brandon_notes: string | null
+          event_id: string | null
+          host_pays: boolean | null
+          id: string
+          invoice_1_sent: boolean | null
+          invoice_2_sent: boolean | null
+          invoice_final_sent: boolean | null
+          payment_completed_date: string | null
+          payment_method: string | null
+          payment_mode: string | null
+          room_id: string | null
+        }
+        Insert: {
+          assigned_guest_email?: string | null
+          assigned_guest_name?: string | null
+          brandon_notes?: string | null
+          event_id?: string | null
+          host_pays?: boolean | null
+          id?: string
+          invoice_1_sent?: boolean | null
+          invoice_2_sent?: boolean | null
+          invoice_final_sent?: boolean | null
+          payment_completed_date?: string | null
+          payment_method?: string | null
+          payment_mode?: string | null
+          room_id?: string | null
+        }
+        Update: {
+          assigned_guest_email?: string | null
+          assigned_guest_name?: string | null
+          brandon_notes?: string | null
+          event_id?: string | null
+          host_pays?: boolean | null
+          id?: string
+          invoice_1_sent?: boolean | null
+          invoice_2_sent?: boolean | null
+          invoice_final_sent?: boolean | null
+          payment_completed_date?: string | null
+          payment_method?: string | null
+          payment_mode?: string | null
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lodging_rooms: {
+        Row: {
+          id: string
+          nightly_rate: number | null
+          room_name: string
+          room_type: string
+          sort_order: number | null
+        }
+        Insert: {
+          id?: string
+          nightly_rate?: number | null
+          room_name: string
+          room_type: string
+          sort_order?: number | null
+        }
+        Update: {
+          id?: string
+          nightly_rate?: number | null
+          room_name?: string
+          room_type?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      meal_events: {
+        Row: {
+          adult_count: number | null
+          event_id: string | null
+          id: string
+          included_in_package: boolean | null
+          kids_count: number | null
+          location: string | null
+          meal_type: string
+          notes: string | null
+          vendor_count: number | null
+        }
+        Insert: {
+          adult_count?: number | null
+          event_id?: string | null
+          id?: string
+          included_in_package?: boolean | null
+          kids_count?: number | null
+          location?: string | null
+          meal_type: string
+          notes?: string | null
+          vendor_count?: number | null
+        }
+        Update: {
+          adult_count?: number | null
+          event_id?: string | null
+          id?: string
+          included_in_package?: boolean | null
+          kids_count?: number | null
+          location?: string | null
+          meal_type?: string
+          notes?: string | null
+          vendor_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string | null
+          event_id: string | null
+          id: string
+          read_at: string | null
+          sender_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          read_at?: string | null
+          sender_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          read_at?: string | null
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      milestones: {
+        Row: {
+          completed_date: string | null
+          created_at: string | null
+          event_id: string | null
+          id: string
+          notes: string | null
+          owner: string | null
+          sort_order: number | null
+          status: string | null
+          target_date: string | null
+          timeframe_label: string | null
+          title: string
+        }
+        Insert: {
+          completed_date?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          owner?: string | null
+          sort_order?: number | null
+          status?: string | null
+          target_date?: string | null
+          timeframe_label?: string | null
+          title: string
+        }
+        Update: {
+          completed_date?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          owner?: string | null
+          sort_order?: number | null
+          status?: string | null
+          target_date?: string | null
+          timeframe_label?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_log: {
+        Row: {
+          event_id: string | null
+          id: string
+          milestone_id: string | null
+          notification_type: string
+          opened_at: string | null
+          paced_send_date: string | null
+          sent_at: string | null
+          subject_line: string | null
+          tasks_included: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          event_id?: string | null
+          id?: string
+          milestone_id?: string | null
+          notification_type: string
+          opened_at?: string | null
+          paced_send_date?: string | null
+          sent_at?: string | null
+          subject_line?: string | null
+          tasks_included?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          event_id?: string | null
+          id?: string
+          milestone_id?: string | null
+          notification_type?: string
+          opened_at?: string | null
+          paced_send_date?: string | null
+          sent_at?: string | null
+          subject_line?: string | null
+          tasks_included?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_log_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_schedule: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          due_date: string | null
+          event_id: string | null
+          id: string
+          label: string
+          method: string | null
+          paid: boolean | null
+          paid_date: string | null
+          track: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          due_date?: string | null
+          event_id?: string | null
+          id?: string
+          label: string
+          method?: string | null
+          paid?: boolean | null
+          paid_date?: string | null
+          track: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          due_date?: string | null
+          event_id?: string | null
+          id?: string
+          label?: string
+          method?: string | null
+          paid?: boolean | null
+          paid_date?: string | null
+          track?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_schedule_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone?: string | null
+          role?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
+      vendors: {
+        Row: {
+          brandon_notes: string | null
+          business_name: string | null
+          category: string
+          coi_received: boolean | null
+          contact_name: string | null
+          contract_uploaded: boolean | null
+          created_at: string | null
+          email: string | null
+          event_id: string | null
+          id: string
+          info_emailed: boolean | null
+          instagram: string | null
+          phone: string | null
+          status: string | null
+          vendor_meals: number | null
+        }
+        Insert: {
+          brandon_notes?: string | null
+          business_name?: string | null
+          category: string
+          coi_received?: boolean | null
+          contact_name?: string | null
+          contract_uploaded?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          event_id?: string | null
+          id?: string
+          info_emailed?: boolean | null
+          instagram?: string | null
+          phone?: string | null
+          status?: string | null
+          vendor_meals?: number | null
+        }
+        Update: {
+          brandon_notes?: string | null
+          business_name?: string | null
+          category?: string
+          coi_received?: boolean | null
+          contact_name?: string | null
+          contract_uploaded?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          event_id?: string | null
+          id?: string
+          info_emailed?: boolean | null
+          instagram?: string | null
+          phone?: string | null
+          status?: string | null
+          vendor_meals?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      working_timeline: {
+        Row: {
+          event_id: string | null
+          id: string
+          last_updated: string | null
+          published: boolean | null
+          timeline_data: Json | null
+        }
+        Insert: {
+          event_id?: string | null
+          id?: string
+          last_updated?: string | null
+          published?: boolean | null
+          timeline_data?: Json | null
+        }
+        Update: {
+          event_id?: string | null
+          id?: string
+          last_updated?: string | null
+          published?: boolean | null
+          timeline_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "working_timeline_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
