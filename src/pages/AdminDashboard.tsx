@@ -39,6 +39,64 @@ export default function AdminDashboard() {
     fetchAttention();
   }, []);
 
+  // Real-time unread badge updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-dashboard-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as { event_id: string | null; read_at: string | null; sender_id: string | null };
+          if (!msg.event_id || msg.read_at !== null) return;
+          // New unread message — bump the badge for that event card
+          setEvents(prev =>
+            prev.map(e =>
+              e.id === msg.event_id
+                ? { ...e, unread_count: e.unread_count + 1 }
+                : e
+            )
+          );
+          // Also add to Today's Attention if not already there
+          setAttention(prev => {
+            const alreadyThere = prev.some(
+              a => a.event_id === msg.event_id && a.type === "message"
+            );
+            if (alreadyThere) return prev;
+            const eventTitle = events.find(e => e.id === msg.event_id)?.couple_names ?? "Event";
+            return [
+              { event_id: msg.event_id!, event_title: eventTitle, tab: "messages", type: "message", label: "Unread messages" },
+              ...prev,
+            ];
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as { event_id: string | null; read_at: string | null };
+          if (!msg.event_id || msg.read_at === null) return;
+          // Message was marked read — re-fetch the accurate count for that event
+          supabase
+            .from("messages")
+            .select("id", { count: "exact", head: true })
+            .eq("event_id", msg.event_id)
+            .is("read_at", null)
+            .then(({ count }) => {
+              setEvents(prev =>
+                prev.map(e =>
+                  e.id === msg.event_id ? { ...e, unread_count: count ?? 0 } : e
+                )
+              );
+            });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [events]);
+
   const fetchEvents = async () => {
     try {
       const { data: eventsData, error } = await supabase
