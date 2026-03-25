@@ -370,9 +370,19 @@ export default function AdminDashboard() {
                           </div>
                         )}
                         <div className="flex items-center gap-2">
-                          <MessageCircle size={13} className={event.unread_count > 0 ? "text-primary" : "text-muted-foreground"} />
+                          <div className="relative flex items-center">
+                            <MessageCircle size={13} className={event.unread_count > 0 ? "text-primary" : "text-muted-foreground"} />
+                            {event.unread_count > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                              </span>
+                            )}
+                          </div>
                           {event.unread_count > 0 ? (
-                            <span className="font-body text-xs font-semibold text-primary">{event.unread_count} unread message{event.unread_count !== 1 ? "s" : ""}</span>
+                            <span className="font-body text-xs font-semibold text-primary">
+                              {event.unread_count} unread message{event.unread_count !== 1 ? "s" : ""}
+                            </span>
                           ) : (
                             <span className="font-body text-xs text-muted-foreground">No unread messages</span>
                           )}
