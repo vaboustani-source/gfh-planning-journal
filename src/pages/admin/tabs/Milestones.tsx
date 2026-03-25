@@ -17,7 +17,7 @@ interface Milestone {
 const statusColors: Record<string, string> = {
   complete: "bg-sage/15 text-sage border-sage/30",
   pending: "bg-muted text-muted-foreground border-border",
-  "in-progress": "bg-amber-50 text-amber-700 border-amber-200",
+  "in-progress": "bg-secondary text-secondary-foreground border-border",
 };
 
 export default function MilestonesTab({ eventId }: { eventId: string }) {
