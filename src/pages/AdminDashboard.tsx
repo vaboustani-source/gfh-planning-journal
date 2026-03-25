@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,10 +34,71 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
+  // Keep a stable ref so realtime callbacks can read latest event titles
+  // without the subscription needing to re-register on every state change
+  const eventsRef = useRef<EventCard[]>([]);
+  useEffect(() => { eventsRef.current = events; }, [events]);
+
   useEffect(() => {
     fetchEvents();
     fetchAttention();
   }, []);
+
+  // Real-time unread badge updates — single stable subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-dashboard-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as { event_id: string | null; read_at: string | null };
+          if (!msg.event_id || msg.read_at !== null) return;
+
+          // Bump badge on the matching card
+          setEvents(prev =>
+            prev.map(e =>
+              e.id === msg.event_id ? { ...e, unread_count: e.unread_count + 1 } : e
+            )
+          );
+
+          // Surface in Today's Attention if not already present
+          setAttention(prev => {
+            if (prev.some(a => a.event_id === msg.event_id && a.type === "message")) return prev;
+            const eventTitle = eventsRef.current.find(e => e.id === msg.event_id)?.couple_names ?? "Event";
+            return [
+              { event_id: msg.event_id!, event_title: eventTitle, tab: "messages", type: "message", label: "Unread messages" },
+              ...prev,
+            ];
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as { event_id: string | null; read_at: string | null };
+          if (!msg.event_id || msg.read_at === null) return;
+
+          // Message read — re-query accurate count for that event
+          supabase
+            .from("messages")
+            .select("id", { count: "exact", head: true })
+            .eq("event_id", msg.event_id)
+            .is("read_at", null)
+            .then(({ count }) => {
+              setEvents(prev =>
+                prev.map(e =>
+                  e.id === msg.event_id ? { ...e, unread_count: count ?? 0 } : e
+                )
+              );
+            });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []); // stable — no deps needed, uses ref for event lookup
 
   const fetchEvents = async () => {
     try {
@@ -295,7 +356,17 @@ export default function AdminDashboard() {
                             <h3 className="font-display text-2xl font-light text-foreground group-hover:text-sage-dark transition-colors leading-tight">{event.couple_names}</h3>
                             <p className="font-body text-xs text-muted-foreground mt-0.5">{event.title}</p>
                           </div>
-                          <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-1 flex-shrink-0" />
+                          <div className="flex items-center gap-2 mt-1 flex-shrink-0">
+                            {event.unread_count > 0 && (
+                              <span className="relative flex h-5 min-w-5 items-center justify-center">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-40" />
+                                <span className="relative inline-flex items-center justify-center rounded-full h-5 min-w-5 px-1 bg-primary text-primary-foreground font-body text-[10px] font-bold">
+                                  {event.unread_count}
+                                </span>
+                              </span>
+                            )}
+                            <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                          </div>
                         </div>
                         <div className="h-px bg-border mb-4" />
                         <div className="flex items-center gap-2 mb-3">
@@ -309,9 +380,19 @@ export default function AdminDashboard() {
                           </div>
                         )}
                         <div className="flex items-center gap-2">
-                          <MessageCircle size={13} className={event.unread_count > 0 ? "text-primary" : "text-muted-foreground"} />
+                          <div className="relative flex items-center">
+                            <MessageCircle size={13} className={event.unread_count > 0 ? "text-primary" : "text-muted-foreground"} />
+                            {event.unread_count > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                              </span>
+                            )}
+                          </div>
                           {event.unread_count > 0 ? (
-                            <span className="font-body text-xs font-semibold text-primary">{event.unread_count} unread message{event.unread_count !== 1 ? "s" : ""}</span>
+                            <span className="font-body text-xs font-semibold text-primary">
+                              {event.unread_count} unread message{event.unread_count !== 1 ? "s" : ""}
+                            </span>
                           ) : (
                             <span className="font-body text-xs text-muted-foreground">No unread messages</span>
                           )}
