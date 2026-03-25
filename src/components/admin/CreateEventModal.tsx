@@ -15,7 +15,6 @@ const PACKAGE_TIERS = [
 
 interface FieldProps {
   label: string;
-  field: string;
   type?: string;
   placeholder?: string;
   value: string;
