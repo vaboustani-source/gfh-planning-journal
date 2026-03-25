@@ -89,7 +89,7 @@ export default function MilestonesTab({ eventId }: { eventId: string }) {
                 key={m.id}
                 className={`rounded-xl border p-4 flex items-start gap-4 transition-colors ${
                   overdue
-                    ? "bg-red-50/50 border-red-200 dark:bg-red-950/10 dark:border-red-900/30"
+                    ? "bg-destructive/5 border-destructive/25"
                     : "bg-card border-border"
                 }`}
               >
