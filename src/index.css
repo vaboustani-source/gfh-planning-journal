@@ -1,15 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Gilbertsville Farmhouse Design System
+   Luxury estate: sage green, cream, warm white, forest depths
+   All colors are HSL.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core palette */
+    --background: 42 35% 96%;
+    --foreground: 105 22% 18%;
+
+    --card: 40 30% 98%;
+    --card-foreground: 105 22% 18%;
+
+    --popover: 40 30% 98%;
+    --popover-foreground: 105 22% 18%;
+
+    /* Sage green as primary */
+    --primary: 106 20% 44%;
+    --primary-foreground: 42 35% 97%;
+
+    --secondary: 42 28% 90%;
+    --secondary-foreground: 105 22% 25%;
+
+    --muted: 42 22% 91%;
+    --muted-foreground: 105 12% 48%;
+
+    /* Warm cream accent */
+    --accent: 38 42% 88%;
+    --accent-foreground: 105 22% 22%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 42 35% 97%;
+
+    --border: 100 12% 83%;
+    --input: 100 12% 83%;
+    --ring: 106 20% 44%;
+
+    --radius: 0.375rem;
+
+    /* Custom tokens */
+    --sage: 106 20% 44%;
+    --sage-light: 105 18% 68%;
+    --sage-dark: 106 24% 28%;
+    --cream: 42 35% 94%;
+    --cream-dark: 38 30% 87%;
+    --forest: 105 22% 18%;
+    --gold-soft: 38 45% 72%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(160deg, hsl(42 35% 97%) 0%, hsl(105 18% 92%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(40 30% 99%) 0%, hsl(42 25% 95%) 100%);
+    --shadow-soft: 0 2px 16px -4px hsl(105 22% 18% / 0.08), 0 1px 4px -2px hsl(105 22% 18% / 0.06);
+    --shadow-card: 0 4px 24px -6px hsl(105 22% 18% / 0.12), 0 1px 6px -2px hsl(105 22% 18% / 0.08);
+    --shadow-elevated: 0 8px 40px -8px hsl(105 22% 18% / 0.16);
+
+    --sidebar-background: 40 28% 94%;
+    --sidebar-foreground: 105 22% 20%;
+    --sidebar-primary: 106 20% 44%;
+    --sidebar-primary-foreground: 42 35% 97%;
+    --sidebar-accent: 42 22% 89%;
+    --sidebar-accent-foreground: 105 22% 22%;
+    --sidebar-border: 100 12% 83%;
+    --sidebar-ring: 106 20% 44%;
+  }
+
+  .dark {
+    --background: 105 22% 10%;
+    --foreground: 42 35% 94%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
