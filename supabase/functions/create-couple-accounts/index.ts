@@ -48,6 +48,11 @@ Deno.serve(async (req) => {
 
     if (eventError) throw eventError
 
+    // Helper to roll back the event if anything downstream fails
+    const rollbackEvent = async () => {
+      await supabase.from('events').delete().eq('id', event.id)
+    }
+
     // 2. Invite / get partner accounts
     const invitePartner = async (email: string, firstName: string, lastName: string) => {
       // Try inviting — if user already exists this will error, so we fallback to lookup
@@ -64,15 +69,24 @@ Deno.serve(async (req) => {
       return data.user
     }
 
-    const [user1, user2] = await Promise.all([
-      invitePartner(partner1_email, partner1_first_name || '', partner1_last_name || ''),
-      invitePartner(partner2_email, partner2_first_name || '', partner2_last_name || ''),
-    ])
+    let user1, user2
+    try {
+      ;[user1, user2] = await Promise.all([
+        invitePartner(partner1_email, partner1_first_name || '', partner1_last_name || ''),
+        invitePartner(partner2_email, partner2_first_name || '', partner2_last_name || ''),
+      ])
+    } catch (inviteErr) {
+      await rollbackEvent()
+      throw inviteErr
+    }
 
-    if (!user1 || !user2) throw new Error('Failed to create partner accounts')
+    if (!user1 || !user2) {
+      await rollbackEvent()
+      throw new Error('Failed to create partner accounts')
+    }
 
     // 3. Upsert public users with names + role
-    await supabase.from('users').upsert([
+    const { error: upsertErr } = await supabase.from('users').upsert([
       {
         id: user1.id,
         email: partner1_email,
@@ -89,11 +103,21 @@ Deno.serve(async (req) => {
       },
     ], { onConflict: 'id' })
 
+    if (upsertErr) {
+      await rollbackEvent()
+      throw upsertErr
+    }
+
     // 4. Link to event
-    await supabase.from('event_users').insert([
+    const { error: linkErr } = await supabase.from('event_users').insert([
       { event_id: event.id, user_id: user1.id, role_in_event: 'partner_1' },
       { event_id: event.id, user_id: user2.id, role_in_event: 'partner_2' },
     ])
+
+    if (linkErr) {
+      await rollbackEvent()
+      throw linkErr
+    }
 
     return new Response(
       JSON.stringify({ event_id: event.id, event_title: eventTitle }),
