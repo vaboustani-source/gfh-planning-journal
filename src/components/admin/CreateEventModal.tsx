@@ -1,0 +1,197 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { X, Loader2, UserPlus } from "lucide-react";
+
+interface Props {
+  onClose: () => void;
+}
+
+const PACKAGE_TIERS = [
+  { value: "base", label: "Base" },
+  { value: "elevated", label: "Elevated" },
+  { value: "full", label: "Full" },
+];
+
+export default function CreateEventModal({ onClose }: Props) {
+  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
+    partner1_first_name: "",
+    partner1_last_name: "",
+    partner1_email: "",
+    partner2_first_name: "",
+    partner2_last_name: "",
+    partner2_email: "",
+    wedding_date: "",
+    arrival_date: "",
+    departure_date: "",
+    package_tier: "base",
+  });
+
+  const set = (field: keyof typeof form, value: string) =>
+    setForm(f => ({ ...f, [field]: value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!form.partner1_email || !form.partner2_email) {
+      setError("Both partner emails are required.");
+      return;
+    }
+    if (form.partner1_email === form.partner2_email) {
+      setError("Partners must have different email addresses.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("create-couple-accounts", {
+        body: form,
+      });
+
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+
+      navigate(`/admin/events/${data.event_id}`);
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const Field = ({
+    label, field, type = "text", placeholder,
+  }: { label: string; field: keyof typeof form; type?: string; placeholder?: string }) => (
+    <div>
+      <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">{label}</p>
+      <input
+        type={type}
+        value={form[field]}
+        onChange={e => set(field, e.target.value)}
+        placeholder={placeholder}
+        className="w-full border border-border rounded-lg px-3 py-2.5 font-body text-sm bg-background text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+      />
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-sage/15 border border-sage/25 flex items-center justify-center shrink-0">
+              <UserPlus size={14} className="text-sage" />
+            </div>
+            <div>
+              <p className="font-display text-xl font-light text-foreground">New Wedding Event</p>
+              <p className="font-body text-xs text-muted-foreground">Partners will receive a login link by email</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-5 space-y-6 max-h-[70vh] overflow-y-auto">
+            {/* Partner 1 */}
+            <div>
+              <p className="font-display text-base font-light text-foreground mb-3 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-sage/15 border border-sage/25 text-sage font-body text-[10px] flex items-center justify-center">1</span>
+                Partner One
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <Field label="First Name" field="partner1_first_name" placeholder="Jane" />
+                <Field label="Last Name" field="partner1_last_name" placeholder="Smith" />
+              </div>
+              <Field label="Email Address *" field="partner1_email" type="email" placeholder="jane@example.com" />
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Partner 2 */}
+            <div>
+              <p className="font-display text-base font-light text-foreground mb-3 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-sage/15 border border-sage/25 text-sage font-body text-[10px] flex items-center justify-center">2</span>
+                Partner Two
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <Field label="First Name" field="partner2_first_name" placeholder="Alex" />
+                <Field label="Last Name" field="partner2_last_name" placeholder="Johnson" />
+              </div>
+              <Field label="Email Address *" field="partner2_email" type="email" placeholder="alex@example.com" />
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Event dates */}
+            <div>
+              <p className="font-display text-base font-light text-foreground mb-3">Event Dates</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Field label="Wedding Date" field="wedding_date" type="date" />
+                <Field label="Arrival Date" field="arrival_date" type="date" />
+                <Field label="Departure Date" field="departure_date" type="date" />
+              </div>
+            </div>
+
+            {/* Package */}
+            <div>
+              <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">Package Tier</p>
+              <div className="flex gap-2">
+                {PACKAGE_TIERS.map(t => (
+                  <button
+                    type="button"
+                    key={t.value}
+                    onClick={() => set("package_tier", t.value)}
+                    className={`flex-1 py-2.5 rounded-lg border font-body text-sm transition-colors ${
+                      form.package_tier === t.value
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:text-foreground bg-background"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3">
+                <p className="font-body text-sm text-destructive">{error}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex gap-3 px-6 py-4 border-t border-border bg-muted/10">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-border font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {submitting ? (
+                <><Loader2 size={15} className="animate-spin" /> Creating…</>
+              ) : (
+                "Create Event & Invite Couple"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
