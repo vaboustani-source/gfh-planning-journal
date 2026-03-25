@@ -42,7 +42,8 @@ export interface EventData {
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "overview");
   const [event, setEvent] = useState<EventData | null>(null);
   const [coupleNames, setCoupleNames] = useState("");
   const [loading, setLoading] = useState(true);
