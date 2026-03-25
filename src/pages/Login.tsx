@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import farmhouseHero from "@/assets/farmhouse-hero.jpg";
+
+const LOGIN_TIMEOUT_MS = 10_000;
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,34 +12,53 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { signIn, profile } = useAuth();
   const navigate = useNavigate();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Navigate once profile is loaded post-login
+  useEffect(() => {
+    if (profile) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setLoading(false);
+      if (profile.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/portal", { replace: true });
+      }
+    }
+  }, [profile, navigate]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const { error } = await signIn(email, password);
-
-    if (error) {
-      setError("Invalid email or password. Please try again.");
+    // Arm a timeout so the spinner never spins forever
+    timeoutRef.current = setTimeout(() => {
       setLoading(false);
-      return;
+      setError("Connection timeout — please try again.");
+    }, LOGIN_TIMEOUT_MS);
+
+    try {
+      const { error: signInError } = await signIn(email, password);
+
+      if (signInError) {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        setLoading(false);
+        // Show the real Supabase error message for easier debugging
+        setError(signInError.message ?? "Invalid email or password. Please try again.");
+      }
+      // On success: loading stays true; profile useEffect above will clear it + redirect
+    } catch (err: any) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setLoading(false);
+      setError(err?.message ?? "An unexpected error occurred.");
     }
-
-    // Give auth state a moment to settle, then redirect
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
   };
-
-  // Navigate once profile is loaded post-login
-  if (profile) {
-    if (profile.role === "admin") {
-      navigate("/admin", { replace: true });
-    } else {
-      navigate("/portal", { replace: true });
-    }
-  }
 
   return (
     <div className="flex min-h-screen">

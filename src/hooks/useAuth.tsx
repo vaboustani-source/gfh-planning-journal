@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .single();
     if (!error && data) setProfile(data);
+    setLoading(false);
   };
 
   useEffect(() => {
