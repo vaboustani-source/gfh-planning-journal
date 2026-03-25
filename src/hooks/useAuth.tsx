@@ -35,22 +35,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .single();
     if (!error && data) setProfile(data);
+    setLoading(false);
   };
 
   useEffect(() => {
+    // IMPORTANT: onAuthStateChange must NOT be async / awaited inside the callback.
+    // Awaiting inside the listener causes a deadlock in Supabase's auth internals.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          // Fire-and-forget — never await inside onAuthStateChange
+          fetchProfile(session.user.id);
         } else {
           setProfile(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
+    // Restore existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
