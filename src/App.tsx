@@ -7,7 +7,13 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
-import CouplePortal from "./pages/CouplePortal";
+import PortalLayout from "./pages/portal/PortalLayout";
+import Today from "./pages/portal/Today";
+import OurWeekend from "./pages/portal/OurWeekend";
+import Planning from "./pages/portal/Planning";
+import OurPeople from "./pages/portal/OurPeople";
+import WeekendDetails from "./pages/portal/WeekendDetails";
+import Messages from "./pages/portal/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +28,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
+
+            {/* Admin */}
             <Route
               path="/admin"
               element={
@@ -30,15 +38,25 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* Couple Portal — nested */}
             <Route
               path="/portal"
               element={
                 <ProtectedRoute requiredRole="couple">
-                  <CouplePortal />
+                  <PortalLayout />
                 </ProtectedRoute>
               }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            >
+              <Route index element={<Navigate to="/portal/today" replace />} />
+              <Route path="today" element={<Today />} />
+              <Route path="our-weekend" element={<OurWeekend />} />
+              <Route path="planning" element={<Planning />} />
+              <Route path="our-people" element={<OurPeople />} />
+              <Route path="weekend-details" element={<WeekendDetails />} />
+              <Route path="messages" element={<Messages />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
