@@ -88,21 +88,6 @@ export default function CreateEventModal({ onClose }: Props) {
     }
   };
 
-  const Field = ({
-    label, field, type = "text", placeholder,
-  }: { label: string; field: keyof typeof form; type?: string; placeholder?: string }) => (
-    <div>
-      <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">{label}</p>
-      <input
-        type={type}
-        value={form[field]}
-        onChange={e => set(field, e.target.value)}
-        placeholder={placeholder}
-        className="w-full border border-border rounded-lg px-3 py-2.5 font-body text-sm bg-background text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
-      />
-    </div>
-  );
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
       <div className="w-full max-w-xl rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
