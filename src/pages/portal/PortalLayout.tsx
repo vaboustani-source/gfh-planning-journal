@@ -1,0 +1,181 @@
+import { useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { PortalDataProvider } from "@/hooks/usePortalData";
+import {
+  Sunrise, CalendarHeart, CheckSquare, Users, BookOpen, MessageCircle, LogOut, Menu, X
+} from "lucide-react";
+
+const navItems = [
+  { to: "/portal/today",           label: "Today",               icon: Sunrise },
+  { to: "/portal/our-weekend",     label: "Our Weekend",         icon: CalendarHeart },
+  { to: "/portal/planning",        label: "Planning",            icon: CheckSquare },
+  { to: "/portal/our-people",      label: "Our People",          icon: Users },
+  { to: "/portal/weekend-details", label: "Weekend Details",     icon: BookOpen },
+  { to: "/portal/messages",        label: "Messages",            icon: MessageCircle },
+];
+
+function NavItem({ to, label, icon: Icon, onClick }: { to: string; label: string; icon: React.ElementType; onClick?: () => void }) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-4 py-2.5 rounded-lg font-body text-sm transition-all duration-200 ${
+          isActive
+            ? "bg-sage/12 text-sage-dark font-medium"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+        }`
+      }
+    >
+      <Icon size={16} strokeWidth={1.75} />
+      <span>{label}</span>
+    </NavLink>
+  );
+}
+
+function MobileNavItem({ to, label, icon: Icon }: { to: string; label: string; icon: React.ElementType }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex flex-col items-center gap-1 px-2 py-1.5 transition-colors ${
+          isActive ? "text-primary" : "text-muted-foreground"
+        }`
+      }
+    >
+      <Icon size={20} strokeWidth={1.75} />
+      <span className="font-body text-[10px] leading-tight">{label}</span>
+    </NavLink>
+  );
+}
+
+export default function PortalLayout() {
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <PortalDataProvider>
+      <div className="min-h-screen bg-background flex">
+
+        {/* ── Desktop sidebar ─────────────────────── */}
+        <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-border bg-sidebar sticky top-0 h-screen">
+          {/* Brand */}
+          <div className="px-5 py-6 border-b border-border">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-sage/15 border border-sage/25 flex items-center justify-center shrink-0">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-sage">
+                  <path d="M12 2C8 2 4 6 4 10c0 5.5 8 12 8 12s8-6.5 8-12c0-4-4-8-8-8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+                </svg>
+              </div>
+              <div>
+                <p className="font-display text-base font-light leading-tight text-foreground">Gilbertsville</p>
+                <p className="font-body text-[10px] text-muted-foreground -mt-0.5">Farmhouse</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Profile */}
+          <div className="px-5 py-4 border-b border-border">
+            <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
+            <p className="font-body text-sm font-medium text-foreground truncate">
+              {profile?.first_name && profile?.last_name
+                ? `${profile.first_name} ${profile.last_name}`
+                : profile?.email}
+            </p>
+          </div>
+
+          {/* Nav */}
+          <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+            {navItems.map(item => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </nav>
+
+          {/* Sign out */}
+          <div className="px-3 py-4 border-t border-border">
+            <button
+              onClick={() => signOut().then(() => navigate("/login"))}
+              className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg font-body text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            >
+              <LogOut size={16} strokeWidth={1.75} />
+              Sign out
+            </button>
+          </div>
+        </aside>
+
+        {/* ── Mobile drawer overlay ─────────────── */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            <div className="absolute inset-0 bg-forest/40 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+            <aside className="relative w-72 bg-sidebar border-r border-border flex flex-col h-full shadow-elevated">
+              <div className="px-5 py-5 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-sage/15 border border-sage/25 flex items-center justify-center">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-sage">
+                      <path d="M12 2C8 2 4 6 4 10c0 5.5 8 12 8 12s8-6.5 8-12c0-4-4-8-8-8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+                    </svg>
+                  </div>
+                  <p className="font-display text-base font-light text-foreground">Gilbertsville Farmhouse</p>
+                </div>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-muted-foreground hover:text-foreground">
+                  <X size={18} />
+                </button>
+              </div>
+              <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+                {navItems.map(item => (
+                  <NavItem key={item.to} {...item} onClick={() => setMobileMenuOpen(false)} />
+                ))}
+              </nav>
+              <div className="px-3 py-4 border-t border-border">
+                <button
+                  onClick={() => signOut().then(() => navigate("/login"))}
+                  className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg font-body text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                >
+                  <LogOut size={16} strokeWidth={1.75} />
+                  Sign out
+                </button>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* ── Main content area ─────────────────── */}
+        <div className="flex-1 flex flex-col min-h-screen min-w-0">
+          {/* Mobile top bar */}
+          <header className="lg:hidden sticky top-0 z-30 bg-card/90 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 h-14">
+            <button onClick={() => setMobileMenuOpen(true)} className="p-1.5 -ml-1.5 text-foreground">
+              <Menu size={20} strokeWidth={1.75} />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-sage/15 border border-sage/25 flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-sage">
+                  <path d="M12 2C8 2 4 6 4 10c0 5.5 8 12 8 12s8-6.5 8-12c0-4-4-8-8-8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+                </svg>
+              </div>
+              <span className="font-display text-base font-light text-foreground">Gilbertsville Farmhouse</span>
+            </div>
+            <div className="w-8" />
+          </header>
+
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
+            <Outlet />
+          </main>
+
+          {/* ── Mobile bottom nav ──────────────── */}
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t border-border grid grid-cols-6">
+            {navItems.map(item => (
+              <MobileNavItem key={item.to} {...item} />
+            ))}
+          </nav>
+        </div>
+
+      </div>
+    </PortalDataProvider>
+  );
+}
