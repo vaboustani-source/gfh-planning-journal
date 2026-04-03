@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Check } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface Room {
   id: string;
