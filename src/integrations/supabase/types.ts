@@ -1094,6 +1094,7 @@ export type Database = {
           info_emailed: boolean | null
           instagram: string | null
           phone: string | null
+          sort_order: number | null
           status: string | null
           vendor_meals: number | null
         }
@@ -1111,6 +1112,7 @@ export type Database = {
           info_emailed?: boolean | null
           instagram?: string | null
           phone?: string | null
+          sort_order?: number | null
           status?: string | null
           vendor_meals?: number | null
         }
@@ -1128,6 +1130,7 @@ export type Database = {
           info_emailed?: boolean | null
           instagram?: string | null
           phone?: string | null
+          sort_order?: number | null
           status?: string | null
           vendor_meals?: number | null
         }

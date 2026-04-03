@@ -147,7 +147,7 @@ export default function Messages() {
   const groups = groupByDate(messages);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen pb-20">
 
       {/* Header */}
       <div className="shrink-0 px-5 py-4 lg:px-8 border-b border-border bg-card/80 backdrop-blur-sm">
@@ -166,7 +166,7 @@ export default function Messages() {
       </div>
 
       {/* Message thread */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 lg:px-8">
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 lg:px-8">
         <div className="max-w-2xl mx-auto space-y-1">
 
           {loading && (
@@ -243,8 +243,8 @@ export default function Messages() {
         </div>
       </div>
 
-      {/* Input bar */}
-      <div className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8">
+      {/* Input bar — positioned above sticky footer */}
+      <div className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8 sticky bottom-20 z-10">
         <div className="max-w-2xl mx-auto flex items-end gap-2.5">
           <textarea
             ref={inputRef}
