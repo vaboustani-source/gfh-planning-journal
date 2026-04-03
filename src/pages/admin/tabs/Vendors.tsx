@@ -328,7 +328,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           <p className="font-display text-base font-light text-foreground border-b border-border pb-2 mb-3">Other</p>
           <div className="space-y-2">
             {vendors.filter(v => !VENDOR_GROUPS.some(g => g.categories.includes(v.category))).map(v => (
-              <VendorRow key={v.id} vendor={v}
+              <VendorRow key={v.id} vendor={v} eventId={eventId}
                 onUpdate={updateVendor} onDelete={deleteVendor}
                 onSaveStart={markSaving} onSaveEnd={markSaved} />
             ))}
