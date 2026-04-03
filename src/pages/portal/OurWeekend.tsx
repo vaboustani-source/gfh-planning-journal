@@ -23,6 +23,7 @@ function formatDate(d: string | null) {
 
 export default function OurWeekend() {
   const { event, loading } = usePortalData();
+  const navigate = useNavigate();
 
   return (
     <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10">
