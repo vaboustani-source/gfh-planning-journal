@@ -398,8 +398,15 @@ export default function AdminDashboard() {
                           )}
                         </div>
                       </div>
-                      <div className="px-6 pb-5">
+                      <div className="px-6 pb-5 flex items-center justify-between">
                         <span className="inline-flex items-center rounded-full bg-sage/8 border border-sage/20 px-2.5 py-0.5 font-body text-xs text-sage capitalize">{event.status}</span>
+                        <span
+                          role="button"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/admin/preview/${event.id}`); }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-body text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                        >
+                          <Eye size={13} /> Preview Portal
+                        </span>
                       </div>
                     </button>
                   );
