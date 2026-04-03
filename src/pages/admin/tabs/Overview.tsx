@@ -5,6 +5,7 @@ import { Check, Edit2 } from "lucide-react";
 import { addDays, subDays, format } from "date-fns";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import SaveButton from "@/components/admin/SaveButton";
 
 const PACKAGE_TIERS = ["base", "premium", "elite"];
