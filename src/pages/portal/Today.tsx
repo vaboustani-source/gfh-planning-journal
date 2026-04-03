@@ -144,7 +144,7 @@ export default function Today() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10">
+    <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
 
       {/* Countdown ───────────────────────── */}
       <section className="animate-fade-up mb-10">

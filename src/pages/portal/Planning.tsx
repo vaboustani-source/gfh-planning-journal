@@ -46,7 +46,7 @@ export default function Planning() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10">
+    <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
       <div className="animate-fade-up">
         <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-2">Your tasks</p>
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Planning</h1>
