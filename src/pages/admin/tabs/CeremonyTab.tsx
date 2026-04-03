@@ -544,10 +544,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
         />
       </Section>
 
-      {/* Manual save */}
-      <div className="flex justify-end">
-        <SaveButton status={status} onClick={handleManualSave} label="Save Ceremony Details" />
-      </div>
+      <AdminStickyFooter status={status} onSave={handleManualSave} onSaveAndContinue={() => { handleManualSave(); onNavigateNext?.(); }} />
     </div>
   );
 }
