@@ -127,6 +127,8 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
     <PortalDataContext.Provider value={{
       event,
       eventId: event?.id ?? null,
+      accessTier,
+      roleInEvent,
       checklistProgress,
       nextTask,
       daysUntilArrival,
