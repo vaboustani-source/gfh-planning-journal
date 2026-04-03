@@ -63,9 +63,9 @@ export default function EventDetail() {
   const navigateToNextTab = useCallback(() => {
     const idx = TAB_ORDER.indexOf(activeTab);
     const nextIdx = (idx + 1) % TAB_ORDER.length;
-    setActiveTab(TAB_ORDER[nextIdx]);
+    handleTabChange(TAB_ORDER[nextIdx]);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [activeTab]);
+  }, [activeTab, handleTabChange]);
 
   useEffect(() => {
     if (!eventId) return;
