@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
       throw new Error('Both partner emails are required')
     }
 
-    // Build event title
     const n1 = [partner1_first_name, partner1_last_name].filter(Boolean).join(' ') || partner1_email
     const n2 = [partner2_first_name, partner2_last_name].filter(Boolean).join(' ') || partner2_email
     const eventTitle = `${n1} & ${n2}`
@@ -48,33 +47,35 @@ Deno.serve(async (req) => {
 
     if (eventError) throw eventError
 
-    // Helper to roll back the event if anything downstream fails
     const rollbackEvent = async () => {
       await supabase.from('events').delete().eq('id', event.id)
     }
 
-    // 2. Invite / get partner accounts
-    const invitePartner = async (email: string, firstName: string, lastName: string) => {
-      // Try inviting — if user already exists this will error, so we fallback to lookup
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-        data: { first_name: firstName, last_name: lastName },
+    // 2. Get or create partner accounts
+    // First check if users already exist to avoid hitting email rate limits
+    const getOrCreateUser = async (email: string, firstName: string, lastName: string) => {
+      // Check if user already exists
+      const { data: list } = await supabase.auth.admin.listUsers()
+      const existing = list?.users?.find(u => u.email === email)
+      if (existing) return existing
+
+      // User doesn't exist — create directly with a temporary password (no email sent)
+      const tempPassword = crypto.randomUUID() + '-Aa1!'
+      const { data, error } = await supabase.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { first_name: firstName, last_name: lastName },
       })
-      if (error) {
-        // User might already exist — fetch by email
-        const { data: list } = await supabase.auth.admin.listUsers()
-        const existing = list?.users?.find(u => u.email === email)
-        if (existing) return existing
-        throw error
-      }
+      if (error) throw error
       return data.user
     }
 
     let user1, user2
     try {
-      ;[user1, user2] = await Promise.all([
-        invitePartner(partner1_email, partner1_first_name || '', partner1_last_name || ''),
-        invitePartner(partner2_email, partner2_first_name || '', partner2_last_name || ''),
-      ])
+      // Run sequentially to avoid race conditions on listUsers
+      user1 = await getOrCreateUser(partner1_email, partner1_first_name || '', partner1_last_name || '')
+      user2 = await getOrCreateUser(partner2_email, partner2_first_name || '', partner2_last_name || '')
     } catch (inviteErr) {
       await rollbackEvent()
       throw inviteErr
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
       throw new Error('Failed to create partner accounts')
     }
 
-    // 3. Upsert public users with names + role
+    // 3. Upsert public users
     const { error: upsertErr } = await supabase.from('users').upsert([
       {
         id: user1.id,
