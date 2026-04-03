@@ -32,6 +32,8 @@ interface NextTask {
 interface PortalDataContextType {
   event: PortalEvent | null;
   eventId: string | null;
+  accessTier: number;
+  roleInEvent: string | null;
   checklistProgress: ChecklistProgress;
   nextTask: NextTask | null;
   daysUntilArrival: number | null;
