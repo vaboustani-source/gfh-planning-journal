@@ -74,11 +74,15 @@ const App = () => (
             >
               <Route index element={<Navigate to="/portal/today" replace />} />
               <Route path="today" element={<Today />} />
-              <Route path="our-weekend" element={<OurWeekend />} />
+              <Route path="our-wedding" element={<OurWeekend />} />
               <Route path="planning" element={<Planning />} />
+              <Route path="vendors" element={<Vendors />} />
+              <Route path="ceremony" element={<Ceremony />} />
+              <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
-              <Route path="weekend-details" element={<WeekendDetails />} />
+              <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
+              <Route path="notes" element={<Notes />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
