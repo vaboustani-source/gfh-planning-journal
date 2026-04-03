@@ -203,8 +203,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   };
 
   return (
-    <div className="space-y-5 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-5 pb-24 animate-fade-up relative">
       <div className="flex items-center justify-between">
         <div className="flex gap-4">
           <span className="font-body text-sm text-muted-foreground">{vendors.length} vendor{vendors.length !== 1 ? "s" : ""}</span>
