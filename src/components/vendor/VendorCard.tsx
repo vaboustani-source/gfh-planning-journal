@@ -65,6 +65,7 @@ interface VendorCardProps {
 export function VendorCard({
   vendor, eventId, isAdmin, initialEditMode = false,
   onUpdate, onDelete, onSaveStart, onSaveEnd,
+  dragHandleProps, showDragHandle = false,
 }: VendorCardProps) {
   const isGF = isGilbertsvilleRow(vendor);
   const hasContent = !!vendor.business_name;
@@ -72,6 +73,7 @@ export function VendorCard({
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(vendor);
   const [fileCount, setFileCount] = useState(0);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => { setDraft(vendor); }, [vendor]);
