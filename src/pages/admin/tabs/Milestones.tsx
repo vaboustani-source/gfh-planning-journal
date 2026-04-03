@@ -66,8 +66,7 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
       {/* Progress */}
       <div className="rounded-xl bg-card border border-border p-5">
         <div className="flex items-center justify-between mb-3">
