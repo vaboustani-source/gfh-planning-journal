@@ -3,13 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import { LodgingList } from "./people/LodgingList";
 import { Headcounts } from "./people/Headcounts";
-import { VendorList } from "./people/VendorList";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 const TABS = [
   { id: "lodging", label: "Lodging" },
   { id: "headcounts", label: "Headcounts" },
-  { id: "vendors", label: "Vendors" },
 ];
 
 export default function OurPeople() {
@@ -17,7 +15,7 @@ export default function OurPeople() {
   const navigate = useNavigate();
 
   return (
-    <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10">
+    <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
       <div className="animate-fade-up">
         <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-2">
           Guests & lodging
@@ -28,8 +26,7 @@ export default function OurPeople() {
 
         {tab === "lodging" && <LodgingList />}
         {tab === "headcounts" && <Headcounts />}
-        {tab === "vendors" && <VendorList />}
-        <PortalStickyFooter onContinue={() => navigate("/portal/weekend-details")} />
+        <PortalStickyFooter onContinue={() => navigate("/portal/financials")} />
       </div>
     </div>
   );
