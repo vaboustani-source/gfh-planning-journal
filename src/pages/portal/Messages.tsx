@@ -274,7 +274,7 @@ export default function Messages() {
         </p>
       </div>
 
-      <PortalStickyFooter onContinue={() => navigate("/portal/today")} nextOnly />
+      <PortalStickyFooter onContinue={() => navigate("/portal/notes")} nextOnly />
     </div>
   );
 }

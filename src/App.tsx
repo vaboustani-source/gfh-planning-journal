@@ -14,9 +14,13 @@ import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
 import Planning from "./pages/portal/Planning";
+import Vendors from "./pages/portal/Vendors";
+import Ceremony from "./pages/portal/Ceremony";
+import MenusMeals from "./pages/portal/MenusMeals";
 import OurPeople from "./pages/portal/OurPeople";
-import WeekendDetails from "./pages/portal/WeekendDetails";
+import Financials from "./pages/portal/Financials";
 import Messages from "./pages/portal/Messages";
+import Notes from "./pages/portal/Notes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,11 +74,15 @@ const App = () => (
             >
               <Route index element={<Navigate to="/portal/today" replace />} />
               <Route path="today" element={<Today />} />
-              <Route path="our-weekend" element={<OurWeekend />} />
+              <Route path="our-wedding" element={<OurWeekend />} />
               <Route path="planning" element={<Planning />} />
+              <Route path="vendors" element={<Vendors />} />
+              <Route path="ceremony" element={<Ceremony />} />
+              <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
-              <Route path="weekend-details" element={<WeekendDetails />} />
+              <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
+              <Route path="notes" element={<Notes />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
