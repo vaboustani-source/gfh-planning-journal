@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import { LodgingList } from "./people/LodgingList";
 import { Headcounts } from "./people/Headcounts";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 const TABS = [
   { id: "lodging", label: "Lodging" },
