@@ -1,0 +1,1 @@
+UPDATE public.users SET role = 'admin' WHERE email = 'victoria@gilbertsvillefarmhouse.com';
