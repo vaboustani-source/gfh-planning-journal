@@ -190,6 +190,5 @@ function PortalLayoutInner() {
         </div>
 
       </div>
-    </PortalDataProvider>
   );
 }
