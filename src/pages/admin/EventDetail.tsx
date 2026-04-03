@@ -22,6 +22,8 @@ const TABS = [
   { id: "ceremony", label: "Ceremony" },
 ];
 
+const TAB_ORDER = ["overview", "milestones", "checklist", "vendors", "ceremony", "financials", "lodging"];
+
 export interface EventData {
   id: string;
   title: string;
