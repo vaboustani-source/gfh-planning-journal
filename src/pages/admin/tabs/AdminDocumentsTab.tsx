@@ -173,7 +173,7 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
         </div>
       )}
 
-      <AdminStickyFooter onSaveAndContinue={onNavigateNext} />
+      <AdminStickyFooter status="idle" onSave={() => {}} onSaveAndContinue={onNavigateNext} />
     </div>
   );
 }

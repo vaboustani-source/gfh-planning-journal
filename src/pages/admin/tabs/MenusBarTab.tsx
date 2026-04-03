@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import BarTab from "./BarTab";
-import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2, Save, Check, Calendar } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
@@ -37,18 +36,11 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
       });
   }, [eventId]);
 
-  const saveMeal = async (meal: MealEvent) => {
-    autosave.setSaving();
-    const { error } = await supabase.from("meal_events").update({
-      meal_type: meal.meal_type,
-      location: meal.location,
-      adult_count: meal.adult_count,
-      kids_count: meal.kids_count,
-      vendor_count: meal.vendor_count,
-      included_in_package: meal.included_in_package,
-      notes: meal.notes,
-    }).eq("id", meal.id);
-    error ? autosave.setError() : autosave.setSaved();
+  const updateMeal = (id: string, field: string, value: any) => {
+    setMeals(prev => prev.map(m => m.id !== id ? m : { ...m, [field]: value }));
+    autosave.debouncedSave(`meal-${id}-${field}`, async () => {
+      await supabase.from("meal_events").update({ [field]: value }).eq("id", id);
+    });
   };
 
   const addMeal = async () => {
@@ -63,15 +55,6 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
   const deleteMeal = async (id: string) => {
     setMeals(prev => prev.filter(m => m.id !== id));
     await supabase.from("meal_events").delete().eq("id", id);
-  };
-
-  const updateMeal = (id: string, field: string, value: any) => {
-    setMeals(prev => prev.map(m => {
-      if (m.id !== id) return m;
-      const updated = { ...m, [field]: value };
-      saveMeal(updated);
-      return updated;
-    }));
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>;
@@ -133,13 +116,12 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
 function TastingSubTab({ eventId, tastingDate, tastingDateNote }: { eventId: string; tastingDate: string | null; tastingDateNote: string | null }) {
   const [date, setDate] = useState(tastingDate ?? "");
   const [notes, setNotes] = useState(tastingDateNote ?? "");
-  const [confirmed, setConfirmed] = useState(!!tastingDate);
   const autosave = useAutosaveStatus();
 
   const save = async (field: string, value: any) => {
-    autosave.setSaving();
-    const { error } = await supabase.from("events").update({ [field]: value }).eq("id", eventId);
-    error ? autosave.setError() : autosave.setSaved();
+    autosave.debouncedSave(`tasting-${field}`, async () => {
+      await supabase.from("events").update({ [field]: value }).eq("id", eventId);
+    });
   };
 
   return (
@@ -159,21 +141,11 @@ function TastingSubTab({ eventId, tastingDate, tastingDateNote }: { eventId: str
           <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Tasting Notes</label>
           <textarea
             value={notes}
-            onChange={e => setNotes(e.target.value)}
-            onBlur={() => save("tasting_date_note", notes || null)}
+            onChange={e => { setNotes(e.target.value); save("tasting_date_note", e.target.value || null); }}
             rows={4}
             placeholder="Notes from the tasting — flavors chosen, couple preferences, any changes..."
             className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm resize-none mt-1"
           />
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={confirmed}
-            onChange={e => { setConfirmed(e.target.checked); }}
-            className="accent-primary"
-          />
-          <span className="font-body text-sm text-foreground">Tasting confirmed</span>
         </div>
       </div>
     </div>
@@ -195,16 +167,17 @@ export default function MenusBarTab({ eventId, onNavigateNext, tastingDate, tast
   tastingDateNote?: string | null;
 }) {
   const [sub, setSub] = useState("meals");
+  const autosave = useAutosaveStatus();
 
   return (
     <div>
       <SectionTabs tabs={SUB_TABS} active={sub} onChange={setSub} />
       <div className="mt-6">
         {sub === "meals" && <MealEventsSubTab eventId={eventId} />}
-        {sub === "bar" && <BarTab eventId={eventId} onNavigateNext={() => {}} embedded />}
+        {sub === "bar" && <BarTab eventId={eventId} onNavigateNext={() => {}} />}
         {sub === "tasting" && <TastingSubTab eventId={eventId} tastingDate={tastingDate ?? null} tastingDateNote={tastingDateNote ?? null} />}
       </div>
-      <AdminStickyFooter onSaveAndContinue={onNavigateNext} />
+      <AdminStickyFooter status={autosave.status} onSave={() => {}} onSaveAndContinue={onNavigateNext} />
     </div>
   );
 }

@@ -157,7 +157,7 @@ export default function AdminNotesTab({ eventId, onNavigateNext }: { eventId: st
         )}
       </section>
 
-      <AdminStickyFooter onSaveAndContinue={onNavigateNext} />
+      <AdminStickyFooter status="idle" onSave={() => {}} onSaveAndContinue={onNavigateNext} />
     </div>
   );
 }
