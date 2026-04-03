@@ -97,6 +97,10 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
     setSending(true);
     setNewMessage("");
     await supabase.from("messages").insert({ event_id: eventId, sender_id: user.id, body: text });
+    // Enqueue notification (fire and forget)
+    supabase.functions.invoke("enqueue-message-notification", {
+      body: { event_id: eventId, sender_id: user.id, message_body: text },
+    }).catch(err => console.warn("Notification enqueue failed:", err));
     setSending(false);
     inputRef.current?.focus();
   };
