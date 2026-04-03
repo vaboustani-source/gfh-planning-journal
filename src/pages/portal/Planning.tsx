@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 interface ChecklistItem {
   id: string;
