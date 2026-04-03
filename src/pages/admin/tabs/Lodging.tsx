@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Check } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface Room {
   id: string;
@@ -42,7 +42,7 @@ const STATUS_STYLES: Record<string, string> = {
   paid: "bg-forest/15 border-forest/30 text-forest-dark",
 };
 
-export default function LodgingTab({ eventId }: { eventId: string }) {
+export default function LodgingTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,8 +110,7 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
       {/* Summary */}
       <div className="flex flex-wrap gap-6">
         <div className="text-center">
@@ -273,6 +272,7 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
           </div>
         </div>
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

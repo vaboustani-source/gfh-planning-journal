@@ -5,6 +5,7 @@ import { Check, Edit2 } from "lucide-react";
 import { addDays, subDays, format } from "date-fns";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import SaveButton from "@/components/admin/SaveButton";
 
 const PACKAGE_TIERS = ["base", "premium", "elite"];
@@ -14,6 +15,7 @@ interface Props {
   event: EventData;
   coupleNames: string;
   onUpdate: (e: EventData) => void;
+  onNavigateNext?: () => void;
 }
 
 function Field({ label, value, onSave }: { label: string; value: string; onSave: (v: string) => Promise<void> }) {
@@ -212,7 +214,7 @@ const ALL_ADDONS = [
   "beer_burro", "haywagon", "mimosa_bar", "lawn_games", "bathroom_baskets",
 ];
 
-export default function Overview({ event, coupleNames, onUpdate }: Props) {
+export default function Overview({ event, coupleNames, onUpdate, onNavigateNext }: Props) {
   const { status, trackSave } = useAutosaveStatus();
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
   const [addonsLoaded, setAddonsLoaded] = useState(false);
@@ -293,8 +295,7 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
     d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "";
 
   return (
-    <div className="space-y-8 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-8 pb-24 animate-fade-up relative">
       {/* Countdown */}
       {daysUntil !== null && (
         <div className="rounded-2xl bg-sage/8 border border-sage/20 px-6 py-5 flex items-center gap-4">
@@ -410,6 +411,7 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
           <Field label="How Heard" value={event.how_heard || ""} onSave={v => patch({ how_heard: v || null })} />
         </div>
       </div>
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 interface ChecklistItem {
   id: string;
@@ -14,6 +16,7 @@ interface ChecklistItem {
 
 export default function Planning() {
   const { eventId, loading: eventLoading } = usePortalData();
+  const navigate = useNavigate();
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -89,6 +92,7 @@ export default function Planning() {
             ))}
           </div>
         )}
+        <PortalStickyFooter onContinue={() => navigate("/portal/our-people")} />
       </div>
     </div>
   );

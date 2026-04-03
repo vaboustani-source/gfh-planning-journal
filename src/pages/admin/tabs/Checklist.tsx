@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, User, Wrench } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface ChecklistItem {
   id: string;
@@ -30,7 +30,7 @@ const sectionLabels: Record<string, string> = {
   general: "General",
 };
 
-export default function ChecklistTab({ eventId }: { eventId: string }) {
+export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
@@ -76,8 +76,7 @@ export default function ChecklistTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
       {/* Progress + filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-1 min-w-0">
@@ -169,6 +168,7 @@ export default function ChecklistTab({ eventId }: { eventId: string }) {
           </div>
         ))
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

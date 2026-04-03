@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Check, Trash2 } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface PaymentLine {
   id: string;
@@ -160,7 +160,7 @@ function LineRow({ line, onDebouncedUpdate, onImmediateUpdate, onDelete }: {
   );
 }
 
-export default function FinancialsTab({ eventId }: { eventId: string }) {
+export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [lines, setLines] = useState<PaymentLine[]>([]);
   const [loading, setLoading] = useState(true);
   const { status, markSaving, markSaved } = useAutosaveStatus();
@@ -200,8 +200,7 @@ export default function FinancialsTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {TRACKS.map(track => (
           <TrackPanel
@@ -216,6 +215,7 @@ export default function FinancialsTab({ eventId }: { eventId: string }) {
           />
         ))}
       </div>
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

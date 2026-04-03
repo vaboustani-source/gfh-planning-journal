@@ -5,8 +5,7 @@ import {
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
-import SaveButton from "@/components/admin/SaveButton";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 /* ── Types ── */
 interface ProcessionalEntry { role: string; name: string; song: string }
@@ -75,7 +74,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 /* ── Main Component ── */
-export default function CeremonyTab({ eventId }: { eventId: string }) {
+export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [loading, setLoading] = useState(true);
   const [locking, setLocking] = useState(false);
   const [recordId, setRecordId] = useState<string | null>(null);
@@ -242,8 +241,7 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
   );
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
 
       {/* Lock banner */}
       {locked ? (
@@ -546,10 +544,7 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
         />
       </Section>
 
-      {/* Manual save */}
-      <div className="flex justify-end">
-        <SaveButton status={status} onClick={handleManualSave} label="Save Ceremony Details" />
-      </div>
+      <AdminStickyFooter status={status} onSave={handleManualSave} onSaveAndContinue={() => { handleManualSave(); onNavigateNext?.(); }} />
     </div>
   );
 }

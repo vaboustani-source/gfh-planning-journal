@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft } from "lucide-react";
@@ -21,6 +21,8 @@ const TABS = [
   { id: "lodging", label: "Lodging" },
   { id: "ceremony", label: "Ceremony" },
 ];
+
+const TAB_ORDER = ["overview", "milestones", "checklist", "vendors", "ceremony", "financials", "lodging"];
 
 export interface EventData {
   id: string;
@@ -52,6 +54,13 @@ export default function EventDetail() {
   const [coupleNames, setCoupleNames] = useState("");
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const navigateToNextTab = useCallback(() => {
+    const idx = TAB_ORDER.indexOf(activeTab);
+    const nextIdx = (idx + 1) % TAB_ORDER.length;
+    setActiveTab(TAB_ORDER[nextIdx]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -176,15 +185,15 @@ export default function EventDetail() {
       </header>
 
       {/* Tab content */}
-      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-        {activeTab === "overview" && <OverviewTab event={event} coupleNames={coupleNames} onUpdate={setEvent} />}
-        {activeTab === "milestones" && <MilestonesTab eventId={event.id} />}
-        {activeTab === "checklist" && <ChecklistTab eventId={event.id} />}
-        {activeTab === "vendors" && <VendorsTab eventId={event.id} />}
+      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8 pb-24">
+        {activeTab === "overview" && <OverviewTab event={event} coupleNames={coupleNames} onUpdate={setEvent} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "milestones" && <MilestonesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "checklist" && <ChecklistTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "vendors" && <VendorsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
-        {activeTab === "financials" && <FinancialsTab eventId={event.id} />}
-        {activeTab === "lodging" && <LodgingTab eventId={event.id} />}
-        {activeTab === "ceremony" && <CeremonyTab eventId={event.id} />}
+        {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "lodging" && <LodgingTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
       </main>
     </div>
   );

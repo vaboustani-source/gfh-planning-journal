@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, AlertCircle, Clock, User } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface Milestone {
   id: string;
@@ -22,7 +22,7 @@ const statusColors: Record<string, string> = {
   "in-progress": "bg-secondary text-secondary-foreground border-border",
 };
 
-export default function MilestonesTab({ eventId }: { eventId: string }) {
+export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const { status, trackSave } = useAutosaveStatus();
@@ -66,8 +66,7 @@ export default function MilestonesTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
       {/* Progress */}
       <div className="rounded-xl bg-card border border-border p-5">
         <div className="flex items-center justify-between mb-3">
@@ -150,6 +149,7 @@ export default function MilestonesTab({ eventId }: { eventId: string }) {
           })}
         </div>
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

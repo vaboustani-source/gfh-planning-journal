@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronDown, ChevronUp, Check, X } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface Vendor {
   id: string;
@@ -160,7 +160,7 @@ function VendorRow({ vendor, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
   );
 }
 
-export default function VendorsTab({ eventId }: { eventId: string }) {
+export default function VendorsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -203,8 +203,7 @@ export default function VendorsTab({ eventId }: { eventId: string }) {
   };
 
   return (
-    <div className="space-y-5 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-5 pb-24 animate-fade-up relative">
       <div className="flex items-center justify-between">
         <div className="flex gap-4">
           <span className="font-body text-sm text-muted-foreground">{vendors.length} vendor{vendors.length !== 1 ? "s" : ""}</span>
@@ -242,6 +241,7 @@ export default function VendorsTab({ eventId }: { eventId: string }) {
           ))}
         </div>
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

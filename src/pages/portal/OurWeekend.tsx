@@ -1,5 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
 import { CalendarHeart, MapPin, Users, Clock } from "lucide-react";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null }) {
   if (!value) return null;
@@ -21,6 +23,7 @@ function formatDate(d: string | null) {
 
 export default function OurWeekend() {
   const { event, loading } = usePortalData();
+  const navigate = useNavigate();
 
   return (
     <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10">
@@ -48,6 +51,7 @@ export default function OurWeekend() {
             </div>
           </div>
         )}
+        <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
       </div>
     </div>
   );

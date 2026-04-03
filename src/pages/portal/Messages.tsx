@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 interface Message {
   id: string;
@@ -48,6 +50,7 @@ function groupByDate(messages: Message[]) {
 export default function Messages() {
   const { user } = useAuth();
   const { eventId } = usePortalData();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -262,6 +265,7 @@ export default function Messages() {
         </p>
       </div>
 
+      <PortalStickyFooter onContinue={() => navigate("/portal/today")} nextOnly />
     </div>
   );
 }

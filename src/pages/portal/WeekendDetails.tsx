@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import { CeremonyMusic } from "./details/CeremonyMusic";
 import { DecorSelections } from "./details/DecorSelections";
 import { MealPrefs } from "./details/MealPrefs";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 const TABS = [
   { id: "ceremony", label: "Ceremony & Music" },
@@ -12,6 +14,7 @@ const TABS = [
 
 export default function WeekendDetails() {
   const [tab, setTab] = useState("ceremony");
+  const navigate = useNavigate();
 
   return (
     <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10">
@@ -28,6 +31,7 @@ export default function WeekendDetails() {
         {tab === "ceremony" && <CeremonyMusic />}
         {tab === "decor" && <DecorSelections />}
         {tab === "meals" && <MealPrefs />}
+        <PortalStickyFooter onContinue={() => navigate("/portal/messages")} />
       </div>
     </div>
   );
