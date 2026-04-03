@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, AlertCircle, Clock, User } from "lucide-react";
+import { Check, AlertCircle, Clock, User, Loader2 } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
