@@ -241,8 +241,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
   );
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
 
       {/* Lock banner */}
       {locked ? (
