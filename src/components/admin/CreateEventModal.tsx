@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Loader2, UserPlus } from "lucide-react";
+import { X, Loader2, UserPlus, CalendarDays } from "lucide-react";
+import { addDays, subDays, format, parseISO } from "date-fns";
 
 interface Props {
   onClose: () => void;
