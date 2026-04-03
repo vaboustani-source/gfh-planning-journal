@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save } from "lucide-react";
+import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical } from "lucide-react";
 import VendorFileUpload from "@/components/admin/VendorFileUpload";
 
 export interface Vendor {
