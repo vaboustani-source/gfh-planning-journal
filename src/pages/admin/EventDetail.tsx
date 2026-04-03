@@ -48,8 +48,13 @@ export interface EventData {
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "overview");
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId }, { replace: true });
+  }, [setSearchParams]);
   const [event, setEvent] = useState<EventData | null>(null);
   const [coupleNames, setCoupleNames] = useState("");
   const [loading, setLoading] = useState(true);

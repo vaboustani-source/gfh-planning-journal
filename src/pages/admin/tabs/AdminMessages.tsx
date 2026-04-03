@@ -80,7 +80,11 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
         event: "INSERT", schema: "public", table: "messages",
         filter: `event_id=eq.${eventId}`,
       }, payload => {
-        setMessages(prev => [...prev, payload.new as Message]);
+        const newMsg = payload.new as Message;
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
         setTimeout(() => scrollToBottom(), 50);
         markRead();
       })
