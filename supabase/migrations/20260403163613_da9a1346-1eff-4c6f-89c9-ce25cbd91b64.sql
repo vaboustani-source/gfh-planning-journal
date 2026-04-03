@@ -1,0 +1,15 @@
+ALTER TABLE public.ceremony_details
+  ADD COLUMN IF NOT EXISTS musician_singer jsonb DEFAULT '{"booked":false,"name":""}'::jsonb,
+  ADD COLUMN IF NOT EXISTS microphone_speakers boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS couple_staying_for_photos boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS couple_leading_to_cocktail boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS wedding_party_altar_choice text DEFAULT 'not_chosen',
+  ADD COLUMN IF NOT EXISTS wedding_party_altar_notes text,
+  ADD COLUMN IF NOT EXISTS formal_introductions jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS welcome_toast_person text,
+  ADD COLUMN IF NOT EXISTS dj_staying_for_afterparty boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS dj_playlist_name text,
+  ADD COLUMN IF NOT EXISTS dj_events_performing jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS speeches_rehearsal jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS speeches_reception jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS misc_notes text;
