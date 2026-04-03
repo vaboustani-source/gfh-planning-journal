@@ -209,6 +209,22 @@ function VendorRow({ vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd
               rows={2} placeholder="Internal notes…"
               className="w-full border border-border rounded-md px-3 py-2 font-body text-xs bg-background focus:outline-none focus:border-primary/50 resize-none" />
           </div>
+
+          {/* File uploads */}
+          <div>
+            <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Contracts & Files</p>
+            <VendorFileUpload
+              eventId={eventId}
+              vendorId={vendor.id}
+              canUpload={true}
+              canDelete={true}
+              onFileCountChange={(count) => {
+                if ((count > 0) !== !!draft.contract_uploaded) {
+                  setDraft(prev => ({ ...prev, contract_uploaded: count > 0 }));
+                }
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
