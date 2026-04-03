@@ -165,6 +165,16 @@ export default function Login() {
           <p className="mt-10 text-center font-body text-xs text-muted-foreground">
             Need access? Contact your coordinator for an invitation.
           </p>
+
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => setEmail("victoria@gilbertsvillefarmhouse.com")}
+              className="font-body text-xs tracking-wide text-primary/70 hover:text-primary underline underline-offset-4 transition-colors"
+            >
+              Admin? Sign in here
+            </button>
+          </div>
         </div>
       </div>
     </div>
