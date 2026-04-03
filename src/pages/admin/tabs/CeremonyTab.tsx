@@ -369,6 +369,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
 
       {/* ── Parent Dances ── */}
       <Section title="Parent Dances">
+        <InstructionBlock {...PARENT_DANCES_INSTRUCTIONS} />
         <div className="space-y-3">
           {parentDances.length === 0 && (
             <p className="font-body text-sm text-muted-foreground italic">Nothing added yet.</p>
