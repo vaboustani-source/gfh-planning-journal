@@ -3,16 +3,21 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import {
-  Sunrise, CalendarHeart, CheckSquare, Users, BookOpen, MessageCircle, LogOut, Menu, X
+  Sunrise, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X
 } from "lucide-react";
 
 const allNavItems = [
-  { to: "/portal/today",           label: "Today",               icon: Sunrise,        tiers: [1, 2, 3, 4] },
-  { to: "/portal/our-weekend",     label: "Our Weekend",         icon: CalendarHeart,  tiers: [1, 3, 4] },
-  { to: "/portal/planning",        label: "Planning",            icon: CheckSquare,    tiers: [1, 3, 4] },
-  { to: "/portal/our-people",      label: "Our People",          icon: Users,          tiers: [1, 3, 4] },
-  { to: "/portal/weekend-details", label: "Weekend Details",     icon: BookOpen,       tiers: [1, 3, 4] },
-  { to: "/portal/messages",        label: "Messages",            icon: MessageCircle,  tiers: [1, 2, 3, 4] },
+  { to: "/portal/today",           label: "Today",             icon: Sunrise,           tiers: [1, 2, 3, 4] },
+  { to: "/portal/our-wedding",     label: "Our Wedding",       icon: CalendarHeart,     tiers: [1, 3, 4] },
+  { to: "/portal/planning",        label: "Planning",          icon: CheckSquare,       tiers: [1, 3, 4] },
+  { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4] },
+  { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4] },
+  { to: "/portal/menus-meals",     label: "Menus & Meals",     icon: UtensilsCrossed,   tiers: [1, 3, 4] },
+  { to: "/portal/our-people",      label: "Our People",        icon: Users,             tiers: [1, 3, 4] },
+  { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4] },
+  { to: "/portal/messages",        label: "Messages",          icon: MessageCircle,     tiers: [1, 2, 3, 4] },
+  { to: "/portal/notes",           label: "Notes",             icon: StickyNote,        tiers: [1, 3, 4] },
 ];
 
 function NavItem({ to, label, icon: Icon, onClick }: { to: string; label: string; icon: React.ElementType; onClick?: () => void }) {
