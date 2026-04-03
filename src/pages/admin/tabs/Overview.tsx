@@ -412,6 +412,10 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
           <Field label="How Heard" value={event.how_heard || ""} onSave={v => patch({ how_heard: v || null })} />
         </div>
       </div>
+
+      {/* Participants */}
+      <ParticipantsPanel eventId={event.id} />
+
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
