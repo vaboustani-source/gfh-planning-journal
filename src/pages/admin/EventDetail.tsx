@@ -86,7 +86,7 @@ export default function EventDetail() {
       .from("event_users")
       .select("user_id")
       .eq("event_id", eventId!)
-      .eq("role_in_event", "couple");
+      .in("role_in_event", ["partner_1", "partner_2", "couple"]);
 
     if (euData && euData.length > 0) {
       const ids = euData.map(r => r.user_id).filter(Boolean) as string[];

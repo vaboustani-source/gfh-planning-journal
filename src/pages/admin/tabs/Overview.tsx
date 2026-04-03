@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import ParticipantsPanel from "@/components/admin/ParticipantsPanel";
 import { EventData } from "../EventDetail";
 import { Check, Edit2 } from "lucide-react";
 import { addDays, subDays, format } from "date-fns";
@@ -411,6 +412,10 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
           <Field label="How Heard" value={event.how_heard || ""} onSave={v => patch({ how_heard: v || null })} />
         </div>
       </div>
+
+      {/* Participants */}
+      <ParticipantsPanel eventId={event.id} />
+
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );

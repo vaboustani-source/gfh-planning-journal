@@ -32,6 +32,8 @@ interface NextTask {
 interface PortalDataContextType {
   event: PortalEvent | null;
   eventId: string | null;
+  accessTier: number;
+  roleInEvent: string | null;
   checklistProgress: ChecklistProgress;
   nextTask: NextTask | null;
   daysUntilArrival: number | null;
@@ -44,6 +46,8 @@ const PortalDataContext = createContext<PortalDataContextType | undefined>(undef
 export function PortalDataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [event, setEvent] = useState<PortalEvent | null>(null);
+  const [accessTier, setAccessTier] = useState<number>(3);
+  const [roleInEvent, setRoleInEvent] = useState<string | null>(null);
   const [checklistProgress, setChecklistProgress] = useState<ChecklistProgress>({ total: 0, completed: 0, percentage: 0 });
   const [nextTask, setNextTask] = useState<NextTask | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,14 +55,16 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
   const fetchEventData = async () => {
     if (!user) return;
     try {
-      // Find the couple's event
+      // Find the user's event link
       const { data: eu } = await supabase
         .from("event_users")
-        .select("event_id")
+        .select("event_id, access_tier, role_in_event")
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (!eu?.event_id) { setLoading(false); return; }
+      setAccessTier(eu.access_tier ?? 3);
+      setRoleInEvent(eu.role_in_event);
 
       const { data: eventData } = await supabase
         .from("events")
@@ -121,6 +127,8 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
     <PortalDataContext.Provider value={{
       event,
       eventId: event?.id ?? null,
+      accessTier,
+      roleInEvent,
       checklistProgress,
       nextTask,
       daysUntilArrival,

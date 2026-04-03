@@ -1,18 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { PortalDataProvider } from "@/hooks/usePortalData";
+import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import {
   Sunrise, CalendarHeart, CheckSquare, Users, BookOpen, MessageCircle, LogOut, Menu, X
 } from "lucide-react";
 
-const navItems = [
-  { to: "/portal/today",           label: "Today",               icon: Sunrise },
-  { to: "/portal/our-weekend",     label: "Our Weekend",         icon: CalendarHeart },
-  { to: "/portal/planning",        label: "Planning",            icon: CheckSquare },
-  { to: "/portal/our-people",      label: "Our People",          icon: Users },
-  { to: "/portal/weekend-details", label: "Weekend Details",     icon: BookOpen },
-  { to: "/portal/messages",        label: "Messages",            icon: MessageCircle },
+const allNavItems = [
+  { to: "/portal/today",           label: "Today",               icon: Sunrise,        tiers: [1, 2, 3, 4] },
+  { to: "/portal/our-weekend",     label: "Our Weekend",         icon: CalendarHeart,  tiers: [1, 3, 4] },
+  { to: "/portal/planning",        label: "Planning",            icon: CheckSquare,    tiers: [1, 3, 4] },
+  { to: "/portal/our-people",      label: "Our People",          icon: Users,          tiers: [1, 3, 4] },
+  { to: "/portal/weekend-details", label: "Weekend Details",     icon: BookOpen,       tiers: [1, 3, 4] },
+  { to: "/portal/messages",        label: "Messages",            icon: MessageCircle,  tiers: [1, 2, 3, 4] },
 ];
 
 function NavItem({ to, label, icon: Icon, onClick }: { to: string; label: string; icon: React.ElementType; onClick?: () => void }) {
@@ -51,12 +51,26 @@ function MobileNavItem({ to, label, icon: Icon }: { to: string; label: string; i
 }
 
 export default function PortalLayout() {
+  return (
+    <PortalDataProvider>
+      <PortalLayoutInner />
+    </PortalDataProvider>
+  );
+}
+
+function PortalLayoutInner() {
   const { profile, signOut } = useAuth();
+  const { accessTier } = usePortalData();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Tier 2 = messages only; others filter by tier array
+  const navItems = useMemo(() => {
+    if (accessTier === 2) return allNavItems.filter(i => i.to === "/portal/messages");
+    return allNavItems.filter(i => i.tiers.includes(accessTier));
+  }, [accessTier]);
+
   return (
-    <PortalDataProvider>
       <div className="min-h-screen bg-background flex">
 
         {/* ── Desktop sidebar ─────────────────────── */}
@@ -176,6 +190,5 @@ export default function PortalLayout() {
         </div>
 
       </div>
-    </PortalDataProvider>
   );
 }
