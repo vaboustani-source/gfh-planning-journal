@@ -10,6 +10,7 @@ import SetPassword from "./pages/SetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
+import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
@@ -62,6 +63,28 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* Admin Preview of Couple Portal */}
+            <Route
+              path="/admin/preview/:eventId"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <PreviewPortalLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="today" replace />} />
+              <Route path="today" element={<Today />} />
+              <Route path="our-wedding" element={<OurWeekend />} />
+              <Route path="planning" element={<Planning />} />
+              <Route path="vendors" element={<Vendors />} />
+              <Route path="ceremony" element={<Ceremony />} />
+              <Route path="menus-meals" element={<MenusMeals />} />
+              <Route path="our-people" element={<OurPeople />} />
+              <Route path="financials" element={<Financials />} />
+              <Route path="messages" element={<Messages />} />
+              <Route path="notes" element={<Notes />} />
+            </Route>
 
             {/* Couple Portal — nested */}
             <Route

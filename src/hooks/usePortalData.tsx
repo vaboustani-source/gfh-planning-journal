@@ -39,11 +39,12 @@ interface PortalDataContextType {
   daysUntilArrival: number | null;
   loading: boolean;
   refreshChecklist: () => void;
+  isPreviewMode: boolean;
 }
 
 const PortalDataContext = createContext<PortalDataContextType | undefined>(undefined);
 
-export function PortalDataProvider({ children }: { children: ReactNode }) {
+export function PortalDataProvider({ children, previewEventId }: { children: ReactNode; previewEventId?: string }) {
   const { user } = useAuth();
   const [event, setEvent] = useState<PortalEvent | null>(null);
   const [accessTier, setAccessTier] = useState<number>(3);
@@ -51,30 +52,38 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
   const [checklistProgress, setChecklistProgress] = useState<ChecklistProgress>({ total: 0, completed: 0, percentage: 0 });
   const [nextTask, setNextTask] = useState<NextTask | null>(null);
   const [loading, setLoading] = useState(true);
+  const isPreviewMode = !!previewEventId;
 
   const fetchEventData = async () => {
     if (!user) return;
     try {
-      // Find the user's event link
-      const { data: eu } = await supabase
-        .from("event_users")
-        .select("event_id, access_tier, role_in_event")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      let eventId: string;
 
-      if (!eu?.event_id) { setLoading(false); return; }
-      setAccessTier(eu.access_tier ?? 3);
-      setRoleInEvent(eu.role_in_event);
+      if (previewEventId) {
+        eventId = previewEventId;
+        setAccessTier(3);
+        setRoleInEvent("preview");
+      } else {
+        const { data: eu } = await supabase
+          .from("event_users")
+          .select("event_id, access_tier, role_in_event")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!eu?.event_id) { setLoading(false); return; }
+        setAccessTier(eu.access_tier ?? 3);
+        setRoleInEvent(eu.role_in_event);
+        eventId = eu.event_id;
+      }
 
       const { data: eventData } = await supabase
         .from("events")
         .select("id, title, wedding_date, arrival_date, departure_date, ceremony_location, cocktail_hour_location, rehearsal_dinner_location, status, package_tier, estimated_guest_count")
-        .eq("id", eu.event_id)
+        .eq("id", eventId)
         .single();
 
       if (eventData) setEvent(eventData);
-
-      await fetchChecklist(eu.event_id);
+      await fetchChecklist(eventId);
     } catch (err) {
       console.error("Portal data error:", err);
     } finally {
@@ -95,7 +104,6 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     setChecklistProgress({ total, completed, percentage });
 
-    // Next task: couple-owned, incomplete, soonest paced_send_date
     const incomplete = allItems
       .filter(i => i.owner === "couple" && i.status !== "complete")
       .sort((a, b) => {
@@ -110,7 +118,7 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchEventData();
-  }, [user]);
+  }, [user, previewEventId]);
 
   const daysUntilArrival = (() => {
     if (!event?.arrival_date) return null;
@@ -134,6 +142,7 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
       daysUntilArrival,
       loading,
       refreshChecklist,
+      isPreviewMode,
     }}>
       {children}
     </PortalDataContext.Provider>
