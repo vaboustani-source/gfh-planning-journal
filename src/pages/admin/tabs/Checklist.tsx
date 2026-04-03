@@ -30,7 +30,7 @@ const sectionLabels: Record<string, string> = {
   general: "General",
 };
 
-export default function ChecklistTab({ eventId }: { eventId: string }) {
+export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
