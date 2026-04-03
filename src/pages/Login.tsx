@@ -3,9 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import farmhouseHero from "@/assets/farmhouse-hero.jpg";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import farmhouseHero from "@/assets/farmhouse-hero.jpg";
 
 const LOGIN_TIMEOUT_MS = 10_000;
 
