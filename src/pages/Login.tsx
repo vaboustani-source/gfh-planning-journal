@@ -36,8 +36,6 @@ export default function Login() {
       setResetLoading(false);
     }
   };
-  const navigate = useNavigate();
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Navigate once profile is loaded post-login
   useEffect(() => {
