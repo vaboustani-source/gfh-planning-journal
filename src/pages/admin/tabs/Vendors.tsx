@@ -313,7 +313,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
             </p>
             <div className="space-y-2">
               {groupVendors.map(v => (
-                <VendorRow key={v.id} vendor={v}
+                <VendorRow key={v.id} vendor={v} eventId={eventId}
                   onUpdate={updateVendor} onDelete={deleteVendor}
                   onSaveStart={markSaving} onSaveEnd={markSaved} />
               ))}
