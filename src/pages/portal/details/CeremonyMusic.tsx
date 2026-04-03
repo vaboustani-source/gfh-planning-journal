@@ -180,7 +180,8 @@ export function CeremonyMusic() {
       {/* Processional order */}
       <div className="rounded-xl bg-card border border-border shadow-soft p-5">
         <SectionHeading>Processional Order</SectionHeading>
-        <div className="space-y-3">
+        {!locked && <InstructionBlock {...PROCESSIONAL_INSTRUCTIONS} />}
+        <div className="space-y-3 mt-4">
           {processional.length === 0 && (
             <p className="font-body text-sm text-muted-foreground">No entries yet.</p>
           )}
