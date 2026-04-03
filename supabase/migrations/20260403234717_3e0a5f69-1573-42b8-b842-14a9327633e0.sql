@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Authenticated users can read vendor contracts" ON storage.objects;
