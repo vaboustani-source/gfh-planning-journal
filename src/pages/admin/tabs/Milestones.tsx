@@ -22,7 +22,7 @@ const statusColors: Record<string, string> = {
   "in-progress": "bg-secondary text-secondary-foreground border-border",
 };
 
-export default function MilestonesTab({ eventId }: { eventId: string }) {
+export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const { status, trackSave } = useAutosaveStatus();
