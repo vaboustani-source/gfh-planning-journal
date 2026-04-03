@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Check } from "lucide-react";
+import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
+import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
 
 interface Room {
   id: string;
@@ -47,6 +49,7 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
   const [selected, setSelected] = useState<Room | null>(null);
   const [draft, setDraft] = useState<Assignment | null>(null);
   const [saving, setSaving] = useState(false);
+  const { status, trackSave } = useAutosaveStatus();
 
   useEffect(() => { fetchAll(); }, [eventId]);
 
@@ -83,18 +86,20 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
   const saveAssignment = async () => {
     if (!draft || !selected) return;
     setSaving(true);
-    const existing = assignments.find(a => a.room_id === selected.id);
-    const payload = { ...draft, event_id: eventId, room_id: selected.id };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, ...withoutId } = payload;
+    await trackSave(async () => {
+      const existing = assignments.find(a => a.room_id === selected.id);
+      const payload = { ...draft, event_id: eventId, room_id: selected.id };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...withoutId } = payload;
 
-    if (existing) {
-      const { data } = await supabase.from("lodging_assignments").update(withoutId).eq("id", existing.id).select().single();
-      if (data) setAssignments(prev => prev.map(a => a.id === existing.id ? data : a));
-    } else {
-      const { data } = await supabase.from("lodging_assignments").insert(withoutId).select().single();
-      if (data) setAssignments(prev => [...prev, data]);
-    }
+      if (existing) {
+        const { data } = await supabase.from("lodging_assignments").update(withoutId).eq("id", existing.id).select().single();
+        if (data) setAssignments(prev => prev.map(a => a.id === existing.id ? data : a));
+      } else {
+        const { data } = await supabase.from("lodging_assignments").insert(withoutId).select().single();
+        if (data) setAssignments(prev => [...prev, data]);
+      }
+    });
     setSaving(false);
     setSelected(null);
   };
@@ -105,7 +110,8 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-6 pb-16 animate-fade-up relative">
+      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
       {/* Summary */}
       <div className="flex flex-wrap gap-6">
         <div className="text-center">
@@ -136,13 +142,13 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
       {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {rooms.map(room => {
-          const status = statusOf(room, assignments);
+          const rstatus = statusOf(room, assignments);
           const assignment = assignments.find(a => a.room_id === room.id);
           return (
             <button
               key={room.id}
               onClick={() => openRoom(room)}
-              className={`rounded-xl border p-3 text-left hover:shadow-sm transition-all ${STATUS_STYLES[status]}`}
+              className={`rounded-xl border p-3 text-left hover:shadow-sm transition-all ${STATUS_STYLES[rstatus]}`}
             >
               <p className="font-body text-xs font-medium truncate">{room.room_name}</p>
               <p className="font-body text-[10px] capitalize mt-0.5 opacity-70">{room.room_type.replace(/_/g, " ")}</p>
@@ -161,7 +167,6 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
       {selected && draft && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
                 <p className="font-display text-lg font-light text-foreground">{selected.room_name}</p>
@@ -172,7 +177,6 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
               </button>
             </div>
 
-            {/* Form */}
             <div className="px-5 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
               {([
                 { label: "Guest Name", field: "assigned_guest_name" as keyof Assignment, type: "text", placeholder: "Full name" },
@@ -190,7 +194,6 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
                 </div>
               ))}
 
-              {/* Host pays toggle */}
               <div className="flex items-center justify-between py-2">
                 <div>
                   <p className="font-body text-sm text-foreground">Who pays for this room?</p>
@@ -224,7 +227,6 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
                 />
               </div>
 
-              {/* Invoice checkboxes */}
               <div className="space-y-2">
                 <p className="font-body text-xs text-muted-foreground uppercase tracking-wider">Invoices</p>
                 {([
@@ -256,7 +258,6 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 px-5 py-4 border-t border-border">
               <button onClick={() => setSelected(null)} className="flex-1 py-2.5 rounded-xl border border-border font-body text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Cancel
@@ -264,7 +265,7 @@ export default function LodgingTab({ eventId }: { eventId: string }) {
               <button
                 onClick={saveAssignment}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-sage text-white font-body text-sm hover:bg-sage/90 transition-colors disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save Assignment"}
               </button>

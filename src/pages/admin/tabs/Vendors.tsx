@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronDown, ChevronUp, Check, X } from "lucide-react";
+import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
+import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
 
 interface Vendor {
   id: string;
@@ -26,26 +28,45 @@ const STATUS_COLORS: Record<string, string> = {
 
 const CATEGORIES = ["photographer", "videographer", "florist", "dj", "band", "officiant", "caterer", "cake", "hair_makeup", "transportation", "lighting", "other"];
 
-function VendorRow({ vendor, onUpdate, onDelete }: {
+function VendorRow({ vendor, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
   vendor: Vendor;
   onUpdate: (id: string, fields: Partial<Vendor>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onSaveStart: () => void;
+  onSaveEnd: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(vendor);
-  const [saving, setSaving] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const save = async () => {
-    setSaving(true);
-    await onUpdate(vendor.id, draft);
-    setSaving(false);
+  const debouncedSave = useCallback((updatedDraft: Vendor) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      onSaveStart();
+      await onUpdate(vendor.id, updatedDraft);
+      onSaveEnd();
+    }, 800);
+  }, [vendor.id, onUpdate, onSaveStart, onSaveEnd]);
+
+  const updateField = (field: keyof Vendor, value: unknown) => {
+    const next = { ...draft, [field]: value };
+    setDraft(next);
+    debouncedSave(next);
+  };
+
+  const immediateSave = async (field: keyof Vendor, value: unknown) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const next = { ...draft, [field]: value };
+    setDraft(next);
+    onSaveStart();
+    await onUpdate(vendor.id, next);
+    onSaveEnd();
   };
 
   const Field = ({ field, placeholder }: { field: keyof Vendor; placeholder?: string }) => (
     <input
       value={(draft[field] as string) || ""}
-      onChange={e => setDraft(d => ({ ...d, [field]: e.target.value }))}
-      onBlur={save}
+      onChange={e => updateField(field, e.target.value)}
       placeholder={placeholder}
       className="w-full border border-border rounded-md px-2.5 py-1.5 font-body text-xs bg-background focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
     />
@@ -53,13 +74,11 @@ function VendorRow({ vendor, onUpdate, onDelete }: {
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Main row */}
       <div className="p-4 flex items-start gap-3">
         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {/* Category */}
           <select
             value={draft.category}
-            onChange={e => { const v = e.target.value; setDraft(d => ({ ...d, category: v })); setTimeout(save, 0); }}
+            onChange={e => immediateSave("category", e.target.value)}
             className="border border-border rounded-md px-2.5 py-1.5 font-body text-xs bg-background focus:outline-none capitalize"
           >
             {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
@@ -71,10 +90,9 @@ function VendorRow({ vendor, onUpdate, onDelete }: {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Status badge */}
           <select
             value={draft.status || "pending"}
-            onChange={e => { const v = e.target.value; setDraft(d => ({ ...d, status: v })); setTimeout(save, 0); }}
+            onChange={e => immediateSave("status", e.target.value)}
             className={`rounded-full border px-2.5 py-0.5 font-body text-xs capitalize focus:outline-none ${STATUS_COLORS[draft.status || "pending"]}`}
           >
             {Object.keys(STATUS_COLORS).map(s => <option key={s} value={s}>{s}</option>)}
@@ -88,7 +106,6 @@ function VendorRow({ vendor, onUpdate, onDelete }: {
         </div>
       </div>
 
-      {/* Expanded */}
       {expanded && (
         <div className="border-t border-border px-4 py-4 bg-muted/20 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -101,14 +118,12 @@ function VendorRow({ vendor, onUpdate, onDelete }: {
               <input
                 type="number"
                 value={draft.vendor_meals ?? 0}
-                onChange={e => setDraft(d => ({ ...d, vendor_meals: parseInt(e.target.value) || 0 }))}
-                onBlur={save}
+                onChange={e => updateField("vendor_meals", parseInt(e.target.value) || 0)}
                 className="w-full border border-border rounded-md px-2.5 py-1.5 font-body text-xs bg-background focus:outline-none focus:border-primary/50"
               />
             </div>
           </div>
 
-          {/* Checkboxes */}
           <div className="flex flex-wrap gap-5">
             {([
               { field: "contract_uploaded" as keyof Vendor, label: "Contract uploaded" },
@@ -117,7 +132,7 @@ function VendorRow({ vendor, onUpdate, onDelete }: {
             ]).map(({ field, label }) => (
               <label key={field} className="flex items-center gap-2 cursor-pointer">
                 <div
-                  onClick={() => { const v = !draft[field]; setDraft(d => ({ ...d, [field]: v })); setTimeout(save, 0); }}
+                  onClick={() => immediateSave(field, !draft[field])}
                   className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
                     draft[field] ? "bg-sage border-sage" : "border-border bg-background"
                   }`}
@@ -129,13 +144,11 @@ function VendorRow({ vendor, onUpdate, onDelete }: {
             ))}
           </div>
 
-          {/* Brandon notes */}
           <div>
             <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Brandon's Notes</p>
             <textarea
               value={draft.brandon_notes || ""}
-              onChange={e => setDraft(d => ({ ...d, brandon_notes: e.target.value }))}
-              onBlur={save}
+              onChange={e => updateField("brandon_notes", e.target.value)}
               rows={2}
               placeholder="Internal notes…"
               className="w-full border border-border rounded-md px-3 py-2 font-body text-xs bg-background focus:outline-none focus:border-primary/50 resize-none"
@@ -151,6 +164,7 @@ export default function VendorsTab({ eventId }: { eventId: string }) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const { status, markSaving, markSaved } = useAutosaveStatus();
 
   useEffect(() => { fetchVendors(); }, [eventId]);
 
@@ -189,8 +203,8 @@ export default function VendorsTab({ eventId }: { eventId: string }) {
   };
 
   return (
-    <div className="space-y-5 animate-fade-up">
-      {/* Summary + Add */}
+    <div className="space-y-5 pb-16 animate-fade-up relative">
+      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
       <div className="flex items-center justify-between">
         <div className="flex gap-4">
           <span className="font-body text-sm text-muted-foreground">{vendors.length} vendor{vendors.length !== 1 ? "s" : ""}</span>
@@ -217,7 +231,14 @@ export default function VendorsTab({ eventId }: { eventId: string }) {
       ) : (
         <div className="space-y-2">
           {vendors.map(v => (
-            <VendorRow key={v.id} vendor={v} onUpdate={updateVendor} onDelete={deleteVendor} />
+            <VendorRow
+              key={v.id}
+              vendor={v}
+              onUpdate={updateVendor}
+              onDelete={deleteVendor}
+              onSaveStart={markSaving}
+              onSaveEnd={markSaved}
+            />
           ))}
         </div>
       )}

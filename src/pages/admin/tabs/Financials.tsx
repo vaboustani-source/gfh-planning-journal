@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Check, Trash2 } from "lucide-react";
+import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
+import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
 
 interface PaymentLine {
   id: string;
@@ -23,22 +25,41 @@ function fmt(n: number | null) {
 }
 
 function TrackPanel({
-  track, lines, eventId, onAdd, onUpdate, onDelete,
+  track, lines, onAdd, onUpdate, onDelete, onSaveStart, onSaveEnd,
 }: {
   track: string;
   lines: PaymentLine[];
-  eventId: string;
   onAdd: (track: string) => Promise<void>;
   onUpdate: (id: string, fields: Partial<PaymentLine>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onSaveStart: () => void;
+  onSaveEnd: () => void;
 }) {
   const total = lines.reduce((s, l) => s + (l.amount ?? 0), 0);
   const paid = lines.filter(l => l.paid).reduce((s, l) => s + (l.amount ?? 0), 0);
   const remaining = total - paid;
+  const debounceRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const debouncedUpdate = useCallback((id: string, fields: Partial<PaymentLine>) => {
+    const key = `${id}-${Object.keys(fields).join(",")}`;
+    const existing = debounceRefs.current.get(key);
+    if (existing) clearTimeout(existing);
+    debounceRefs.current.set(key, setTimeout(async () => {
+      debounceRefs.current.delete(key);
+      onSaveStart();
+      await onUpdate(id, fields);
+      onSaveEnd();
+    }, 800));
+  }, [onUpdate, onSaveStart, onSaveEnd]);
+
+  const immediateUpdate = async (id: string, fields: Partial<PaymentLine>) => {
+    onSaveStart();
+    await onUpdate(id, fields);
+    onSaveEnd();
+  };
 
   return (
     <div className="rounded-xl bg-card border border-border overflow-hidden">
-      {/* Header */}
       <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20">
         <p className="font-display text-lg font-light text-foreground">{TRACK_LABELS[track]}</p>
         <button
@@ -50,60 +71,20 @@ function TrackPanel({
         </button>
       </div>
 
-      {/* Lines */}
       <div className="divide-y divide-border">
         {lines.length === 0 ? (
           <p className="px-5 py-6 font-body text-sm text-muted-foreground text-center">No payment items yet.</p>
         ) : lines.map(line => (
-          <div key={line.id} className="px-5 py-3 grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center">
-            {/* Label */}
-            <input
-              value={line.label}
-              onChange={e => onUpdate(line.id, { label: e.target.value })}
-              className="border border-border rounded-md px-2.5 py-1.5 font-body text-sm bg-background focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 w-full"
-            />
-            {/* Due date */}
-            <input
-              type="date"
-              value={line.due_date || ""}
-              onChange={e => onUpdate(line.id, { due_date: e.target.value || null })}
-              className="border border-border rounded-md px-2.5 py-1.5 font-body text-xs bg-background focus:outline-none focus:border-primary/50 w-32"
-            />
-            {/* Amount */}
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-body text-xs text-muted-foreground">$</span>
-              <input
-                type="number"
-                value={line.amount ?? ""}
-                onChange={e => onUpdate(line.id, { amount: parseFloat(e.target.value) || null })}
-                placeholder="0.00"
-                className="border border-border rounded-md pl-5 pr-2.5 py-1.5 font-body text-sm bg-background focus:outline-none focus:border-primary/50 w-28"
-              />
-            </div>
-            {/* Paid toggle */}
-            <button
-              onClick={() => onUpdate(line.id, {
-                paid: !line.paid,
-                paid_date: !line.paid ? new Date().toISOString().split("T")[0] : null,
-              })}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs transition-colors ${
-                line.paid
-                  ? "bg-sage/15 text-sage border border-sage/30"
-                  : "bg-muted text-muted-foreground border border-border hover:border-sage/40"
-              }`}
-            >
-              {line.paid && <Check size={10} />}
-              {line.paid ? "Paid" : "Mark paid"}
-            </button>
-            {/* Delete */}
-            <button onClick={() => onDelete(line.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-              <Trash2 size={14} />
-            </button>
-          </div>
+          <LineRow
+            key={line.id}
+            line={line}
+            onDebouncedUpdate={debouncedUpdate}
+            onImmediateUpdate={immediateUpdate}
+            onDelete={onDelete}
+          />
         ))}
       </div>
 
-      {/* Totals */}
       <div className="px-5 py-4 border-t border-border bg-muted/10 space-y-1.5">
         <div className="flex justify-between font-body text-sm text-muted-foreground">
           <span>Total</span><span>{fmt(total)}</span>
@@ -119,9 +100,70 @@ function TrackPanel({
   );
 }
 
+function LineRow({ line, onDebouncedUpdate, onImmediateUpdate, onDelete }: {
+  line: PaymentLine;
+  onDebouncedUpdate: (id: string, fields: Partial<PaymentLine>) => void;
+  onImmediateUpdate: (id: string, fields: Partial<PaymentLine>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [label, setLabel] = useState(line.label);
+  const [amount, setAmount] = useState(line.amount);
+
+  return (
+    <div className="px-5 py-3 grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center">
+      <input
+        value={label}
+        onChange={e => {
+          setLabel(e.target.value);
+          onDebouncedUpdate(line.id, { label: e.target.value });
+        }}
+        className="border border-border rounded-md px-2.5 py-1.5 font-body text-sm bg-background focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 w-full"
+      />
+      <input
+        type="date"
+        value={line.due_date || ""}
+        onChange={e => onImmediateUpdate(line.id, { due_date: e.target.value || null })}
+        className="border border-border rounded-md px-2.5 py-1.5 font-body text-xs bg-background focus:outline-none focus:border-primary/50 w-32"
+      />
+      <div className="relative">
+        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-body text-xs text-muted-foreground">$</span>
+        <input
+          type="number"
+          value={amount ?? ""}
+          onChange={e => {
+            const v = parseFloat(e.target.value) || null;
+            setAmount(v);
+            onDebouncedUpdate(line.id, { amount: v });
+          }}
+          placeholder="0.00"
+          className="border border-border rounded-md pl-5 pr-2.5 py-1.5 font-body text-sm bg-background focus:outline-none focus:border-primary/50 w-28"
+        />
+      </div>
+      <button
+        onClick={() => onImmediateUpdate(line.id, {
+          paid: !line.paid,
+          paid_date: !line.paid ? new Date().toISOString().split("T")[0] : null,
+        })}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs transition-colors ${
+          line.paid
+            ? "bg-sage/15 text-sage border border-sage/30"
+            : "bg-muted text-muted-foreground border border-border hover:border-sage/40"
+        }`}
+      >
+        {line.paid && <Check size={10} />}
+        {line.paid ? "Paid" : "Mark paid"}
+      </button>
+      <button onClick={() => onDelete(line.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+}
+
 export default function FinancialsTab({ eventId }: { eventId: string }) {
   const [lines, setLines] = useState<PaymentLine[]>([]);
   const [loading, setLoading] = useState(true);
+  const { status, markSaving, markSaved } = useAutosaveStatus();
 
   useEffect(() => { fetchLines(); }, [eventId]);
 
@@ -158,17 +200,19 @@ export default function FinancialsTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-6 pb-16 animate-fade-up relative">
+      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {TRACKS.map(track => (
           <TrackPanel
             key={track}
             track={track}
             lines={lines.filter(l => l.track === track)}
-            eventId={eventId}
             onAdd={addLine}
             onUpdate={updateLine}
             onDelete={deleteLine}
+            onSaveStart={markSaving}
+            onSaveEnd={markSaved}
           />
         ))}
       </div>
