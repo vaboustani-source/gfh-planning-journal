@@ -170,7 +170,7 @@ export default function EventDetail() {
             {TABS.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`relative shrink-0 px-4 py-3 font-body text-sm transition-colors border-b-2 ${
                   activeTab === tab.id
                     ? "border-primary text-foreground font-medium"
