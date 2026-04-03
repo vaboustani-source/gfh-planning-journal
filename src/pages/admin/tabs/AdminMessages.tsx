@@ -2,41 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
-
-interface Message {
-  id: string;
-  body: string;
-  sender_id: string | null;
-  created_at: string | null;
-  read_at: string | null;
-}
-
-function formatTime(d: string | null) {
-  if (!d) return "";
-  return new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
-function formatDateLabel(d: string | null) {
-  if (!d) return "";
-  const date = new Date(d);
-  const today = new Date(); today.setHours(0,0,0,0);
-  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-  const msgDate = new Date(date); msgDate.setHours(0,0,0,0);
-  if (msgDate.getTime() === today.getTime()) return "Today";
-  if (msgDate.getTime() === yesterday.getTime()) return "Yesterday";
-  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-}
-
-function groupByDate(messages: Message[]) {
-  const groups: { label: string; messages: Message[] }[] = [];
-  let current = "";
-  for (const msg of messages) {
-    const label = formatDateLabel(msg.created_at);
-    if (label !== current) { groups.push({ label, messages: [msg] }); current = label; }
-    else groups[groups.length - 1].messages.push(msg);
-  }
-  return groups;
-}
+import { Message, formatSmartTimestamp, hasTimeGap } from "@/lib/messageUtils";
 
 export default function AdminMessages({ eventId, onUnreadChange }: { eventId: string; onUnreadChange: (n: number) => void }) {
   const { user } = useAuth();
@@ -44,6 +10,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [revealedId, setRevealedId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -101,7 +68,6 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
     setSending(true);
     setNewMessage("");
     await supabase.from("messages").insert({ event_id: eventId, sender_id: user.id, body: text });
-    // Enqueue notification (fire and forget)
     supabase.functions.invoke("enqueue-message-notification", {
       body: { event_id: eventId, sender_id: user.id, message_body: text },
     }).catch(err => console.warn("Notification enqueue failed:", err));
@@ -113,12 +79,10 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
-  const groups = groupByDate(messages);
-
   return (
     <div className="flex flex-col animate-fade-up" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
       {/* Thread */}
-      <div className="flex-1 overflow-y-auto py-4 space-y-1">
+      <div className="flex-1 overflow-y-auto py-4">
         {loading && (
           <div className="flex justify-center py-16">
             <Loader2 size={20} className="animate-spin text-muted-foreground" />
@@ -133,48 +97,59 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
             <p className="font-body text-sm text-muted-foreground">Start the conversation with the couple.</p>
           </div>
         )}
-        {groups.map((group, gi) => (
-          <div key={gi}>
-            <div className="flex items-center gap-3 py-3">
-              <div className="flex-1 h-px bg-border" />
-              <span className="font-body text-[11px] text-muted-foreground">{group.label}</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-            <div className="space-y-1">
-              {group.messages.map((msg, mi) => {
-                const isMe = msg.sender_id === user?.id;
-                const prevMsg = group.messages[mi - 1];
-                const showTail = !prevMsg || prevMsg.sender_id !== msg.sender_id;
-                const isUnread = !msg.read_at && !isMe;
 
-                return (
-                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} ${showTail ? "mt-3" : "mt-0.5"}`}>
-                    <div className="max-w-[75%] group">
-                      {showTail && !isMe && (
-                        <p className="font-body text-[10px] text-muted-foreground ml-1 mb-1">Couple</p>
-                      )}
-                      <div className={`px-3.5 py-2.5 rounded-2xl font-body text-sm leading-relaxed relative ${
-                        isMe
-                          ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : isUnread
-                          ? "bg-sage/15 border border-sage/30 text-foreground rounded-bl-sm"
-                          : "bg-card border border-border text-foreground rounded-bl-sm shadow-soft"
-                      }`}>
-                        {msg.body}
-                        {isUnread && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
-                        )}
-                      </div>
-                      <p className={`font-body text-[10px] text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? "text-right mr-1" : "ml-1"}`}>
-                        {formatTime(msg.created_at)}
-                      </p>
-                    </div>
+        {messages.map((msg, i) => {
+          const prevMsg = messages[i - 1];
+          const isMe = msg.sender_id === user?.id;
+          const sameSenderAsPrev = prevMsg && prevMsg.sender_id === msg.sender_id;
+          const showTimeDivider = i === 0 || hasTimeGap(prevMsg, msg);
+          const showSenderName = !isMe && (!sameSenderAsPrev || showTimeDivider);
+          const isUnread = !msg.read_at && !isMe;
+
+          return (
+            <div key={msg.id}>
+              {/* Time divider — 60+ min gap */}
+              {showTimeDivider && (
+                <div className="flex justify-center py-4">
+                  <span className="font-body text-[11px] text-muted-foreground">
+                    {formatSmartTimestamp(msg.created_at)}
+                  </span>
+                </div>
+              )}
+
+              <div className={`flex ${isMe ? "justify-end" : "justify-start"} ${sameSenderAsPrev && !showTimeDivider ? "mt-0.5" : "mt-3"}`}>
+                <div className="max-w-[75%]">
+                  {showSenderName && (
+                    <p className="font-body text-[10px] text-muted-foreground ml-1 mb-1">Couple</p>
+                  )}
+                  <div
+                    onClick={() => setRevealedId(revealedId === msg.id ? null : msg.id)}
+                    className={`px-3.5 py-2.5 rounded-2xl font-body text-sm leading-relaxed relative cursor-pointer select-none ${
+                      isMe
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : isUnread
+                        ? "bg-sage/15 border border-sage/30 text-foreground rounded-bl-sm"
+                        : "bg-card border border-border text-foreground rounded-bl-sm shadow-soft"
+                    }`}
+                  >
+                    {msg.body}
+                    {isUnread && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
+                    )}
                   </div>
-                );
-              })}
+
+                  {/* Tap-to-reveal timestamp */}
+                  <div className={`overflow-hidden transition-all duration-200 ${revealedId === msg.id ? "max-h-6 opacity-100 mt-0.5" : "max-h-0 opacity-0"}`}>
+                    <p className={`font-body text-[10px] text-muted-foreground ${isMe ? "text-right mr-1" : "ml-1"}`}>
+                      {formatSmartTimestamp(msg.created_at)}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
         <div ref={bottomRef} />
       </div>
 
