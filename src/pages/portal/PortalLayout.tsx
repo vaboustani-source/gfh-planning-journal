@@ -71,7 +71,6 @@ function PortalLayoutInner() {
   }, [accessTier]);
 
   return (
-    <PortalDataProvider>
       <div className="min-h-screen bg-background flex">
 
         {/* ── Desktop sidebar ─────────────────────── */}
