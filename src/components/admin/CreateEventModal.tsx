@@ -50,13 +50,28 @@ export default function CreateEventModal({ onClose }: Props) {
     partner2_last_name: "",
     partner2_email: "",
     wedding_date: "",
-    arrival_date: "",
-    departure_date: "",
     package_tier: "base",
   });
 
+  const [earlyArrival, setEarlyArrival] = useState(false);
+  const [lateDeparture, setLateDeparture] = useState(false);
+
   const set = (field: keyof typeof form, value: string) =>
     setForm(f => ({ ...f, [field]: value }));
+
+  const computedDates = useMemo(() => {
+    if (!form.wedding_date) return null;
+    const wedding = parseISO(form.wedding_date);
+    const arrival = subDays(wedding, earlyArrival ? 2 : 1);
+    const departure = addDays(wedding, lateDeparture ? 2 : 1);
+    return {
+      arrival_date: format(arrival, "yyyy-MM-dd"),
+      departure_date: format(departure, "yyyy-MM-dd"),
+      arrivalDisplay: format(arrival, "EEEE, MMM d"),
+      weddingDisplay: format(wedding, "EEEE, MMM d"),
+      departureDisplay: format(departure, "EEEE, MMM d"),
+    };
+  }, [form.wedding_date, earlyArrival, lateDeparture]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
