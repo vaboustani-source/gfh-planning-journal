@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
-import { CalendarHeart, MapPin, Users, Clock } from "lucide-react";
+import { CalendarHeart, MapPin, Users, Clock, Check } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
+import { supabase } from "@/integrations/supabase/client";
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null }) {
   if (!value) return null;
@@ -21,8 +23,111 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 }
 
+interface Milestone {
+  id: string;
+  title: string;
+  timeframe_label: string | null;
+  status: string | null;
+  sort_order: number | null;
+}
+
+function PlanningJourney({ eventId }: { eventId: string }) {
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!eventId) return;
+
+    const load = async () => {
+      const { data } = await supabase
+        .from("milestones")
+        .select("id, title, timeframe_label, status, sort_order")
+        .eq("event_id", eventId)
+        .order("sort_order", { ascending: true });
+      if (data) setMilestones(data);
+      setLoading(false);
+    };
+    load();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel(`milestones-portal-${eventId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "milestones", filter: `event_id=eq.${eventId}` },
+        (payload) => {
+          setMilestones(prev => prev.map(m =>
+            m.id === payload.new.id ? { ...m, status: payload.new.status } : m
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [eventId]);
+
+  if (loading) {
+    return <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-10 rounded-lg bg-muted animate-pulse" />)}</div>;
+  }
+
+  if (milestones.length === 0) return null;
+
+  const firstIncompleteIdx = milestones.findIndex(m => m.status !== "complete");
+
+  return (
+    <div className="mt-10">
+      <p className="font-display text-2xl font-light text-foreground mb-1">Your Planning Journey</p>
+      <p className="font-body text-sm text-muted-foreground mb-6">Here's where you are in the process.</p>
+
+      <div className="relative">
+        {/* Vertical line */}
+        <div className="absolute left-[11px] top-3 bottom-3 w-px bg-border" />
+
+        <div className="space-y-1">
+          {milestones.map((m, i) => {
+            const done = m.status === "complete";
+            const isActive = i === firstIncompleteIdx;
+
+            return (
+              <div key={m.id} className="flex items-start gap-4 relative py-2.5">
+                {/* Circle */}
+                <div className={`relative z-10 w-[23px] h-[23px] rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                  done
+                    ? "bg-sage border-sage"
+                    : isActive
+                    ? "bg-sage/15 border-sage animate-pulse"
+                    : "bg-muted border-border"
+                }`}>
+                  {done && <Check size={11} className="text-white" />}
+                  {isActive && <div className="w-2 h-2 rounded-full bg-sage" />}
+                </div>
+
+                {/* Text */}
+                <div className="pt-0.5">
+                  <p className={`font-body text-sm ${
+                    done ? "text-muted-foreground" : isActive ? "text-foreground font-medium" : "text-muted-foreground/60"
+                  }`}>
+                    {m.title}
+                  </p>
+                  {m.timeframe_label && (
+                    <p className={`font-body text-[11px] ${
+                      isActive ? "text-sage" : "text-muted-foreground/50"
+                    }`}>
+                      {m.timeframe_label}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OurWeekend() {
-  const { event, loading } = usePortalData();
+  const { event, eventId, loading } = usePortalData();
   const navigate = useNavigate();
 
   return (
@@ -38,18 +143,22 @@ export default function OurWeekend() {
         ) : !event ? (
           <p className="font-body text-sm text-muted-foreground">Event details will appear here once your coordinator sets things up.</p>
         ) : (
-          <div className="rounded-xl bg-card border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-1">
-              <InfoRow icon={CalendarHeart} label="Arrival" value={formatDate(event.arrival_date)} />
-              <InfoRow icon={CalendarHeart} label="Wedding Day" value={formatDate(event.wedding_date)} />
-              <InfoRow icon={CalendarHeart} label="Departure" value={formatDate(event.departure_date)} />
-              <InfoRow icon={MapPin} label="Ceremony" value={event.ceremony_location} />
-              <InfoRow icon={MapPin} label="Cocktail Hour" value={event.cocktail_hour_location} />
-              <InfoRow icon={MapPin} label="Rehearsal Dinner" value={event.rehearsal_dinner_location} />
-              <InfoRow icon={Users} label="Estimated Guests" value={event.estimated_guest_count ? `${event.estimated_guest_count} guests` : null} />
-              <InfoRow icon={Clock} label="Package" value={event.package_tier} />
+          <>
+            <div className="rounded-xl bg-card border border-border shadow-soft overflow-hidden">
+              <div className="px-5 py-1">
+                <InfoRow icon={CalendarHeart} label="Arrival" value={formatDate(event.arrival_date)} />
+                <InfoRow icon={CalendarHeart} label="Wedding Day" value={formatDate(event.wedding_date)} />
+                <InfoRow icon={CalendarHeart} label="Departure" value={formatDate(event.departure_date)} />
+                <InfoRow icon={MapPin} label="Ceremony" value={event.ceremony_location} />
+                <InfoRow icon={MapPin} label="Cocktail Hour" value={event.cocktail_hour_location} />
+                <InfoRow icon={MapPin} label="Rehearsal Dinner" value={event.rehearsal_dinner_location} />
+                <InfoRow icon={Users} label="Estimated Guests" value={event.estimated_guest_count ? `${event.estimated_guest_count} guests` : null} />
+                <InfoRow icon={Clock} label="Package" value={event.package_tier} />
+              </div>
             </div>
-          </div>
+
+            {eventId && <PlanningJourney eventId={eventId} />}
+          </>
         )}
         <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
       </div>

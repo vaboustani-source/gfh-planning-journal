@@ -52,14 +52,11 @@ Deno.serve(async (req) => {
     }
 
     // 2. Get or create partner accounts
-    // First check if users already exist to avoid hitting email rate limits
     const getOrCreateUser = async (email: string, firstName: string, lastName: string) => {
-      // Check if user already exists
       const { data: list } = await supabase.auth.admin.listUsers()
       const existing = list?.users?.find(u => u.email === email)
       if (existing) return existing
 
-      // User doesn't exist — create directly with a temporary password (no email sent)
       const tempPassword = crypto.randomUUID() + '-Aa1!'
       const { data, error } = await supabase.auth.admin.createUser({
         email,
@@ -73,7 +70,6 @@ Deno.serve(async (req) => {
 
     let user1, user2
     try {
-      // Run sequentially to avoid race conditions on listUsers
       user1 = await getOrCreateUser(partner1_email, partner1_first_name || '', partner1_last_name || '')
       user2 = await getOrCreateUser(partner2_email, partner2_first_name || '', partner2_last_name || '')
     } catch (inviteErr) {
@@ -120,10 +116,10 @@ Deno.serve(async (req) => {
       throw linkErr
     }
 
-    // 5. Seed milestones and vendors if wedding_date is provided
-    if (wedding_date) {
-      await supabase.rpc('seed_milestones', { p_event_id: event.id, p_wedding_date: wedding_date })
-    }
+    // 5. Seed milestones and vendors
+    // Use wedding_date if provided, otherwise fallback to today + 365 days
+    const milestoneDate = wedding_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    await supabase.rpc('seed_milestones', { p_event_id: event.id, p_wedding_date: milestoneDate })
     await supabase.rpc('seed_vendors', { p_event_id: event.id })
 
     return new Response(
