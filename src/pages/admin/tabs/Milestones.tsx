@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, AlertCircle, Clock, User, Loader2 } from "lucide-react";
+import { Check, AlertCircle, Clock, User } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
@@ -16,62 +16,90 @@ interface Milestone {
   notes: string | null;
 }
 
-const statusColors: Record<string, string> = {
-  complete: "bg-sage/15 text-sage border-sage/30",
-  pending: "bg-muted text-muted-foreground border-border",
-  "in-progress": "bg-secondary text-secondary-foreground border-border",
-};
-
 export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
-  const [seeding, setSeeding] = useState(false);
   const { status, trackSave } = useAutosaveStatus();
+  const seeded = useRef(false);
 
-  useEffect(() => { fetch(); }, [eventId]);
+  useEffect(() => {
+    loadMilestones();
+  }, [eventId]);
 
-  const fetch = async () => {
+  const loadMilestones = async () => {
     const { data } = await supabase
       .from("milestones")
       .select("*")
       .eq("event_id", eventId)
-      .order("target_date", { ascending: true });
-    if (data) setMilestones(data);
-    setLoading(false);
+      .order("sort_order", { ascending: true });
+
+    if (data && data.length > 0) {
+      setMilestones(data);
+      setLoading(false);
+    } else if (!seeded.current) {
+      // Auto-seed on first load if empty
+      seeded.current = true;
+      const { data: evt } = await supabase.from("events").select("wedding_date").eq("id", eventId).single();
+      const fallback = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      await supabase.rpc("seed_milestones", { p_event_id: eventId, p_wedding_date: evt?.wedding_date || fallback });
+      // Re-fetch
+      const { data: seededData } = await supabase
+        .from("milestones")
+        .select("*")
+        .eq("event_id", eventId)
+        .order("sort_order", { ascending: true });
+      if (seededData) setMilestones(seededData);
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
   };
 
-  const markComplete = async (m: Milestone) => {
+  const toggleComplete = async (m: Milestone) => {
     const next = m.status === "complete" ? "pending" : "complete";
     const today = new Date().toISOString().split("T")[0];
-    await trackSave(async () => {
-      await supabase.from("milestones").update({
-        status: next,
-        completed_date: next === "complete" ? today : null,
-      }).eq("id", m.id);
-    });
+    const updates = {
+      status: next,
+      completed_date: next === "complete" ? today : null,
+    };
+
     setMilestones(prev => prev.map(x =>
-      x.id === m.id ? { ...x, status: next, completed_date: next === "complete" ? today : null } : x
+      x.id === m.id ? { ...x, ...updates } : x
     ));
+
+    await trackSave(async () => {
+      await supabase.from("milestones").update(updates).eq("id", m.id);
+    });
   };
 
-  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   const isOverdue = (m: Milestone) =>
     m.target_date && new Date(m.target_date) < now && m.status !== "complete";
 
   const completed = milestones.filter(m => m.status === "complete").length;
-  const pct = milestones.length ? Math.round((completed / milestones.length) * 100) : 0;
+  const total = milestones.length;
+  const pct = total ? Math.round((completed / total) * 100) : 0;
 
   const fmtDate = (d: string | null) =>
     d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
 
-  if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="py-12 flex justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-24 animate-fade-up relative">
-      {/* Progress */}
+      {/* Progress bar */}
       <div className="rounded-xl bg-card border border-border p-5">
         <div className="flex items-center justify-between mb-3">
-          <p className="font-body text-sm text-foreground">{completed} of {milestones.length} milestones complete</p>
+          <p className="font-body text-sm text-foreground">
+            {completed} of {total} milestones complete
+          </p>
           <p className="font-display text-2xl font-light text-foreground">{pct}%</p>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -82,91 +110,82 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
         </div>
       </div>
 
-      {milestones.length === 0 ? (
-        <div className="text-center py-16 space-y-4">
-          <p className="font-body text-muted-foreground">No milestones for this event yet.</p>
-          <button
-            onClick={async () => {
-              setSeeding(true);
-              // Fetch event wedding_date
-              const { data: evt } = await supabase.from("events").select("wedding_date").eq("id", eventId).single();
-              if (evt?.wedding_date) {
-                await supabase.rpc("seed_milestones", { p_event_id: eventId, p_wedding_date: evt.wedding_date });
-                await fetch();
-              }
-              setSeeding(false);
-            }}
-            disabled={seeding}
-            className="inline-flex items-center gap-2 rounded-xl bg-sage px-6 py-2.5 font-body text-sm font-medium text-white hover:bg-sage/90 transition-colors disabled:opacity-60"
-          >
-            {seeding ? <Loader2 size={14} className="animate-spin" /> : null}
-            {seeding ? "Seeding…" : "Seed Default Milestones"}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {milestones.map(m => {
-            const overdue = isOverdue(m);
-            return (
-              <div
-                key={m.id}
-                className={`rounded-xl border p-4 flex items-start gap-4 transition-colors ${
-                  overdue
-                    ? "bg-destructive/5 border-destructive/25"
-                    : "bg-card border-border"
+      {/* Timeline */}
+      <div className="space-y-2">
+        {milestones.map(m => {
+          const overdue = isOverdue(m);
+          const done = m.status === "complete";
+
+          return (
+            <div
+              key={m.id}
+              className={`rounded-xl border p-4 flex items-start gap-4 transition-colors ${
+                overdue
+                  ? "bg-destructive/5 border-destructive/25"
+                  : done
+                  ? "bg-sage/5 border-sage/20"
+                  : "bg-card border-border"
+              }`}
+            >
+              {/* Checkbox */}
+              <button
+                onClick={() => toggleComplete(m)}
+                className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                  done
+                    ? "bg-sage border-sage text-white"
+                    : overdue
+                    ? "border-destructive/50 hover:border-destructive"
+                    : "border-border hover:border-sage"
                 }`}
               >
-                <button
-                  onClick={() => markComplete(m)}
-                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                    m.status === "complete"
-                      ? "bg-sage border-sage text-white"
-                      : overdue
-                      ? "border-red-400 hover:border-red-500"
-                      : "border-border hover:border-sage"
-                  }`}
-                >
-                  {m.status === "complete" && <Check size={11} className="text-white" />}
-                </button>
+                {done && <Check size={11} className="text-white" />}
+              </button>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <p className={`font-body text-sm font-medium ${m.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {m.title}
-                    </p>
-                    {overdue && (
-                      <span className="flex items-center gap-1 font-body text-[10px] text-destructive bg-destructive/10 border border-destructive/20 rounded-full px-2 py-0.5">
-                        <AlertCircle size={9} />
-                        Overdue
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground font-body">
-                    {m.timeframe_label && <span>{m.timeframe_label}</span>}
-                    {m.target_date && (
-                      <span className="flex items-center gap-1">
-                        <Clock size={9} />
-                        {fmtDate(m.target_date)}
-                      </span>
-                    )}
-                    {m.owner && (
-                      <span className="flex items-center gap-1">
-                        <User size={9} />
-                        {m.owner}
-                      </span>
-                    )}
-                  </div>
-                  {m.notes && <p className="mt-1.5 font-body text-xs text-muted-foreground">{m.notes}</p>}
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <p className={`font-body text-sm font-medium ${done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                    {m.title}
+                  </p>
+                  {overdue && (
+                    <span className="flex items-center gap-1 font-body text-[10px] text-destructive bg-destructive/10 border border-destructive/20 rounded-full px-2 py-0.5">
+                      <AlertCircle size={9} />
+                      Overdue
+                    </span>
+                  )}
                 </div>
-
-                <span className={`shrink-0 inline-flex items-center rounded-full border px-2.5 py-0.5 font-body text-[11px] capitalize ${statusColors[m.status || "pending"] || statusColors.pending}`}>
-                  {m.status || "pending"}
-                </span>
+                <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground font-body">
+                  {m.timeframe_label && <span>{m.timeframe_label}</span>}
+                  {m.target_date && (
+                    <span className="flex items-center gap-1">
+                      <Clock size={9} />
+                      {fmtDate(m.target_date)}
+                    </span>
+                  )}
+                  {m.owner && (
+                    <span className="flex items-center gap-1 capitalize">
+                      <User size={9} />
+                      {m.owner}
+                    </span>
+                  )}
+                </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              {/* Status pill */}
+              <span className={`shrink-0 inline-flex items-center rounded-full border px-2.5 py-0.5 font-body text-[11px] capitalize ${
+                done
+                  ? "bg-sage/15 text-sage border-sage/30"
+                  : overdue
+                  ? "bg-destructive/10 text-destructive border-destructive/20"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}>
+                {done ? "complete" : overdue ? "overdue" : "pending"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
