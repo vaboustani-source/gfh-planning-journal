@@ -30,19 +30,26 @@ function Stepper({
   return (
     <div className="flex items-center justify-between py-2">
       <p className="font-body text-sm text-foreground">{label}</p>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+          className="w-11 h-11 sm:w-8 sm:h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
         >
           <Minus size={14} />
         </button>
-        <span className="font-display text-2xl font-light text-foreground w-8 text-center tabular-nums">
-          {value}
-        </span>
+        <input
+          type="number"
+          min={0}
+          value={value}
+          onChange={(e) => {
+            const n = parseInt(e.target.value);
+            onChange(isNaN(n) || n < 0 ? 0 : n);
+          }}
+          className="w-12 h-11 sm:h-8 rounded-md border border-border bg-background text-center font-display text-xl font-light text-foreground tabular-nums focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
         <button
           onClick={() => onChange(value + 1)}
-          className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+          className="w-11 h-11 sm:w-8 sm:h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
         >
           <Plus size={14} />
         </button>
