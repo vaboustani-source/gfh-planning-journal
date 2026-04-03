@@ -355,9 +355,9 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
         {/* Locations */}
         <div className="rounded-xl bg-card border border-border p-6 space-y-5">
           <p className="font-display text-lg font-light text-foreground">Locations</p>
-          <Field label="Ceremony Location" value={event.ceremony_location || ""} onSave={v => patch({ ceremony_location: v || null })} />
-          <Field label="Cocktail Hour Location" value={event.cocktail_hour_location || ""} onSave={v => patch({ cocktail_hour_location: v || null })} />
-          <Field label="Rehearsal Dinner Location" value={event.rehearsal_dinner_location || ""} onSave={v => patch({ rehearsal_dinner_location: v || null })} />
+          <LocationField label="Ceremony Location" value={event.ceremony_location || ""} options={CEREMONY_OPTIONS} onSave={v => patch({ ceremony_location: v || null })} />
+          <LocationField label="Cocktail Hour Location" value={event.cocktail_hour_location || ""} options={COCKTAIL_OPTIONS} onSave={v => patch({ cocktail_hour_location: v || null })} />
+          <LocationField label="Rehearsal Dinner Location" value={event.rehearsal_dinner_location || ""} options={REHEARSAL_OPTIONS} onSave={v => patch({ rehearsal_dinner_location: v || null })} />
         </div>
 
         {/* Add-ons */}
