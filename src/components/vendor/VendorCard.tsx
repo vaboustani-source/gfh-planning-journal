@@ -113,7 +113,18 @@ export function VendorCard({
     return (
       <div className={`rounded-xl border overflow-hidden ${isGF ? "border-sage/25 bg-sage/5" : "border-border bg-card"}`}>
         <div className="p-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            {/* Drag handle */}
+            {showDragHandle && !isGF && (
+              <div {...dragHandleProps} className="flex items-center pt-1 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                <GripVertical size={16} />
+              </div>
+            )}
+            {showDragHandle && isGF && (
+              <div className="flex items-center pt-1 text-transparent">
+                <GripVertical size={16} />
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <p className="font-body text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -167,11 +178,32 @@ export function VendorCard({
                   <Pencil size={12} /> Edit
                 </button>
               )}
+              {/* Delete button — not for GF rows */}
+              {isAdmin && !isGF && onDelete && !confirmingDelete && (
+                <button onClick={() => setConfirmingDelete(true)}
+                  className="p-1.5 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors">
+                  <Trash2 size={13} />
+                </button>
+              )}
               <button onClick={() => setExpanded(!expanded)} className="text-muted-foreground hover:text-foreground">
                 {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
             </div>
           </div>
+          {/* Inline delete confirmation */}
+          {confirmingDelete && (
+            <div className="mt-3 flex items-center gap-3 p-2.5 rounded-lg bg-destructive/5 border border-destructive/20">
+              <p className="font-body text-xs text-foreground flex-1">Remove this vendor?</p>
+              <button onClick={() => { onDelete?.(vendor.id); setConfirmingDelete(false); }}
+                className="px-3 py-1 rounded-md bg-destructive text-destructive-foreground font-body text-xs hover:opacity-90 transition-opacity">
+                Yes, remove
+              </button>
+              <button onClick={() => setConfirmingDelete(false)}
+                className="px-3 py-1 rounded-md border border-border font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
         {expanded && (
           <div className="border-t border-border px-4 py-3 bg-muted/20">
