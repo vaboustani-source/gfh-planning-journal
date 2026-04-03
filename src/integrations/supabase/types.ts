@@ -614,6 +614,39 @@ export type Database = {
           },
         ]
       }
+      message_notification_queue: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          messages_json: Json
+          recipient_email: string
+          recipient_role: string
+          scheduled_send_at: string
+          sent: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          messages_json?: Json
+          recipient_email: string
+          recipient_role: string
+          scheduled_send_at: string
+          sent?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          messages_json?: Json
+          recipient_email?: string
+          recipient_role?: string
+          scheduled_send_at?: string
+          sent?: boolean
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
