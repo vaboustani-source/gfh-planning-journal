@@ -4,6 +4,66 @@ import { Plus } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import { VendorCard, Vendor, VENDOR_GROUPS } from "@/components/vendor/VendorCard";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+function SortableVendorCard({
+  vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd,
+}: {
+  vendor: Vendor;
+  eventId: string;
+  onUpdate: (id: string, fields: Partial<Vendor>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onSaveStart: () => void;
+  onSaveEnd: () => void;
+}) {
+  const isGF = ["venue", "caterer"].includes(vendor.category) && vendor.business_name === "Gilbertsville Farmhouse";
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: vendor.id, disabled: isGF });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <VendorCard
+        vendor={vendor}
+        eventId={eventId}
+        isAdmin
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        onSaveStart={onSaveStart}
+        onSaveEnd={onSaveEnd}
+        showDragHandle
+        dragHandleProps={listeners}
+      />
+    </div>
+  );
+}
 
 export default function VendorsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -12,17 +72,22 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const { status, markSaving, markSaved } = useAutosaveStatus();
   const seeded = useRef(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
   useEffect(() => { loadVendors(); }, [eventId]);
 
   const loadVendors = async () => {
-    const { data } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("created_at", { ascending: true });
+    const { data } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
     if (data && data.length > 0) {
       setVendors(data);
       setLoading(false);
     } else if (!seeded.current) {
       seeded.current = true;
       await supabase.rpc("seed_vendors", { p_event_id: eventId });
-      const { data: seededData } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("created_at", { ascending: true });
+      const { data: seededData } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
       if (seededData) setVendors(seededData);
       setLoading(false);
     } else {
@@ -51,6 +116,44 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
     setVendors(prev => prev.filter(v => v.id !== id));
   };
 
+  const sortGroupVendors = (groupVendors: Vendor[]) => {
+    // Pin GF rows to the top
+    const gf = groupVendors.filter(v => ["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse");
+    const rest = groupVendors.filter(v => !gf.some(g => g.id === v.id));
+    return [...gf, ...rest];
+  };
+
+  const handleDragEnd = async (event: DragEndEvent, groupCategories: string[]) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const groupVendors = sortGroupVendors(vendors.filter(v => groupCategories.includes(v.category)));
+    const oldIndex = groupVendors.findIndex(v => v.id === active.id);
+    const newIndex = groupVendors.findIndex(v => v.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Don't allow moving into GF positions
+    const gfCount = groupVendors.filter(v => ["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse").length;
+    if (newIndex < gfCount) return;
+
+    const reordered = [...groupVendors];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    // Update sort_order for all items in this group
+    const updates = reordered.map((v, i) => ({ id: v.id, sort_order: i }));
+
+    setVendors(prev => {
+      const otherVendors = prev.filter(v => !groupCategories.includes(v.category));
+      const updatedGroup = reordered.map((v, i) => ({ ...v, sort_order: i }));
+      return [...otherVendors, ...updatedGroup];
+    });
+
+    markSaving();
+    await Promise.all(updates.map(u => supabase.from("vendors").update({ sort_order: u.sort_order }).eq("id", u.id)));
+    markSaved();
+  };
+
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   const byStatus = {
@@ -74,18 +177,23 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
       </div>
 
       {VENDOR_GROUPS.map(group => {
-        const groupVendors = vendors.filter(v => group.categories.includes(v.category));
+        const groupVendors = sortGroupVendors(vendors.filter(v => group.categories.includes(v.category)));
         if (groupVendors.length === 0) return null;
         return (
           <div key={group.label}>
             <p className="font-display text-base font-light text-foreground border-b border-border pb-2 mb-3">{group.label}</p>
-            <div className="space-y-2">
-              {groupVendors.map(v => (
-                <VendorCard key={v.id} vendor={v} eventId={eventId} isAdmin
-                  onUpdate={updateVendor} onDelete={deleteVendor}
-                  onSaveStart={markSaving} onSaveEnd={markSaved} />
-              ))}
-            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter}
+              onDragEnd={(e) => handleDragEnd(e, group.categories)}>
+              <SortableContext items={groupVendors.map(v => v.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {groupVendors.map(v => (
+                    <SortableVendorCard key={v.id} vendor={v} eventId={eventId}
+                      onUpdate={updateVendor} onDelete={deleteVendor}
+                      onSaveStart={markSaving} onSaveEnd={markSaved} />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
         );
       })}
