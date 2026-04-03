@@ -203,6 +203,8 @@ export default function EventDetail() {
         {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "lodging" && <LodgingTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "dietary" && <DietaryTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "bar" && <BarTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
       </main>
     </div>
   );
