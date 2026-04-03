@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, MessageCircle, Clock, ChevronRight, LogOut, Plus,
-  AlertCircle, CreditCard, Settings,
+  AlertCircle, CreditCard, Settings, Eye,
 } from "lucide-react";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 
