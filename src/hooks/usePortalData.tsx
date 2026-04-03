@@ -46,6 +46,8 @@ const PortalDataContext = createContext<PortalDataContextType | undefined>(undef
 export function PortalDataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [event, setEvent] = useState<PortalEvent | null>(null);
+  const [accessTier, setAccessTier] = useState<number>(3);
+  const [roleInEvent, setRoleInEvent] = useState<string | null>(null);
   const [checklistProgress, setChecklistProgress] = useState<ChecklistProgress>({ total: 0, completed: 0, percentage: 0 });
   const [nextTask, setNextTask] = useState<NextTask | null>(null);
   const [loading, setLoading] = useState(true);
