@@ -200,8 +200,7 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-up relative">
-      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+    <div className="space-y-6 pb-24 animate-fade-up relative">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {TRACKS.map(track => (
           <TrackPanel
