@@ -73,8 +73,9 @@ function isGilbertsvilleRow(v: Vendor) {
 }
 
 /* ── Vendor Row ── */
-function VendorRow({ vendor, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
+function VendorRow({ vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
   vendor: Vendor;
+  eventId: string;
   onUpdate: (id: string, fields: Partial<Vendor>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onSaveStart: () => void;
