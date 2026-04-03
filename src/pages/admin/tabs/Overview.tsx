@@ -224,8 +224,18 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
   });
 
   if (!addonsLoaded) {
-    supabase.from("event_addons").select("*").eq("event_id", event.id).then(({ data }) => {
-      if (data) setAddons(data);
+    supabase.from("event_addons").select("*").eq("event_id", event.id).then(async ({ data }) => {
+      let rows = data || [];
+      const existing = new Set(rows.map(r => r.addon));
+      const missing = ALL_ADDONS.filter(a => !existing.has(a));
+      if (missing.length > 0) {
+        const inserts = missing.map(a => ({ event_id: event.id, addon: a, included: false }));
+        const { data: inserted } = await supabase.from("event_addons").insert(inserts).select();
+        if (inserted) rows = [...rows, ...inserted];
+      }
+      // Sort to match ALL_ADDONS order
+      rows.sort((a, b) => ALL_ADDONS.indexOf(a.addon) - ALL_ADDONS.indexOf(b.addon));
+      setAddons(rows);
       setAddonsLoaded(true);
     });
   }
