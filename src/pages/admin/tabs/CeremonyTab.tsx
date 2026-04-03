@@ -305,6 +305,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
 
       {/* ── Processional ── */}
       <Section title="Processional Order">
+        <InstructionBlock {...PROCESSIONAL_INSTRUCTIONS} />
         <div className="space-y-3">
           {processional.length === 0 && (
             <p className="font-body text-sm text-muted-foreground italic">Nothing added yet.</p>
