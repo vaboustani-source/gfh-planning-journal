@@ -5,8 +5,7 @@ import {
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
-import SaveButton from "@/components/admin/SaveButton";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 /* ── Types ── */
 interface ProcessionalEntry { role: string; name: string; song: string }
