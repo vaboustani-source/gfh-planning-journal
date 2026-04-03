@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, AlertCircle, Clock, User } from "lucide-react";
+import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
+import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
 
 interface Milestone {
   id: string;
@@ -23,6 +25,7 @@ const statusColors: Record<string, string> = {
 export default function MilestonesTab({ eventId }: { eventId: string }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
+  const { status, trackSave } = useAutosaveStatus();
 
   useEffect(() => { fetch(); }, [eventId]);
 
@@ -39,10 +42,12 @@ export default function MilestonesTab({ eventId }: { eventId: string }) {
   const markComplete = async (m: Milestone) => {
     const next = m.status === "complete" ? "pending" : "complete";
     const today = new Date().toISOString().split("T")[0];
-    await supabase.from("milestones").update({
-      status: next,
-      completed_date: next === "complete" ? today : null,
-    }).eq("id", m.id);
+    await trackSave(async () => {
+      await supabase.from("milestones").update({
+        status: next,
+        completed_date: next === "complete" ? today : null,
+      }).eq("id", m.id);
+    });
     setMilestones(prev => prev.map(x =>
       x.id === m.id ? { ...x, status: next, completed_date: next === "complete" ? today : null } : x
     ));
@@ -61,7 +66,8 @@ export default function MilestonesTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-6 pb-16 animate-fade-up relative">
+      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
       {/* Progress */}
       <div className="rounded-xl bg-card border border-border p-5">
         <div className="flex items-center justify-between mb-3">
@@ -93,7 +99,6 @@ export default function MilestonesTab({ eventId }: { eventId: string }) {
                     : "bg-card border-border"
                 }`}
               >
-                {/* Complete toggle */}
                 <button
                   onClick={() => markComplete(m)}
                   className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${

@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Save, Check, Loader2, Plus, Trash2, Lock, Unlock,
+  Check, Loader2, Plus, Trash2, Lock, Unlock,
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
+import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
+import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import SaveButton from "@/components/admin/SaveButton";
 
 interface ProcessionalEntry { role: string; name: string; song: string }
 interface DanceEntry { who: string; song: string }
@@ -34,11 +37,10 @@ function TextRow({ label, value, onChange, placeholder, readOnly }: {
 
 export default function CeremonyTab({ eventId }: { eventId: string }) {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [locking, setLocking] = useState(false);
   const [recordId, setRecordId] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+  const { status, trackSave, markUnsaved } = useAutosaveStatus();
 
   const [officiantName, setOfficiantName] = useState("");
   const [officiantRelationship, setOfficiantRelationship] = useState("");
@@ -54,6 +56,9 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
   const [cakeCuttingSong, setCakeCuttingSong] = useState("");
   const [scriptSent, setScriptSent] = useState(false);
   const [specialNotes, setSpecialNotes] = useState("");
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const initialLoad = useRef(true);
 
   useEffect(() => {
     if (!eventId) return;
@@ -82,10 +87,12 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
           setSpecialNotes(data.special_notes ?? "");
         }
         setLoading(false);
+        // Allow the initial state to settle before watching for changes
+        setTimeout(() => { initialLoad.current = false; }, 100);
       });
   }, [eventId]);
 
-  const buildPayload = () => ({
+  const buildPayload = useCallback(() => ({
     event_id: eventId,
     officiant_name: officiantName || null,
     officiant_relationship: officiantRelationship || null,
@@ -102,26 +109,39 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
     script_sent_to_brandon: scriptSent,
     special_notes: specialNotes || null,
     updated_at: new Date().toISOString(),
-  });
+  }), [eventId, officiantName, officiantRelationship, officiantAttending, microphone, ceremonyMusicVendor, djBandVendor, processional, firstDance, parentDances, recessionalSong, lastDanceSong, cakeCuttingSong, scriptSent, specialNotes]);
 
-  const handleSave = async () => {
-    setSaving(true);
-    const payload = buildPayload();
-    if (recordId) {
-      await supabase.from("ceremony_details").update(payload).eq("id", recordId);
-    } else {
-      const { data } = await supabase.from("ceremony_details").insert(payload).select("id").single();
-      if (data) setRecordId(data.id);
-    }
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  // Autosave with 800ms debounce
+  useEffect(() => {
+    if (loading || initialLoad.current) return;
+    markUnsaved();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      doSave();
+    }, 800);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [officiantName, officiantRelationship, officiantAttending, microphone, ceremonyMusicVendor, djBandVendor, processional, firstDance, parentDances, recessionalSong, lastDanceSong, cakeCuttingSong, scriptSent, specialNotes]);
+
+  const doSave = async () => {
+    await trackSave(async () => {
+      const payload = buildPayload();
+      if (recordId) {
+        await supabase.from("ceremony_details").update(payload).eq("id", recordId);
+      } else {
+        const { data } = await supabase.from("ceremony_details").insert(payload).select("id").single();
+        if (data) setRecordId(data.id);
+      }
+    });
+  };
+
+  const handleManualSave = async () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    await doSave();
   };
 
   const toggleLock = async () => {
     if (!recordId) {
-      // Save first to ensure record exists
-      await handleSave();
+      await handleManualSave();
     }
     setLocking(true);
     const next = !locked;
@@ -152,7 +172,9 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
   );
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-6 pb-16 animate-fade-up relative">
+      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
+
       {/* Lock banner */}
       {locked ? (
         <div className="flex items-center justify-between rounded-xl bg-sage/10 border border-sage/25 px-5 py-4">
@@ -299,16 +321,10 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
         />
       </Section>
 
-      {/* Save button */}
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-body text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
-      >
-        {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> :
-         saved ? <><Check size={15} /> Saved!</> :
-         <><Save size={15} /> Save Ceremony Details</>}
-      </button>
+      {/* Manual save button */}
+      <div className="flex justify-end">
+        <SaveButton status={status} onClick={handleManualSave} label="Save Ceremony Details" />
+      </div>
     </div>
   );
 }

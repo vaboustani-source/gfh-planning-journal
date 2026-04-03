@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, User, Wrench } from "lucide-react";
+import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
+import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
 
 interface ChecklistItem {
   id: string;
@@ -32,6 +34,7 @@ export default function ChecklistTab({ eventId }: { eventId: string }) {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
+  const { status, trackSave } = useAutosaveStatus();
 
   useEffect(() => { fetchItems(); }, [eventId]);
 
@@ -48,7 +51,9 @@ export default function ChecklistTab({ eventId }: { eventId: string }) {
   const toggle = async (item: ChecklistItem) => {
     const next = item.status === "complete" ? "incomplete" : "complete";
     const now = next === "complete" ? new Date().toISOString() : null;
-    await supabase.from("checklist_items").update({ status: next, completed_at: now }).eq("id", item.id);
+    await trackSave(async () => {
+      await supabase.from("checklist_items").update({ status: next, completed_at: now }).eq("id", item.id);
+    });
     setItems(prev => prev.map(x => x.id === item.id ? { ...x, status: next, completed_at: now } : x));
   };
 
@@ -71,7 +76,8 @@ export default function ChecklistTab({ eventId }: { eventId: string }) {
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-6 pb-16 animate-fade-up relative">
+      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
       {/* Progress + filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-1 min-w-0">
@@ -122,7 +128,7 @@ export default function ChecklistTab({ eventId }: { eventId: string }) {
                 >
                   <button
                     onClick={() => toggle(item)}
-                    className={`mt-0.5 w-4.5 h-4.5 w-[18px] h-[18px] rounded border flex items-center justify-center shrink-0 transition-colors ${
+                    className={`mt-0.5 w-[18px] h-[18px] rounded border flex items-center justify-center shrink-0 transition-colors ${
                       item.status === "complete"
                         ? "bg-sage border-sage"
                         : "border-border hover:border-sage bg-background"
