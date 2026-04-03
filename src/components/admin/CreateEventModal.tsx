@@ -161,12 +161,46 @@ export default function CreateEventModal({ onClose }: Props) {
 
             {/* Event dates */}
             <div>
-              <p className="font-display text-base font-light text-foreground mb-3">Event Dates</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Field label="Wedding Date" value={form.wedding_date} onChange={v => set("wedding_date", v)} type="date" />
-                <Field label="Arrival Date" value={form.arrival_date} onChange={v => set("arrival_date", v)} type="date" />
-                <Field label="Departure Date" value={form.departure_date} onChange={v => set("departure_date", v)} type="date" />
-              </div>
+              <p className="font-display text-base font-light text-foreground mb-3 flex items-center gap-2">
+                <CalendarDays size={16} className="text-sage" />
+                Event Dates
+              </p>
+              <Field label="Wedding Date *" value={form.wedding_date} onChange={v => set("wedding_date", v)} type="date" />
+
+              {form.wedding_date && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setEarlyArrival(p => !p)}
+                      className={`flex-1 py-2.5 rounded-lg border font-body text-sm transition-colors ${
+                        earlyArrival
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground bg-background"
+                      }`}
+                    >
+                      Thursday arrival?
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLateDeparture(p => !p)}
+                      className={`flex-1 py-2.5 rounded-lg border font-body text-sm transition-colors ${
+                        lateDeparture
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground bg-background"
+                      }`}
+                    >
+                      Monday departure?
+                    </button>
+                  </div>
+
+                  {computedDates && (
+                    <p className="font-body text-xs text-muted-foreground bg-sage/8 border border-sage/15 rounded-lg px-3 py-2.5 text-center">
+                      Arrive {computedDates.arrivalDisplay} · Wedding {computedDates.weddingDisplay} · Depart {computedDates.departureDisplay}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Package */}
