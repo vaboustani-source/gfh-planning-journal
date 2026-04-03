@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import farmhouseHero from "@/assets/farmhouse-hero.jpg";
 
 const LOGIN_TIMEOUT_MS = 10_000;
@@ -10,9 +11,31 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const { signIn, profile } = useAuth();
   const navigate = useNavigate();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError("Enter your email address first, then click this link.");
+      return;
+    }
+    setResetLoading(true);
+    setError("");
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/set-password`,
+      });
+      if (resetError) throw resetError;
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message ?? "Failed to send reset email.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   // Navigate once profile is loaded post-login
   useEffect(() => {
@@ -162,11 +185,31 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="mt-10 text-center font-body text-xs text-muted-foreground">
+          {/* Password setup / reset links */}
+          <div className="mt-6 space-y-3 text-center">
+            {resetSent ? (
+              <div className="rounded bg-sage/10 border border-sage/20 px-4 py-3">
+                <p className="font-body text-sm text-foreground">
+                  Check your email for a password setup link.
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={resetLoading}
+                className="font-body text-sm text-primary/80 hover:text-primary underline underline-offset-4 transition-colors disabled:opacity-50"
+              >
+                {resetLoading ? "Sending link…" : "First time? Set your password"}
+              </button>
+            )}
+          </div>
+
+          <p className="mt-6 text-center font-body text-xs text-muted-foreground">
             Need access? Contact your coordinator for an invitation.
           </p>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <button
               type="button"
               onClick={() => setEmail("victoria@gilbertsvillefarmhouse.com")}
