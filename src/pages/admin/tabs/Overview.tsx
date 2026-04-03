@@ -213,6 +213,7 @@ const ALL_ADDONS = [
 ];
 
 export default function Overview({ event, coupleNames, onUpdate }: Props) {
+  const { status, trackSave } = useAutosaveStatus();
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
   const [addonsLoaded, setAddonsLoaded] = useState(false);
   const [earlyArrival, setEarlyArrival] = useState(() => {
