@@ -11,7 +11,31 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const { signIn, profile } = useAuth();
+  const navigate = useNavigate();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError("Enter your email address first, then click this link.");
+      return;
+    }
+    setResetLoading(true);
+    setError("");
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/set-password`,
+      });
+      if (resetError) throw resetError;
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message ?? "Failed to send reset email.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
   const navigate = useNavigate();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
