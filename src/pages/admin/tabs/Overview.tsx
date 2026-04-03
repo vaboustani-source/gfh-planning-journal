@@ -214,7 +214,7 @@ const ALL_ADDONS = [
   "beer_burro", "haywagon", "mimosa_bar", "lawn_games", "bathroom_baskets",
 ];
 
-export default function Overview({ event, coupleNames, onUpdate }: Props) {
+export default function Overview({ event, coupleNames, onUpdate, onNavigateNext }: Props) {
   const { status, trackSave } = useAutosaveStatus();
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
   const [addonsLoaded, setAddonsLoaded] = useState(false);
