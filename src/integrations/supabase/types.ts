@@ -48,6 +48,7 @@ export type Database = {
           speeches_rehearsal: Json | null
           updated_at: string | null
           wedding_party_altar_choice: string | null
+          wedding_party_altar_notes: string | null
           welcome_toast_person: string | null
         }
         Insert: {
@@ -83,6 +84,7 @@ export type Database = {
           speeches_rehearsal?: Json | null
           updated_at?: string | null
           wedding_party_altar_choice?: string | null
+          wedding_party_altar_notes?: string | null
           welcome_toast_person?: string | null
         }
         Update: {
@@ -118,6 +120,7 @@ export type Database = {
           speeches_rehearsal?: Json | null
           updated_at?: string | null
           wedding_party_altar_choice?: string | null
+          wedding_party_altar_notes?: string | null
           welcome_toast_person?: string | null
         }
         Relationships: [
