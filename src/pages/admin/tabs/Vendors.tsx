@@ -241,6 +241,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           ))}
         </div>
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

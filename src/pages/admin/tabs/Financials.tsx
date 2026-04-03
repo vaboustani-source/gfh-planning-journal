@@ -215,6 +215,7 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
           />
         ))}
       </div>
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

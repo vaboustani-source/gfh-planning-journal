@@ -272,6 +272,7 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
           </div>
         </div>
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }
