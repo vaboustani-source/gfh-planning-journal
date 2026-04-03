@@ -204,11 +204,11 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
 
   const doSave = async () => {
     await trackSave(async () => {
-      const payload = buildPayload();
+      const payload = buildPayload() as Record<string, unknown>;
       if (recordId) {
-        await supabase.from("ceremony_details").update(payload).eq("id", recordId);
+        await supabase.from("ceremony_details").update(payload as never).eq("id", recordId);
       } else {
-        const { data } = await supabase.from("ceremony_details").insert(payload).select("id").single();
+        const { data } = await supabase.from("ceremony_details").insert(payload as never).select("id").single();
         if (data) setRecordId(data.id);
       }
     });
@@ -226,8 +226,9 @@ export default function CeremonyTab({ eventId }: { eventId: string }) {
     if (recordId) {
       await supabase.from("ceremony_details").update({ locked_by_brandon: next }).eq("id", recordId);
     } else {
+      const payload = { ...buildPayload(), locked_by_brandon: next } as Record<string, unknown>;
       const { data } = await supabase.from("ceremony_details")
-        .insert({ ...buildPayload(), locked_by_brandon: next }).select("id").single();
+        .insert(payload as never).select("id").single();
       if (data) setRecordId(data.id);
     }
     setLocked(next);
