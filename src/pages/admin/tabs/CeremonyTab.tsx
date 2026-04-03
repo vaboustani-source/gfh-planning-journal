@@ -6,6 +6,7 @@ import {
 import type { Json } from "@/integrations/supabase/types";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import InstructionBlock, { PROCESSIONAL_INSTRUCTIONS, PARENT_DANCES_INSTRUCTIONS } from "@/components/ceremony/InstructionBlock";
 
 /* ── Types ── */
 interface ProcessionalEntry { role: string; name: string; song: string }
