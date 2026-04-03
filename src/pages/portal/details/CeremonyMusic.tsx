@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { Save, Check, Loader2, Plus, Trash2, Lock } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
+import InstructionBlock, { PROCESSIONAL_INSTRUCTIONS, PARENT_DANCES_INSTRUCTIONS } from "@/components/ceremony/InstructionBlock";
 
 interface ProcessionalEntry {
   role: string;
