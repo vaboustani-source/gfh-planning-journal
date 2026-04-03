@@ -18,15 +18,24 @@ export type Database = {
         Row: {
           cake_cutting_song: string | null
           ceremony_music_vendor: string | null
+          couple_leading_to_cocktail: boolean | null
+          couple_staying_for_photos: boolean | null
           dj_band_vendor: string | null
+          dj_events_performing: Json | null
+          dj_playlist_name: string | null
+          dj_staying_for_afterparty: boolean | null
           event_id: string | null
           finalized: boolean | null
           first_dance_song: string | null
+          formal_introductions: Json | null
           id: string
           intro_order: Json | null
           last_dance_song: string | null
           locked_by_brandon: boolean | null
+          microphone_speakers: boolean | null
           microphone_type: string | null
+          misc_notes: string | null
+          musician_singer: string | null
           officiant_attending_rehearsal: boolean | null
           officiant_name: string | null
           officiant_relationship: string | null
@@ -35,20 +44,33 @@ export type Database = {
           recessional_song: string | null
           script_sent_to_brandon: boolean | null
           special_notes: string | null
+          speeches_reception: Json | null
+          speeches_rehearsal: Json | null
           updated_at: string | null
+          wedding_party_altar_choice: string | null
+          welcome_toast_person: string | null
         }
         Insert: {
           cake_cutting_song?: string | null
           ceremony_music_vendor?: string | null
+          couple_leading_to_cocktail?: boolean | null
+          couple_staying_for_photos?: boolean | null
           dj_band_vendor?: string | null
+          dj_events_performing?: Json | null
+          dj_playlist_name?: string | null
+          dj_staying_for_afterparty?: boolean | null
           event_id?: string | null
           finalized?: boolean | null
           first_dance_song?: string | null
+          formal_introductions?: Json | null
           id?: string
           intro_order?: Json | null
           last_dance_song?: string | null
           locked_by_brandon?: boolean | null
+          microphone_speakers?: boolean | null
           microphone_type?: string | null
+          misc_notes?: string | null
+          musician_singer?: string | null
           officiant_attending_rehearsal?: boolean | null
           officiant_name?: string | null
           officiant_relationship?: string | null
@@ -57,20 +79,33 @@ export type Database = {
           recessional_song?: string | null
           script_sent_to_brandon?: boolean | null
           special_notes?: string | null
+          speeches_reception?: Json | null
+          speeches_rehearsal?: Json | null
           updated_at?: string | null
+          wedding_party_altar_choice?: string | null
+          welcome_toast_person?: string | null
         }
         Update: {
           cake_cutting_song?: string | null
           ceremony_music_vendor?: string | null
+          couple_leading_to_cocktail?: boolean | null
+          couple_staying_for_photos?: boolean | null
           dj_band_vendor?: string | null
+          dj_events_performing?: Json | null
+          dj_playlist_name?: string | null
+          dj_staying_for_afterparty?: boolean | null
           event_id?: string | null
           finalized?: boolean | null
           first_dance_song?: string | null
+          formal_introductions?: Json | null
           id?: string
           intro_order?: Json | null
           last_dance_song?: string | null
           locked_by_brandon?: boolean | null
+          microphone_speakers?: boolean | null
           microphone_type?: string | null
+          misc_notes?: string | null
+          musician_singer?: string | null
           officiant_attending_rehearsal?: boolean | null
           officiant_name?: string | null
           officiant_relationship?: string | null
@@ -79,7 +114,11 @@ export type Database = {
           recessional_song?: string | null
           script_sent_to_brandon?: boolean | null
           special_notes?: string | null
+          speeches_reception?: Json | null
+          speeches_rehearsal?: Json | null
           updated_at?: string | null
+          wedding_party_altar_choice?: string | null
+          welcome_toast_person?: string | null
         }
         Relationships: [
           {
@@ -902,6 +941,10 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      seed_milestones: {
+        Args: { p_event_id: string; p_wedding_date: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
