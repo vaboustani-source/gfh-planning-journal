@@ -10,6 +10,8 @@ import AdminMessages from "./tabs/AdminMessages";
 import FinancialsTab from "./tabs/Financials";
 import LodgingTab from "./tabs/Lodging";
 import CeremonyTab from "./tabs/CeremonyTab";
+import DietaryTab from "./tabs/DietaryTab";
+import BarTab from "./tabs/BarTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -20,9 +22,11 @@ const TABS = [
   { id: "financials", label: "Financials" },
   { id: "lodging", label: "Lodging" },
   { id: "ceremony", label: "Ceremony" },
+  { id: "dietary", label: "Dietary" },
+  { id: "bar", label: "Bar" },
 ];
 
-const TAB_ORDER = ["overview", "milestones", "checklist", "vendors", "ceremony", "financials", "lodging"];
+const TAB_ORDER = ["overview", "milestones", "checklist", "vendors", "ceremony", "financials", "lodging", "dietary", "bar"];
 
 export interface EventData {
   id: string;
@@ -199,6 +203,8 @@ export default function EventDetail() {
         {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "lodging" && <LodgingTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "dietary" && <DietaryTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "bar" && <BarTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
       </main>
     </div>
   );

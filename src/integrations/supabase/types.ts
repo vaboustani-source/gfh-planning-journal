@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      bar_selections: {
+        Row: {
+          bar_package: string | null
+          beer_selection_1: string | null
+          beer_selection_2: string | null
+          champagne_arrival_upgrade: boolean | null
+          champagne_welcome_toast: boolean | null
+          event_id: string | null
+          finalized: boolean | null
+          high_noon_add_third: boolean | null
+          high_noon_events: string | null
+          high_noon_upgrade_1: boolean | null
+          high_noon_upgrade_2: boolean | null
+          id: string
+          locked_by_brandon: boolean | null
+          notes: string | null
+          red_wine_1: string | null
+          red_wine_2: string | null
+          signature_drink_1: string | null
+          signature_drink_2: string | null
+          signature_drink_special_request: string | null
+          updated_at: string | null
+          welcome_drink_1: string | null
+          welcome_drink_2: string | null
+          welcome_drink_3: string | null
+          white_wine_1: string | null
+          white_wine_2: string | null
+        }
+        Insert: {
+          bar_package?: string | null
+          beer_selection_1?: string | null
+          beer_selection_2?: string | null
+          champagne_arrival_upgrade?: boolean | null
+          champagne_welcome_toast?: boolean | null
+          event_id?: string | null
+          finalized?: boolean | null
+          high_noon_add_third?: boolean | null
+          high_noon_events?: string | null
+          high_noon_upgrade_1?: boolean | null
+          high_noon_upgrade_2?: boolean | null
+          id?: string
+          locked_by_brandon?: boolean | null
+          notes?: string | null
+          red_wine_1?: string | null
+          red_wine_2?: string | null
+          signature_drink_1?: string | null
+          signature_drink_2?: string | null
+          signature_drink_special_request?: string | null
+          updated_at?: string | null
+          welcome_drink_1?: string | null
+          welcome_drink_2?: string | null
+          welcome_drink_3?: string | null
+          white_wine_1?: string | null
+          white_wine_2?: string | null
+        }
+        Update: {
+          bar_package?: string | null
+          beer_selection_1?: string | null
+          beer_selection_2?: string | null
+          champagne_arrival_upgrade?: boolean | null
+          champagne_welcome_toast?: boolean | null
+          event_id?: string | null
+          finalized?: boolean | null
+          high_noon_add_third?: boolean | null
+          high_noon_events?: string | null
+          high_noon_upgrade_1?: boolean | null
+          high_noon_upgrade_2?: boolean | null
+          id?: string
+          locked_by_brandon?: boolean | null
+          notes?: string | null
+          red_wine_1?: string | null
+          red_wine_2?: string | null
+          signature_drink_1?: string | null
+          signature_drink_2?: string | null
+          signature_drink_special_request?: string | null
+          updated_at?: string | null
+          welcome_drink_1?: string | null
+          welcome_drink_2?: string | null
+          welcome_drink_3?: string | null
+          white_wine_1?: string | null
+          white_wine_2?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_selections_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ceremony_details: {
         Row: {
           cake_cutting_song: string | null
@@ -193,6 +285,54 @@ export type Database = {
           },
         ]
       }
+      couple_notes: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          created_by: string | null
+          event_id: string | null
+          id: string
+          shared_with_brandon: boolean | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          shared_with_brandon?: boolean | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          shared_with_brandon?: boolean | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_notes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decor_items: {
         Row: {
           brandon_notes: string | null
@@ -242,6 +382,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "decor_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dietary_restrictions: {
+        Row: {
+          child_age: number | null
+          created_at: string | null
+          event_id: string | null
+          guest_name: string | null
+          has_restriction: boolean | null
+          id: string
+          is_child: boolean | null
+          is_onsite: boolean | null
+          notes: string | null
+          other_meals: string | null
+          reception_only: boolean | null
+          restriction_type: string | null
+          severity: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          child_age?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          guest_name?: string | null
+          has_restriction?: boolean | null
+          id?: string
+          is_child?: boolean | null
+          is_onsite?: boolean | null
+          notes?: string | null
+          other_meals?: string | null
+          reception_only?: boolean | null
+          restriction_type?: string | null
+          severity?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          child_age?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          guest_name?: string | null
+          has_restriction?: boolean | null
+          id?: string
+          is_child?: boolean | null
+          is_onsite?: boolean | null
+          notes?: string | null
+          other_meals?: string | null
+          reception_only?: boolean | null
+          restriction_type?: string | null
+          severity?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dietary_restrictions_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
