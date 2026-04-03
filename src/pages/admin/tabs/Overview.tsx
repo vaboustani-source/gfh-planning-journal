@@ -204,6 +204,10 @@ function LocationField({ label, value, options, onSave }: {
     </div>
   );
 }
+const ALL_ADDONS = [
+  "wedding_day_breakfast", "welcome_bags", "after_party", "goat_yoga",
+  "beer_burro", "haywagon", "mimosa_bar", "lawn_games", "bathroom_baskets",
+];
 
 export default function Overview({ event, coupleNames, onUpdate }: Props) {
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
