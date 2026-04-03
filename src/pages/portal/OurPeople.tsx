@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import { LodgingList } from "./people/LodgingList";
 import { Headcounts } from "./people/Headcounts";
+import { VendorList } from "./people/VendorList";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 const TABS = [
   { id: "lodging", label: "Lodging" },
   { id: "headcounts", label: "Headcounts" },
+  { id: "vendors", label: "Vendors" },
 ];
 
 export default function OurPeople() {
@@ -26,6 +28,7 @@ export default function OurPeople() {
 
         {tab === "lodging" && <LodgingList />}
         {tab === "headcounts" && <Headcounts />}
+        {tab === "vendors" && <VendorList />}
         <PortalStickyFooter onContinue={() => navigate("/portal/weekend-details")} />
       </div>
     </div>
