@@ -42,7 +42,7 @@ const STATUS_STYLES: Record<string, string> = {
   paid: "bg-forest/15 border-forest/30 text-forest-dark",
 };
 
-export default function LodgingTab({ eventId }: { eventId: string }) {
+export default function LodgingTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);

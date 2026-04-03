@@ -160,7 +160,7 @@ function LineRow({ line, onDebouncedUpdate, onImmediateUpdate, onDelete }: {
   );
 }
 
-export default function FinancialsTab({ eventId }: { eventId: string }) {
+export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [lines, setLines] = useState<PaymentLine[]>([]);
   const [loading, setLoading] = useState(true);
   const { status, markSaving, markSaved } = useAutosaveStatus();

@@ -149,6 +149,7 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
           })}
         </div>
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

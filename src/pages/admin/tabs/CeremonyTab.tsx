@@ -75,7 +75,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 /* ── Main Component ── */
-export default function CeremonyTab({ eventId }: { eventId: string }) {
+export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [loading, setLoading] = useState(true);
   const [locking, setLocking] = useState(false);
   const [recordId, setRecordId] = useState<string | null>(null);

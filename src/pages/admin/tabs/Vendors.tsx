@@ -160,7 +160,7 @@ function VendorRow({ vendor, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
   );
 }
 
-export default function VendorsTab({ eventId }: { eventId: string }) {
+export default function VendorsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);

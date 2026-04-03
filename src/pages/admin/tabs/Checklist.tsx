@@ -168,6 +168,7 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
           </div>
         ))
       )}
+      <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
 }

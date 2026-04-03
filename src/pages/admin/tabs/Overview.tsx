@@ -15,6 +15,7 @@ interface Props {
   event: EventData;
   coupleNames: string;
   onUpdate: (e: EventData) => void;
+  onNavigateNext?: () => void;
 }
 
 function Field({ label, value, onSave }: { label: string; value: string; onSave: (v: string) => Promise<void> }) {
