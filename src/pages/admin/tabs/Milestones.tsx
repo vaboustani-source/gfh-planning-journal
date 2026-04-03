@@ -83,8 +83,25 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
       </div>
 
       {milestones.length === 0 ? (
-        <div className="text-center py-16">
+        <div className="text-center py-16 space-y-4">
           <p className="font-body text-muted-foreground">No milestones for this event yet.</p>
+          <button
+            onClick={async () => {
+              setSeeding(true);
+              // Fetch event wedding_date
+              const { data: evt } = await supabase.from("events").select("wedding_date").eq("id", eventId).single();
+              if (evt?.wedding_date) {
+                await supabase.rpc("seed_milestones", { p_event_id: eventId, p_wedding_date: evt.wedding_date });
+                await fetch();
+              }
+              setSeeding(false);
+            }}
+            disabled={seeding}
+            className="inline-flex items-center gap-2 rounded-xl bg-sage px-6 py-2.5 font-body text-sm font-medium text-white hover:bg-sage/90 transition-colors disabled:opacity-60"
+          >
+            {seeding ? <Loader2 size={14} className="animate-spin" /> : null}
+            {seeding ? "Seeding…" : "Seed Default Milestones"}
+          </button>
         </div>
       ) : (
         <div className="space-y-2">
