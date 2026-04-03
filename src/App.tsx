@@ -14,9 +14,13 @@ import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
 import Planning from "./pages/portal/Planning";
+import Vendors from "./pages/portal/Vendors";
+import Ceremony from "./pages/portal/Ceremony";
+import MenusMeals from "./pages/portal/MenusMeals";
 import OurPeople from "./pages/portal/OurPeople";
-import WeekendDetails from "./pages/portal/WeekendDetails";
+import Financials from "./pages/portal/Financials";
 import Messages from "./pages/portal/Messages";
+import Notes from "./pages/portal/Notes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
