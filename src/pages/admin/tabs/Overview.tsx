@@ -204,6 +204,10 @@ function LocationField({ label, value, options, onSave }: {
     </div>
   );
 }
+const ALL_ADDONS = [
+  "wedding_day_breakfast", "welcome_bags", "after_party", "goat_yoga",
+  "beer_burro", "haywagon", "mimosa_bar", "lawn_games", "bathroom_baskets",
+];
 
 export default function Overview({ event, coupleNames, onUpdate }: Props) {
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
@@ -220,8 +224,18 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
   });
 
   if (!addonsLoaded) {
-    supabase.from("event_addons").select("*").eq("event_id", event.id).then(({ data }) => {
-      if (data) setAddons(data);
+    supabase.from("event_addons").select("*").eq("event_id", event.id).then(async ({ data }) => {
+      let rows = data || [];
+      const existing = new Set(rows.map(r => r.addon));
+      const missing = ALL_ADDONS.filter(a => !existing.has(a));
+      if (missing.length > 0) {
+        const inserts = missing.map(a => ({ event_id: event.id, addon: a, included: false }));
+        const { data: inserted } = await supabase.from("event_addons").insert(inserts).select();
+        if (inserted) rows = [...rows, ...inserted];
+      }
+      // Sort to match ALL_ADDONS order
+      rows.sort((a, b) => ALL_ADDONS.indexOf(a.addon) - ALL_ADDONS.indexOf(b.addon));
+      setAddons(rows);
       setAddonsLoaded(true);
     });
   }
@@ -273,7 +287,7 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
     d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "";
 
   return (
-    <div className="space-y-8 animate-fade-up">
+    <div className="space-y-8 pb-16 animate-fade-up">
       {/* Countdown */}
       {daysUntil !== null && (
         <div className="rounded-2xl bg-sage/8 border border-sage/20 px-6 py-5 flex items-center gap-4">
