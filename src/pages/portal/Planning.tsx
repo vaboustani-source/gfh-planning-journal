@@ -16,6 +16,7 @@ interface ChecklistItem {
 
 export default function Planning() {
   const { eventId, loading: eventLoading } = usePortalData();
+  const navigate = useNavigate();
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
 
