@@ -89,7 +89,11 @@ export default function CreateEventModal({ onClose }: Props) {
     setSubmitting(true);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("create-couple-accounts", {
-        body: form,
+        body: {
+          ...form,
+          arrival_date: computedDates?.arrival_date || "",
+          departure_date: computedDates?.departure_date || "",
+        },
       });
 
       if (fnError) throw fnError;
