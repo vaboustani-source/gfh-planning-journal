@@ -325,18 +325,21 @@ export type Database = {
       }
       event_users: {
         Row: {
+          access_tier: number | null
           event_id: string | null
           id: string
           role_in_event: string
           user_id: string | null
         }
         Insert: {
+          access_tier?: number | null
           event_id?: string | null
           id?: string
           role_in_event: string
           user_id?: string | null
         }
         Update: {
+          access_tier?: number | null
           event_id?: string | null
           id?: string
           role_in_event?: string
