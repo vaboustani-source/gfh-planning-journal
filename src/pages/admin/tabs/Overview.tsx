@@ -213,6 +213,7 @@ const ALL_ADDONS = [
 ];
 
 export default function Overview({ event, coupleNames, onUpdate }: Props) {
+  const { status, trackSave } = useAutosaveStatus();
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
   const [addonsLoaded, setAddonsLoaded] = useState(false);
   const [earlyArrival, setEarlyArrival] = useState(() => {
@@ -244,8 +245,10 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
   }
 
   const patch = async (fields: Partial<EventData>) => {
-    const { data } = await supabase.from("events").update(fields).eq("id", event.id).select().single();
-    if (data) onUpdate(data as EventData);
+    await trackSave(async () => {
+      const { data } = await supabase.from("events").update(fields).eq("id", event.id).select().single();
+      if (data) onUpdate(data as EventData);
+    });
   };
 
   const handleWeddingDateChange = useCallback(async (v: string) => {
