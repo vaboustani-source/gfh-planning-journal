@@ -48,8 +48,13 @@ export interface EventData {
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "overview");
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId }, { replace: true });
+  }, [setSearchParams]);
   const [event, setEvent] = useState<EventData | null>(null);
   const [coupleNames, setCoupleNames] = useState("");
   const [loading, setLoading] = useState(true);
@@ -58,9 +63,9 @@ export default function EventDetail() {
   const navigateToNextTab = useCallback(() => {
     const idx = TAB_ORDER.indexOf(activeTab);
     const nextIdx = (idx + 1) % TAB_ORDER.length;
-    setActiveTab(TAB_ORDER[nextIdx]);
+    handleTabChange(TAB_ORDER[nextIdx]);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [activeTab]);
+  }, [activeTab, handleTabChange]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -165,7 +170,7 @@ export default function EventDetail() {
             {TABS.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`relative shrink-0 px-4 py-3 font-body text-sm transition-colors border-b-2 ${
                   activeTab === tab.id
                     ? "border-primary text-foreground font-medium"
