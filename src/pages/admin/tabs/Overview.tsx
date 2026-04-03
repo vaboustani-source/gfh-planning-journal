@@ -139,9 +139,9 @@ function SmallToggle({ label, checked, onChange }: { label: string; checked: boo
   );
 }
 
-const CEREMONY_OPTIONS = ["Hilltop Cathedral", "Woodsy Ceremony Site", "Other (off-site)"];
-const COCKTAIL_OPTIONS = ["Milking Parlor", "Farmhouse Lawn", "Hayloft", "Other"];
-const REHEARSAL_OPTIONS = ["Hayloft", "Milking Parlor", "Other"];
+const CEREMONY_OPTIONS = ["Hilltop Cathedral", "Woodsy Ceremony Site", "Milking Parlor", "Courtyard", "Other (off-site)"];
+const COCKTAIL_OPTIONS = ["Milking Parlor", "Farmhouse Lawn", "Hayloft", "Courtyard", "Other"];
+const REHEARSAL_OPTIONS = ["Hayloft", "Milking Parlor", "Courtyard", "Other"];
 
 function LocationField({ label, value, options, onSave }: {
   label: string;
