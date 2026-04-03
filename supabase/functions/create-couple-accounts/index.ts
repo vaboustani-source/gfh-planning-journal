@@ -120,6 +120,12 @@ Deno.serve(async (req) => {
       throw linkErr
     }
 
+    // 5. Seed milestones and vendors if wedding_date is provided
+    if (wedding_date) {
+      await supabase.rpc('seed_milestones', { p_event_id: event.id, p_wedding_date: wedding_date })
+    }
+    await supabase.rpc('seed_vendors', { p_event_id: event.id })
+
     return new Response(
       JSON.stringify({ event_id: event.id, event_title: eventTitle }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
