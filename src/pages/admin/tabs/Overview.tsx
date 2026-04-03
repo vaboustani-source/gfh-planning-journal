@@ -139,6 +139,72 @@ function SmallToggle({ label, checked, onChange }: { label: string; checked: boo
   );
 }
 
+const CEREMONY_OPTIONS = ["Hilltop Cathedral", "Woodsy Ceremony Site", "Other (off-site)"];
+const COCKTAIL_OPTIONS = ["Milking Parlor", "Farmhouse Lawn", "Hayloft", "Other"];
+const REHEARSAL_OPTIONS = ["Hayloft", "Milking Parlor", "Other"];
+
+function LocationField({ label, value, options, onSave }: {
+  label: string;
+  value: string;
+  options: string[];
+  onSave: (v: string) => Promise<void>;
+}) {
+  const isKnown = options.some(o => o === value);
+  const isOther = value && !isKnown;
+  const otherOption = options.find(o => o.startsWith("Other")) || "Other";
+
+  const [selected, setSelected] = useState(isOther ? otherOption : (value || ""));
+  const [customText, setCustomText] = useState(
+    isOther ? (value.startsWith("Other: ") ? value.slice(7) : value) : ""
+  );
+  const [saving, setSaving] = useState(false);
+
+  const handleSelect = async (v: string) => {
+    setSelected(v);
+    if (v.startsWith("Other")) {
+      // Don't save yet — wait for custom text
+      return;
+    }
+    setSaving(true);
+    await onSave(v);
+    setCustomText("");
+    setSaving(false);
+  };
+
+  const handleCustomSave = async () => {
+    if (!customText.trim()) return;
+    setSaving(true);
+    await onSave(`Other: ${customText.trim()}`);
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider">{label}</p>
+      <select
+        value={selected}
+        disabled={saving}
+        onChange={e => handleSelect(e.target.value)}
+        className="w-full border border-border rounded-md px-3 py-1.5 font-body text-sm bg-background focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+      >
+        <option value="">Select…</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      {selected.startsWith("Other") && (
+        <input
+          value={customText}
+          onChange={e => setCustomText(e.target.value)}
+          onBlur={handleCustomSave}
+          onKeyDown={e => { if (e.key === "Enter") handleCustomSave(); }}
+          placeholder="Describe the location…"
+          disabled={saving}
+          className="w-full border border-border rounded-md px-3 py-1.5 font-body text-[12px] bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+        />
+      )}
+    </div>
+  );
+}
+
 export default function Overview({ event, coupleNames, onUpdate }: Props) {
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
   const [addonsLoaded, setAddonsLoaded] = useState(false);
