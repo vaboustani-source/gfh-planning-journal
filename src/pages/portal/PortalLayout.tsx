@@ -51,9 +51,24 @@ function MobileNavItem({ to, label, icon: Icon }: { to: string; label: string; i
 }
 
 export default function PortalLayout() {
+  return (
+    <PortalDataProvider>
+      <PortalLayoutInner />
+    </PortalDataProvider>
+  );
+}
+
+function PortalLayoutInner() {
   const { profile, signOut } = useAuth();
+  const { accessTier } = usePortalData();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Tier 2 = messages only; others filter by tier array
+  const navItems = useMemo(() => {
+    if (accessTier === 2) return allNavItems.filter(i => i.to === "/portal/messages");
+    return allNavItems.filter(i => i.tiers.includes(accessTier));
+  }, [accessTier]);
 
   return (
     <PortalDataProvider>
