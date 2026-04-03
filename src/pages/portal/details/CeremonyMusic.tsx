@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { Save, Check, Loader2, Plus, Trash2, Lock } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
+import InstructionBlock, { PROCESSIONAL_INSTRUCTIONS, PARENT_DANCES_INSTRUCTIONS } from "@/components/ceremony/InstructionBlock";
 
 interface ProcessionalEntry {
   role: string;
@@ -179,7 +180,8 @@ export function CeremonyMusic() {
       {/* Processional order */}
       <div className="rounded-xl bg-card border border-border shadow-soft p-5">
         <SectionHeading>Processional Order</SectionHeading>
-        <div className="space-y-3">
+        {!locked && <InstructionBlock {...PROCESSIONAL_INSTRUCTIONS} />}
+        <div className="space-y-3 mt-4">
           {processional.length === 0 && (
             <p className="font-body text-sm text-muted-foreground">No entries yet.</p>
           )}
@@ -246,7 +248,8 @@ export function CeremonyMusic() {
       {/* Parent dances */}
       <div className="rounded-xl bg-card border border-border shadow-soft p-5">
         <SectionHeading>Parent Dances</SectionHeading>
-        <div className="space-y-3">
+        {!locked && <InstructionBlock {...PARENT_DANCES_INSTRUCTIONS} />}
+        <div className="space-y-3 mt-4">
           {parentDances.length === 0 && (
             <p className="font-body text-sm text-muted-foreground">No parent dances added yet.</p>
           )}

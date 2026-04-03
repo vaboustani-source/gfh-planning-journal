@@ -6,6 +6,7 @@ import {
 import type { Json } from "@/integrations/supabase/types";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import InstructionBlock, { PROCESSIONAL_INSTRUCTIONS, PARENT_DANCES_INSTRUCTIONS } from "@/components/ceremony/InstructionBlock";
 
 /* ── Types ── */
 interface ProcessionalEntry { role: string; name: string; song: string }
@@ -304,6 +305,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
 
       {/* ── Processional ── */}
       <Section title="Processional Order">
+        <InstructionBlock {...PROCESSIONAL_INSTRUCTIONS} />
         <div className="space-y-3">
           {processional.length === 0 && (
             <p className="font-body text-sm text-muted-foreground italic">Nothing added yet.</p>
@@ -367,6 +369,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
 
       {/* ── Parent Dances ── */}
       <Section title="Parent Dances">
+        <InstructionBlock {...PARENT_DANCES_INSTRUCTIONS} />
         <div className="space-y-3">
           {parentDances.length === 0 && (
             <p className="font-body text-sm text-muted-foreground italic">Nothing added yet.</p>
