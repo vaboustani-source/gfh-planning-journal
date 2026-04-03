@@ -1,5 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
 import { CalendarHeart, MapPin, Users, Clock } from "lucide-react";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null }) {
   if (!value) return null;
