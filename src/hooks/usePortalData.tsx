@@ -55,14 +55,16 @@ export function PortalDataProvider({ children }: { children: ReactNode }) {
   const fetchEventData = async () => {
     if (!user) return;
     try {
-      // Find the couple's event
+      // Find the user's event link
       const { data: eu } = await supabase
         .from("event_users")
-        .select("event_id")
+        .select("event_id, access_tier, role_in_event")
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (!eu?.event_id) { setLoading(false); return; }
+      setAccessTier(eu.access_tier ?? 3);
+      setRoleInEvent(eu.role_in_event);
 
       const { data: eventData } = await supabase
         .from("events")
