@@ -58,6 +58,8 @@ interface VendorCardProps {
   onDelete?: (id: string) => Promise<void>;
   onSaveStart?: () => void;
   onSaveEnd?: () => void;
+  dragHandleProps?: Record<string, any>;
+  showDragHandle?: boolean;
 }
 
 export function VendorCard({
