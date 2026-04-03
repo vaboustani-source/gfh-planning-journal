@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Loader2, UserPlus } from "lucide-react";
+import { X, Loader2, UserPlus, CalendarDays } from "lucide-react";
+import { addDays, subDays, format, parseISO } from "date-fns";
 
 interface Props {
   onClose: () => void;
@@ -49,13 +50,28 @@ export default function CreateEventModal({ onClose }: Props) {
     partner2_last_name: "",
     partner2_email: "",
     wedding_date: "",
-    arrival_date: "",
-    departure_date: "",
     package_tier: "base",
   });
 
+  const [earlyArrival, setEarlyArrival] = useState(false);
+  const [lateDeparture, setLateDeparture] = useState(false);
+
   const set = (field: keyof typeof form, value: string) =>
     setForm(f => ({ ...f, [field]: value }));
+
+  const computedDates = useMemo(() => {
+    if (!form.wedding_date) return null;
+    const wedding = parseISO(form.wedding_date);
+    const arrival = subDays(wedding, earlyArrival ? 2 : 1);
+    const departure = addDays(wedding, lateDeparture ? 2 : 1);
+    return {
+      arrival_date: format(arrival, "yyyy-MM-dd"),
+      departure_date: format(departure, "yyyy-MM-dd"),
+      arrivalDisplay: format(arrival, "EEEE, MMM d"),
+      weddingDisplay: format(wedding, "EEEE, MMM d"),
+      departureDisplay: format(departure, "EEEE, MMM d"),
+    };
+  }, [form.wedding_date, earlyArrival, lateDeparture]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +89,11 @@ export default function CreateEventModal({ onClose }: Props) {
     setSubmitting(true);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("create-couple-accounts", {
-        body: form,
+        body: {
+          ...form,
+          arrival_date: computedDates?.arrival_date || "",
+          departure_date: computedDates?.departure_date || "",
+        },
       });
 
       if (fnError) throw fnError;
@@ -141,12 +161,46 @@ export default function CreateEventModal({ onClose }: Props) {
 
             {/* Event dates */}
             <div>
-              <p className="font-display text-base font-light text-foreground mb-3">Event Dates</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Field label="Wedding Date" value={form.wedding_date} onChange={v => set("wedding_date", v)} type="date" />
-                <Field label="Arrival Date" value={form.arrival_date} onChange={v => set("arrival_date", v)} type="date" />
-                <Field label="Departure Date" value={form.departure_date} onChange={v => set("departure_date", v)} type="date" />
-              </div>
+              <p className="font-display text-base font-light text-foreground mb-3 flex items-center gap-2">
+                <CalendarDays size={16} className="text-sage" />
+                Event Dates
+              </p>
+              <Field label="Wedding Date *" value={form.wedding_date} onChange={v => set("wedding_date", v)} type="date" />
+
+              {form.wedding_date && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setEarlyArrival(p => !p)}
+                      className={`flex-1 py-2.5 rounded-lg border font-body text-sm transition-colors ${
+                        earlyArrival
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground bg-background"
+                      }`}
+                    >
+                      Thursday arrival?
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLateDeparture(p => !p)}
+                      className={`flex-1 py-2.5 rounded-lg border font-body text-sm transition-colors ${
+                        lateDeparture
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground bg-background"
+                      }`}
+                    >
+                      Monday departure?
+                    </button>
+                  </div>
+
+                  {computedDates && (
+                    <p className="font-body text-xs text-muted-foreground bg-sage/8 border border-sage/15 rounded-lg px-3 py-2.5 text-center">
+                      Arrive {computedDates.arrivalDisplay} · Wedding {computedDates.weddingDisplay} · Depart {computedDates.departureDisplay}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Package */}
