@@ -12,6 +12,7 @@ const TABS = [
 
 export default function OurPeople() {
   const [tab, setTab] = useState("lodging");
+  const navigate = useNavigate();
 
   return (
     <div className="max-w-lg mx-auto px-5 py-8 lg:px-8 lg:py-10">
