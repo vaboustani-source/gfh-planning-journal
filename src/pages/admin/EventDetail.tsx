@@ -11,22 +11,26 @@ import FinancialsTab from "./tabs/Financials";
 import LodgingTab from "./tabs/Lodging";
 import CeremonyTab from "./tabs/CeremonyTab";
 import DietaryTab from "./tabs/DietaryTab";
-import BarTab from "./tabs/BarTab";
+import MenusBarTab from "./tabs/MenusBarTab";
+import AdminNotesTab from "./tabs/AdminNotesTab";
+import AdminDocumentsTab from "./tabs/AdminDocumentsTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "milestones", label: "Milestones" },
   { id: "checklist", label: "Checklist" },
   { id: "vendors", label: "Vendors" },
-  { id: "messages", label: "Messages" },
-  { id: "financials", label: "Financials" },
-  { id: "lodging", label: "Lodging" },
   { id: "ceremony", label: "Ceremony" },
-  { id: "dietary", label: "Dietary" },
-  { id: "bar", label: "Bar" },
+  { id: "menus-bar", label: "Menus & Bar" },
+  { id: "dietary", label: "Dietary & Kids" },
+  { id: "lodging", label: "Lodging" },
+  { id: "financials", label: "Financials" },
+  { id: "messages", label: "Messages" },
+  { id: "notes", label: "Notes" },
+  { id: "documents", label: "Documents" },
 ];
 
-const TAB_ORDER = ["overview", "milestones", "checklist", "vendors", "ceremony", "financials", "lodging", "dietary", "bar"];
+const TAB_ORDER = TABS.map(t => t.id);
 
 export interface EventData {
   id: string;
@@ -175,7 +179,7 @@ export default function EventDetail() {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`relative shrink-0 px-4 py-3 font-body text-sm transition-colors border-b-2 ${
+                className={`relative shrink-0 px-3 lg:px-4 py-3 font-body text-xs lg:text-sm transition-colors border-b-2 whitespace-nowrap ${
                   activeTab === tab.id
                     ? "border-primary text-foreground font-medium"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -199,12 +203,14 @@ export default function EventDetail() {
         {activeTab === "milestones" && <MilestonesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "checklist" && <ChecklistTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "vendors" && <VendorsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
-        {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
-        {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
-        {activeTab === "lodging" && <LodgingTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "menus-bar" && <MenusBarTab eventId={event.id} onNavigateNext={navigateToNextTab} tastingDate={event.tasting_date} tastingDateNote={event.tasting_date_note} />}
         {activeTab === "dietary" && <DietaryTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
-        {activeTab === "bar" && <BarTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "lodging" && <LodgingTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
+        {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "documents" && <AdminDocumentsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
       </main>
     </div>
   );
