@@ -92,6 +92,7 @@ export default function Planning() {
             ))}
           </div>
         )}
+        <PortalStickyFooter onContinue={() => navigate("/portal/our-people")} />
       </div>
     </div>
   );

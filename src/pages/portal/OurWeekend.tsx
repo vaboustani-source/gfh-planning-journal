@@ -51,6 +51,7 @@ export default function OurWeekend() {
             </div>
           </div>
         )}
+        <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
       </div>
     </div>
   );

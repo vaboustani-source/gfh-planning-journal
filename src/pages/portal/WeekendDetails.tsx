@@ -31,6 +31,7 @@ export default function WeekendDetails() {
         {tab === "ceremony" && <CeremonyMusic />}
         {tab === "decor" && <DecorSelections />}
         {tab === "meals" && <MealPrefs />}
+        <PortalStickyFooter onContinue={() => navigate("/portal/messages")} />
       </div>
     </div>
   );

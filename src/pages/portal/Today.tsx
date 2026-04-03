@@ -202,6 +202,7 @@ export default function Today() {
         </button>
       </section>
 
+      <PortalStickyFooter onContinue={() => navigate("/portal/our-weekend")} nextOnly />
     </div>
   );
 }

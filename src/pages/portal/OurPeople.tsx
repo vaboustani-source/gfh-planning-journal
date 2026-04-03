@@ -26,6 +26,7 @@ export default function OurPeople() {
 
         {tab === "lodging" && <LodgingList />}
         {tab === "headcounts" && <Headcounts />}
+        <PortalStickyFooter onContinue={() => navigate("/portal/weekend-details")} />
       </div>
     </div>
   );
