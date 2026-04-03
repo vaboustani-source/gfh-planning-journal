@@ -291,7 +291,8 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
     d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "";
 
   return (
-    <div className="space-y-8 pb-16 animate-fade-up">
+    <div className="space-y-8 pb-16 animate-fade-up relative">
+      <AutosaveIndicator status={status} className="absolute top-0 right-0" />
       {/* Countdown */}
       {daysUntil !== null && (
         <div className="rounded-2xl bg-sage/8 border border-sage/20 px-6 py-5 flex items-center gap-4">
