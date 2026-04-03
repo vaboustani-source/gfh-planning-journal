@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronDown, ChevronUp, Check, X, Building2 } from "lucide-react";
+import VendorFileUpload from "@/components/admin/VendorFileUpload";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
@@ -72,8 +73,9 @@ function isGilbertsvilleRow(v: Vendor) {
 }
 
 /* ── Vendor Row ── */
-function VendorRow({ vendor, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
+function VendorRow({ vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
   vendor: Vendor;
+  eventId: string;
   onUpdate: (id: string, fields: Partial<Vendor>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onSaveStart: () => void;
@@ -207,6 +209,22 @@ function VendorRow({ vendor, onUpdate, onDelete, onSaveStart, onSaveEnd }: {
               rows={2} placeholder="Internal notes…"
               className="w-full border border-border rounded-md px-3 py-2 font-body text-xs bg-background focus:outline-none focus:border-primary/50 resize-none" />
           </div>
+
+          {/* File uploads */}
+          <div>
+            <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Contracts & Files</p>
+            <VendorFileUpload
+              eventId={eventId}
+              vendorId={vendor.id}
+              canUpload={true}
+              canDelete={true}
+              onFileCountChange={(count) => {
+                if ((count > 0) !== !!draft.contract_uploaded) {
+                  setDraft(prev => ({ ...prev, contract_uploaded: count > 0 }));
+                }
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
@@ -295,7 +313,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
             </p>
             <div className="space-y-2">
               {groupVendors.map(v => (
-                <VendorRow key={v.id} vendor={v}
+                <VendorRow key={v.id} vendor={v} eventId={eventId}
                   onUpdate={updateVendor} onDelete={deleteVendor}
                   onSaveStart={markSaving} onSaveEnd={markSaved} />
               ))}
@@ -310,7 +328,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           <p className="font-display text-base font-light text-foreground border-b border-border pb-2 mb-3">Other</p>
           <div className="space-y-2">
             {vendors.filter(v => !VENDOR_GROUPS.some(g => g.categories.includes(v.category))).map(v => (
-              <VendorRow key={v.id} vendor={v}
+              <VendorRow key={v.id} vendor={v} eventId={eventId}
                 onUpdate={updateVendor} onDelete={deleteVendor}
                 onSaveStart={markSaving} onSaveEnd={markSaved} />
             ))}
