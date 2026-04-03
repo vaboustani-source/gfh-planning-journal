@@ -320,6 +320,7 @@ export type Database = {
       events: {
         Row: {
           arrival_date: string | null
+          arrival_date_note: string | null
           ceremony_location: string | null
           cocktail_hour_location: string | null
           count_at_30_days: number | null
@@ -327,6 +328,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           departure_date: string | null
+          departure_date_note: string | null
           estimated_guest_count: number | null
           event_type: string
           how_heard: string | null
@@ -335,11 +337,14 @@ export type Database = {
           rehearsal_dinner_location: string | null
           status: string
           tasting_date: string | null
+          tasting_date_note: string | null
           title: string
           wedding_date: string | null
+          wedding_date_note: string | null
         }
         Insert: {
           arrival_date?: string | null
+          arrival_date_note?: string | null
           ceremony_location?: string | null
           cocktail_hour_location?: string | null
           count_at_30_days?: number | null
@@ -347,6 +352,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           departure_date?: string | null
+          departure_date_note?: string | null
           estimated_guest_count?: number | null
           event_type?: string
           how_heard?: string | null
@@ -355,11 +361,14 @@ export type Database = {
           rehearsal_dinner_location?: string | null
           status?: string
           tasting_date?: string | null
+          tasting_date_note?: string | null
           title: string
           wedding_date?: string | null
+          wedding_date_note?: string | null
         }
         Update: {
           arrival_date?: string | null
+          arrival_date_note?: string | null
           ceremony_location?: string | null
           cocktail_hour_location?: string | null
           count_at_30_days?: number | null
@@ -367,6 +376,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           departure_date?: string | null
+          departure_date_note?: string | null
           estimated_guest_count?: number | null
           event_type?: string
           how_heard?: string | null
@@ -375,8 +385,10 @@ export type Database = {
           rehearsal_dinner_location?: string | null
           status?: string
           tasting_date?: string | null
+          tasting_date_note?: string | null
           title?: string
           wedding_date?: string | null
+          wedding_date_note?: string | null
         }
         Relationships: [
           {

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { EventData } from "../EventDetail";
 import { Check, Edit2 } from "lucide-react";
+import { addDays, subDays, format } from "date-fns";
 
 const PACKAGE_TIERS = ["base", "premium", "elite"];
 const STATUSES = ["onboarding", "planning", "active", "complete", "archived"];
@@ -74,10 +75,26 @@ function SelectField({ label, value, options, onSave }: { label: string; value: 
   );
 }
 
-function DateField({ label, value, onSave }: { label: string; value: string; onSave: (v: string) => Promise<void> }) {
+function DateField({ label, value, onSave, note, onSaveNote }: {
+  label: string;
+  value: string;
+  onSave: (v: string) => Promise<void>;
+  note?: string;
+  onSaveNote?: (v: string) => Promise<void>;
+}) {
   const [saving, setSaving] = useState(false);
+  const [noteVal, setNoteVal] = useState(note || "");
+  const [noteSaving, setNoteSaving] = useState(false);
+
+  const saveNote = async () => {
+    if (!onSaveNote || noteVal === (note || "")) return;
+    setNoteSaving(true);
+    await onSaveNote(noteVal);
+    setNoteSaving(false);
+  };
+
   return (
-    <div>
+    <div className="space-y-1">
       <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
       <input
         type="date"
@@ -90,13 +107,51 @@ function DateField({ label, value, onSave }: { label: string; value: string; onS
         }}
         className="border border-border rounded-md px-3 py-1.5 font-body text-sm bg-background focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
       />
+      {onSaveNote !== undefined && (
+        <input
+          value={noteVal}
+          onChange={e => setNoteVal(e.target.value)}
+          onBlur={saveNote}
+          onKeyDown={e => { if (e.key === "Enter") saveNote(); }}
+          placeholder="Internal note…"
+          disabled={noteSaving}
+          className="w-full border-0 border-b border-border/50 bg-transparent px-1 py-0.5 font-body text-[11px] text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+        />
+      )}
     </div>
+  );
+}
+
+function SmallToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-body text-[11px] transition-colors border ${
+        checked
+          ? "bg-primary/10 border-primary/30 text-foreground"
+          : "bg-background border-border text-muted-foreground hover:border-primary/20"
+      }`}
+    >
+      <span className={`w-2.5 h-2.5 rounded-full transition-colors ${checked ? "bg-primary" : "bg-border"}`} />
+      {label}
+    </button>
   );
 }
 
 export default function Overview({ event, coupleNames, onUpdate }: Props) {
   const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
   const [addonsLoaded, setAddonsLoaded] = useState(false);
+  const [earlyArrival, setEarlyArrival] = useState(() => {
+    if (!event.wedding_date || !event.arrival_date) return false;
+    const diff = Math.round((new Date(event.wedding_date).getTime() - new Date(event.arrival_date).getTime()) / 86400000);
+    return diff >= 2;
+  });
+  const [lateDeparture, setLateDeparture] = useState(() => {
+    if (!event.wedding_date || !event.departure_date) return false;
+    const diff = Math.round((new Date(event.departure_date).getTime() - new Date(event.wedding_date).getTime()) / 86400000);
+    return diff >= 2;
+  });
 
   if (!addonsLoaded) {
     supabase.from("event_addons").select("*").eq("event_id", event.id).then(({ data }) => {
@@ -110,12 +165,46 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
     if (data) onUpdate(data as EventData);
   };
 
+  const handleWeddingDateChange = useCallback(async (v: string) => {
+    if (!v) {
+      await patch({ wedding_date: null });
+      return;
+    }
+    const wedding = new Date(v + "T12:00:00");
+    const arrival = subDays(wedding, earlyArrival ? 2 : 1);
+    const departure = addDays(wedding, lateDeparture ? 2 : 1);
+    await patch({
+      wedding_date: v,
+      arrival_date: format(arrival, "yyyy-MM-dd"),
+      departure_date: format(departure, "yyyy-MM-dd"),
+    });
+  }, [earlyArrival, lateDeparture, event.id]);
+
+  const handleEarlyArrival = useCallback(async (checked: boolean) => {
+    setEarlyArrival(checked);
+    if (!event.wedding_date) return;
+    const wedding = new Date(event.wedding_date + "T12:00:00");
+    const arrival = subDays(wedding, checked ? 2 : 1);
+    await patch({ arrival_date: format(arrival, "yyyy-MM-dd") });
+  }, [event.wedding_date, event.id]);
+
+  const handleLateDeparture = useCallback(async (checked: boolean) => {
+    setLateDeparture(checked);
+    if (!event.wedding_date) return;
+    const wedding = new Date(event.wedding_date + "T12:00:00");
+    const departure = addDays(wedding, checked ? 2 : 1);
+    await patch({ departure_date: format(departure, "yyyy-MM-dd") });
+  }, [event.wedding_date, event.id]);
+
   const daysUntil = event.arrival_date
     ? Math.round((new Date(event.arrival_date).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
     : null;
 
   const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : "";
+    d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : "";
+
+  const fmtShort = (d: string | null) =>
+    d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "";
 
   return (
     <div className="space-y-8 animate-fade-up">
@@ -141,10 +230,51 @@ export default function Overview({ event, coupleNames, onUpdate }: Props) {
         {/* Dates */}
         <div className="rounded-xl bg-card border border-border p-6 space-y-5">
           <p className="font-display text-lg font-light text-foreground">Key Dates</p>
-          <DateField label="Wedding Date" value={event.wedding_date || ""} onSave={v => patch({ wedding_date: v || null })} />
-          <DateField label="Arrival Date" value={event.arrival_date || ""} onSave={v => patch({ arrival_date: v || null })} />
-          <DateField label="Departure Date" value={event.departure_date || ""} onSave={v => patch({ departure_date: v || null })} />
-          <DateField label="Tasting Date" value={event.tasting_date || ""} onSave={v => patch({ tasting_date: v || null })} />
+
+          <DateField
+            label="Wedding Date"
+            value={event.wedding_date || ""}
+            onSave={handleWeddingDateChange}
+            note={event.wedding_date_note || ""}
+            onSaveNote={v => patch({ wedding_date_note: v || null })}
+          />
+
+          {/* Toggles */}
+          {event.wedding_date && (
+            <div className="flex items-center gap-2 -mt-2">
+              <SmallToggle label="Thursday arrival?" checked={earlyArrival} onChange={handleEarlyArrival} />
+              <SmallToggle label="Monday departure?" checked={lateDeparture} onChange={handleLateDeparture} />
+            </div>
+          )}
+
+          {/* Summary line */}
+          {event.wedding_date && event.arrival_date && event.departure_date && (
+            <p className="font-body text-[11px] text-muted-foreground -mt-2">
+              Arrive {fmtShort(event.arrival_date)} · Wedding {fmtShort(event.wedding_date)} · Depart {fmtShort(event.departure_date)}
+            </p>
+          )}
+
+          <DateField
+            label="Arrival Date"
+            value={event.arrival_date || ""}
+            onSave={v => patch({ arrival_date: v || null })}
+            note={event.arrival_date_note || ""}
+            onSaveNote={v => patch({ arrival_date_note: v || null })}
+          />
+          <DateField
+            label="Departure Date"
+            value={event.departure_date || ""}
+            onSave={v => patch({ departure_date: v || null })}
+            note={event.departure_date_note || ""}
+            onSaveNote={v => patch({ departure_date_note: v || null })}
+          />
+          <DateField
+            label="Tasting Date"
+            value={event.tasting_date || ""}
+            onSave={v => patch({ tasting_date: v || null })}
+            note={event.tasting_date_note || ""}
+            onSaveNote={v => patch({ tasting_date_note: v || null })}
+          />
         </div>
 
         {/* Event info */}

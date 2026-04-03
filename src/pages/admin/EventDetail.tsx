@@ -37,6 +37,10 @@ export interface EventData {
   estimated_guest_count: number | null;
   tasting_date: string | null;
   how_heard: string | null;
+  wedding_date_note: string | null;
+  arrival_date_note: string | null;
+  departure_date_note: string | null;
+  tasting_date_note: string | null;
 }
 
 export default function EventDetail() {
