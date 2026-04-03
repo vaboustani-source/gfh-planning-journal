@@ -948,6 +948,7 @@ export type Database = {
         Args: { p_event_id: string; p_wedding_date: string }
         Returns: undefined
       }
+      seed_vendors: { Args: { p_event_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
