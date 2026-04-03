@@ -25,6 +25,7 @@ const statusColors: Record<string, string> = {
 export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
   const { status, trackSave } = useAutosaveStatus();
 
   useEffect(() => { fetch(); }, [eventId]);
