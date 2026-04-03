@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronDown, ChevronUp, Check, X } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface Vendor {
   id: string;
