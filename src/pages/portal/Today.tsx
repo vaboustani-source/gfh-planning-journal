@@ -3,6 +3,7 @@ import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageCircle, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 function CountdownDisplay({ days }: { days: number | null }) {
   if (days === null) {
