@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronDown, ChevronUp, Check, X, Building2 } from "lucide-react";
+import VendorFileUpload from "@/components/admin/VendorFileUpload";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
