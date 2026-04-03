@@ -150,7 +150,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
     });
 
     markSaving();
-    await Promise.all(updates.map(u => supabase.from("vendors").update({ sort_order: u.sort_order }).eq("id", u.id)));
+    await Promise.all(updates.map(u => supabase.from("vendors").update({ sort_order: u.sort_order } as any).eq("id", u.id)));
     markSaved();
   };
 
