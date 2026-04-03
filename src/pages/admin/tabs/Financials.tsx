@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Check, Trash2 } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
-import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
+import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface PaymentLine {
   id: string;
