@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import { CeremonyMusic } from "./details/CeremonyMusic";
 import { DecorSelections } from "./details/DecorSelections";
 import { MealPrefs } from "./details/MealPrefs";
+import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
 const TABS = [
   { id: "ceremony", label: "Ceremony & Music" },
