@@ -5,47 +5,7 @@ import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
-
-interface Message {
-  id: string;
-  body: string;
-  sender_id: string | null;
-  created_at: string | null;
-  read_at: string | null;
-}
-
-function formatTime(dateStr: string | null) {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
-function formatDateLabel(dateStr: string | null) {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-  const msgDate = new Date(date); msgDate.setHours(0, 0, 0, 0);
-
-  if (msgDate.getTime() === today.getTime()) return "Today";
-  if (msgDate.getTime() === yesterday.getTime()) return "Yesterday";
-  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-}
-
-function groupByDate(messages: Message[]) {
-  const groups: { label: string; messages: Message[] }[] = [];
-  let currentLabel = "";
-  for (const msg of messages) {
-    const label = formatDateLabel(msg.created_at);
-    if (label !== currentLabel) {
-      groups.push({ label, messages: [msg] });
-      currentLabel = label;
-    } else {
-      groups[groups.length - 1].messages.push(msg);
-    }
-  }
-  return groups;
-}
+import { Message, formatSmartTimestamp, hasTimeGap } from "@/lib/messageUtils";
 
 export default function Messages() {
   const { user } = useAuth();
@@ -55,6 +15,7 @@ export default function Messages() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [revealedId, setRevealedId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -75,7 +36,6 @@ export default function Messages() {
 
   const markAsRead = async () => {
     if (!eventId || !user) return;
-    // Mark messages not sent by this user as read
     await supabase
       .from("messages")
       .update({ read_at: new Date().toISOString() })
@@ -91,7 +51,6 @@ export default function Messages() {
       setTimeout(() => scrollToBottom("instant"), 100);
     });
 
-    // Real-time subscription
     const channel = supabase
       .channel(`messages-${eventId}`)
       .on(
@@ -121,18 +80,14 @@ export default function Messages() {
     if (!text || !eventId || !user || sending) return;
     setSending(true);
     setNewMessage("");
-
     await supabase.from("messages").insert({
       event_id: eventId,
       sender_id: user.id,
       body: text,
     });
-
-    // Enqueue notification (fire and forget)
     supabase.functions.invoke("enqueue-message-notification", {
       body: { event_id: eventId, sender_id: user.id, message_body: text },
     }).catch(err => console.warn("Notification enqueue failed:", err));
-
     setSending(false);
     inputRef.current?.focus();
   };
@@ -144,11 +99,8 @@ export default function Messages() {
     }
   };
 
-  const groups = groupByDate(messages);
-
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen pb-20">
-
       {/* Header */}
       <div className="shrink-0 px-5 py-4 lg:px-8 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
@@ -167,8 +119,7 @@ export default function Messages() {
 
       {/* Message thread */}
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 lg:px-8">
-        <div className="max-w-2xl mx-auto space-y-1">
-
+        <div className="max-w-2xl mx-auto">
           {loading && (
             <div className="flex justify-center py-16">
               <Loader2 size={20} className="animate-spin text-muted-foreground" />
@@ -190,60 +141,58 @@ export default function Messages() {
             </div>
           )}
 
-          {groups.map((group, gi) => (
-            <div key={gi}>
-              {/* Date separator */}
-              <div className="flex items-center gap-3 py-4">
-                <div className="flex-1 h-px bg-border" />
-                <span className="font-body text-[11px] text-muted-foreground shrink-0">{group.label}</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
+          {messages.map((msg, i) => {
+            const prevMsg = messages[i - 1];
+            const isMe = msg.sender_id === user?.id;
+            const sameSenderAsPrev = prevMsg && prevMsg.sender_id === msg.sender_id;
+            const showTimeDivider = i === 0 || hasTimeGap(prevMsg, msg);
+            const showSenderName = !isMe && (!sameSenderAsPrev || showTimeDivider);
 
-              {/* Messages in this group */}
-              <div className="space-y-1">
-                {group.messages.map((msg, mi) => {
-                  const isMe = msg.sender_id === user?.id;
-                  const prevMsg = group.messages[mi - 1];
-                  const showTail = !prevMsg || prevMsg.sender_id !== msg.sender_id;
+            return (
+              <div key={msg.id}>
+                {/* Time divider — shown on first message or 60+ min gap */}
+                {showTimeDivider && (
+                  <div className="flex justify-center py-4">
+                    <span className="font-body text-[11px] text-muted-foreground">
+                      {formatSmartTimestamp(msg.created_at)}
+                    </span>
+                  </div>
+                )}
 
-                  return (
+                <div className={`flex ${isMe ? "justify-end" : "justify-start"} ${sameSenderAsPrev && !showTimeDivider ? "mt-0.5" : "mt-3"}`}>
+                  <div className="max-w-[78%]">
+                    {showSenderName && (
+                      <p className="font-body text-[10px] text-muted-foreground ml-1 mb-1">Brandon</p>
+                    )}
+
                     <div
-                      key={msg.id}
-                      className={`flex ${isMe ? "justify-end" : "justify-start"} ${showTail ? "mt-3" : "mt-0.5"}`}
+                      onClick={() => setRevealedId(revealedId === msg.id ? null : msg.id)}
+                      className={`px-3.5 py-2.5 rounded-2xl font-body text-sm leading-relaxed cursor-pointer select-none ${
+                        isMe
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-card border border-border text-foreground rounded-bl-sm shadow-soft"
+                      }`}
                     >
-                      <div className={`max-w-[78%] group`}>
-                        {/* Sender label */}
-                        {showTail && !isMe && (
-                          <p className="font-body text-[10px] text-muted-foreground ml-1 mb-1">Brandon</p>
-                        )}
-
-                        <div
-                          className={`px-3.5 py-2.5 rounded-2xl font-body text-sm leading-relaxed ${
-                            isMe
-                              ? "bg-primary text-primary-foreground rounded-br-sm"
-                              : "bg-card border border-border text-foreground rounded-bl-sm shadow-soft"
-                          }`}
-                        >
-                          {msg.body}
-                        </div>
-
-                        {/* Timestamp on hover */}
-                        <p className={`font-body text-[10px] text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? "text-right mr-1" : "ml-1"}`}>
-                          {formatTime(msg.created_at)}
-                        </p>
-                      </div>
+                      {msg.body}
                     </div>
-                  );
-                })}
+
+                    {/* Tap-to-reveal timestamp */}
+                    <div className={`overflow-hidden transition-all duration-200 ${revealedId === msg.id ? "max-h-6 opacity-100 mt-0.5" : "max-h-0 opacity-0"}`}>
+                      <p className={`font-body text-[10px] text-muted-foreground ${isMe ? "text-right mr-1" : "ml-1"}`}>
+                        {formatSmartTimestamp(msg.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <div ref={bottomRef} />
         </div>
       </div>
 
-      {/* Input bar — positioned above sticky footer */}
+      {/* Input bar */}
       <div className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8 sticky bottom-20 z-10">
         <div className="max-w-2xl mx-auto flex items-end gap-2.5">
           <textarea
