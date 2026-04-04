@@ -13,7 +13,7 @@ export default function Ceremony() {
         </p>
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Ceremony & Music</h1>
         <CeremonyMusic />
-        <PortalStickyFooter onContinue={() => navigate("/portal/menus-meals")} />
+        <PortalStickyFooter onContinue={() => navigate("/portal/decor")} />
       </div>
     </div>
   );
