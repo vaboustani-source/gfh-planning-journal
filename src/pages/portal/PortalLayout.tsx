@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import {
   Sunrise, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles
 } from "lucide-react";
 
 const allNavItems = [
