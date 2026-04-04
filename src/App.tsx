@@ -17,6 +17,7 @@ import OurWeekend from "./pages/portal/OurWeekend";
 import Planning from "./pages/portal/Planning";
 import Vendors from "./pages/portal/Vendors";
 import Ceremony from "./pages/portal/Ceremony";
+import Decor from "./pages/portal/Decor";
 import MenusMeals from "./pages/portal/MenusMeals";
 import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="planning" element={<Planning />} />
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
+              <Route path="decor" element={<Decor />} />
               <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
               <Route path="financials" element={<Financials />} />
@@ -101,6 +103,7 @@ const App = () => (
               <Route path="planning" element={<Planning />} />
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
+              <Route path="decor" element={<Decor />} />
               <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
               <Route path="financials" element={<Financials />} />
