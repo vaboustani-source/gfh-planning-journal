@@ -22,8 +22,14 @@ export function VendorList() {
   }, [eventId]);
 
   const updateVendor = async (id: string, fields: Partial<Vendor>) => {
-    await supabase.from("vendors").update(fields).eq("id", id);
-    setVendors(prev => prev.map(v => v.id === id ? { ...v, ...fields } : v));
+    // Couples can only update safe fields — strip admin-only fields
+    const safeFields: Partial<Vendor> = {};
+    const allowedKeys: (keyof Vendor)[] = ["business_name", "contact_name", "phone", "email", "instagram"];
+    for (const key of allowedKeys) {
+      if (key in fields) (safeFields as any)[key] = fields[key];
+    }
+    await supabase.from("vendors").update(safeFields).eq("id", id);
+    setVendors(prev => prev.map(v => v.id === id ? { ...v, ...safeFields } : v));
   };
 
   if (loading) {

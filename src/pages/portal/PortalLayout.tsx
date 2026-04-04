@@ -13,6 +13,7 @@ const allNavItems = [
   { to: "/portal/planning",        label: "Planning",          icon: CheckSquare,       tiers: [1, 3, 4] },
   { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4] },
   { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4] },
+  { to: "/portal/decor",           label: "Décor",             icon: Sparkles,          tiers: [1, 3, 4] },
   { to: "/portal/menus-meals",     label: "Menus & Meals",     icon: UtensilsCrossed,   tiers: [1, 3, 4] },
   { to: "/portal/our-people",      label: "Our People",        icon: Users,             tiers: [1, 3, 4] },
   { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4] },

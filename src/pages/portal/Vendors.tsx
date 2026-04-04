@@ -14,6 +14,7 @@ export default function Vendors() {
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Vendors</h1>
         <VendorList />
         <PortalStickyFooter onContinue={() => navigate("/portal/ceremony")} nextOnly />
+
       </div>
     </div>
   );

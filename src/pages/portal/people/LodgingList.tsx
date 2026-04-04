@@ -37,32 +37,55 @@ export function LodgingList() {
 
   useEffect(() => {
     if (!eventId) return;
-    Promise.all([
-      supabase.from("lodging_rooms").select("id, room_name, room_type, nightly_rate, sort_order").order("sort_order", { ascending: true }),
-      supabase.from("lodging_assignments").select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays").eq("event_id", eventId),
-    ]).then(([{ data: rData }, { data: aData }]) => {
-      if (rData) setRooms(rData);
-      if (aData) {
-        setAssignments(aData.map(a => ({
-          id: a.id,
-          room_id: a.room_id,
-          assigned_guest_name: a.assigned_guest_name ?? "",
-          assigned_guest_email: a.assigned_guest_email ?? "",
-          host_pays: a.host_pays ?? false,
-        })));
-        // Derive section modes from existing data
-        const modes: Record<string, SectionPaymentMode> = {};
-        for (const sec of LODGING_SECTIONS) {
-          const secRoomIds = (rData || []).filter(r => r.room_type === sec.roomType).map(r => r.id);
-          const secAssignments = (aData || []).filter(a => a.room_id && secRoomIds.includes(a.room_id));
-          const allHost = secAssignments.length > 0 && secAssignments.every(a => a.host_pays);
-          const allGuest = secAssignments.length > 0 && secAssignments.every(a => !a.host_pays);
-          modes[sec.key] = allHost ? "host" : allGuest ? "guest" : "mixed";
+    (async () => {
+      const [{ data: rData }, { data: aData }] = await Promise.all([
+        supabase.from("lodging_rooms").select("id, room_name, room_type, nightly_rate, sort_order").order("sort_order", { ascending: true }),
+        supabase.from("lodging_assignments").select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays").eq("event_id", eventId),
+      ]);
+      const allRooms = rData || [];
+      let allAssignments = aData || [];
+      setRooms(allRooms);
+
+      // Auto-create placeholder rows for any rooms missing an assignment
+      const assignedRoomIds = new Set(allAssignments.map(a => a.room_id));
+      const missingRooms = allRooms.filter(r => !assignedRoomIds.has(r.id));
+      if (missingRooms.length > 0) {
+        const placeholders = missingRooms.map(r => ({
+          event_id: eventId,
+          room_id: r.id,
+          assigned_guest_name: null,
+          assigned_guest_email: null,
+          host_pays: false,
+        }));
+        const { data: inserted } = await supabase
+          .from("lodging_assignments")
+          .insert(placeholders)
+          .select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays");
+        if (inserted) {
+          allAssignments = [...allAssignments, ...inserted];
         }
-        setSectionModes(modes);
       }
+
+      setAssignments(allAssignments.map(a => ({
+        id: a.id,
+        room_id: a.room_id,
+        assigned_guest_name: a.assigned_guest_name ?? "",
+        assigned_guest_email: a.assigned_guest_email ?? "",
+        host_pays: a.host_pays ?? false,
+      })));
+
+      // Derive section modes from existing data
+      const modes: Record<string, SectionPaymentMode> = {};
+      for (const sec of LODGING_SECTIONS) {
+        const secRoomIds = allRooms.filter(r => r.room_type === sec.roomType).map(r => r.id);
+        const secAssignments = allAssignments.filter(a => a.room_id && secRoomIds.includes(a.room_id));
+        const allHost = secAssignments.length > 0 && secAssignments.every(a => a.host_pays);
+        const allGuest = secAssignments.length > 0 && secAssignments.every(a => !a.host_pays);
+        modes[sec.key] = allHost ? "host" : allGuest ? "guest" : "mixed";
+      }
+      setSectionModes(modes);
       setLoading(false);
-    });
+    })();
   }, [eventId]);
 
   const getAssignment = (roomId: string) => assignments.find(a => a.room_id === roomId);
