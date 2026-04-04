@@ -17,6 +17,7 @@ import OurWeekend from "./pages/portal/OurWeekend";
 import Planning from "./pages/portal/Planning";
 import Vendors from "./pages/portal/Vendors";
 import Ceremony from "./pages/portal/Ceremony";
+import Decor from "./pages/portal/Decor";
 import MenusMeals from "./pages/portal/MenusMeals";
 import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
