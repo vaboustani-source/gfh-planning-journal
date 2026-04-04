@@ -141,52 +141,67 @@ export default function Messages() {
             </div>
           )}
 
-          {messages.map((msg, i) => {
-            const prevMsg = messages[i - 1];
-            const isMe = msg.sender_id === user?.id;
-            const sameSenderAsPrev = prevMsg && prevMsg.sender_id === msg.sender_id;
-            const showTimeDivider = i === 0 || hasTimeGap(prevMsg, msg);
-            const showSenderName = !isMe && (!sameSenderAsPrev || showTimeDivider);
+          {(() => {
+            // Find the last message sent by me that has been read
+            const lastReadId = (() => {
+              for (let j = messages.length - 1; j >= 0; j--) {
+                if (messages[j].sender_id === user?.id && messages[j].read_at) return messages[j].id;
+              }
+              return null;
+            })();
 
-            return (
-              <div key={msg.id}>
-                {/* Time divider — shown on first message or 60+ min gap */}
-                {showTimeDivider && (
-                  <div className="flex justify-center py-4">
-                    <span className="font-body text-[11px] text-muted-foreground">
-                      {formatSmartTimestamp(msg.created_at)}
-                    </span>
-                  </div>
-                )}
+            return messages.map((msg, i) => {
+              const prevMsg = messages[i - 1];
+              const isMe = msg.sender_id === user?.id;
+              const sameSenderAsPrev = prevMsg && prevMsg.sender_id === msg.sender_id;
+              const showTimeDivider = i === 0 || hasTimeGap(prevMsg, msg);
+              const showSenderName = !isMe && (!sameSenderAsPrev || showTimeDivider);
+              const showReadReceipt = isMe && msg.id === lastReadId;
 
-                <div className={`flex ${isMe ? "justify-end" : "justify-start"} ${sameSenderAsPrev && !showTimeDivider ? "mt-0.5" : "mt-3"}`}>
-                  <div className="max-w-[78%]">
-                    {showSenderName && (
-                      <p className="font-body text-[10px] text-muted-foreground ml-1 mb-1">Brandon</p>
-                    )}
-
-                    <div
-                      onClick={() => setRevealedId(revealedId === msg.id ? null : msg.id)}
-                      className={`px-3.5 py-2.5 rounded-2xl font-body text-sm leading-relaxed cursor-pointer select-none ${
-                        isMe
-                          ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : "bg-card border border-border text-foreground rounded-bl-sm shadow-soft"
-                      }`}
-                    >
-                      {msg.body}
-                    </div>
-
-                    {/* Tap-to-reveal timestamp */}
-                    <div className={`overflow-hidden transition-all duration-200 ${revealedId === msg.id ? "max-h-6 opacity-100 mt-0.5" : "max-h-0 opacity-0"}`}>
-                      <p className={`font-body text-[10px] text-muted-foreground ${isMe ? "text-right mr-1" : "ml-1"}`}>
+              return (
+                <div key={msg.id}>
+                  {showTimeDivider && (
+                    <div className="flex justify-center py-4">
+                      <span className="font-body text-[11px] text-muted-foreground">
                         {formatSmartTimestamp(msg.created_at)}
-                      </p>
+                      </span>
+                    </div>
+                  )}
+
+                  <div className={`flex ${isMe ? "justify-end" : "justify-start"} ${sameSenderAsPrev && !showTimeDivider ? "mt-0.5" : "mt-3"}`}>
+                    <div className="max-w-[78%]">
+                      {showSenderName && (
+                        <p className="font-body text-[10px] text-muted-foreground ml-1 mb-1">Brandon</p>
+                      )}
+
+                      <div
+                        onClick={() => setRevealedId(revealedId === msg.id ? null : msg.id)}
+                        className={`px-3.5 py-2.5 rounded-2xl font-body text-sm leading-relaxed cursor-pointer select-none ${
+                          isMe
+                            ? "bg-primary text-primary-foreground rounded-br-sm"
+                            : "bg-card border border-border text-foreground rounded-bl-sm shadow-soft"
+                        }`}
+                      >
+                        {msg.body}
+                      </div>
+
+                      {/* Tap-to-reveal timestamp */}
+                      <div className={`overflow-hidden transition-all duration-200 ${revealedId === msg.id ? "max-h-6 opacity-100 mt-0.5" : "max-h-0 opacity-0"}`}>
+                        <p className={`font-body text-[10px] text-muted-foreground ${isMe ? "text-right mr-1" : "ml-1"}`}>
+                          {formatSmartTimestamp(msg.created_at)}
+                        </p>
+                      </div>
+
+                      {/* Read receipt */}
+                      {showReadReceipt && (
+                        <p className="font-body text-[10px] text-muted-foreground/70 text-right mr-1 mt-0.5">Read</p>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
 
           <div ref={bottomRef} />
         </div>
