@@ -116,13 +116,13 @@ Deno.serve(async (req) => {
       throw linkErr
     }
 
-    // 5. Seed milestones and vendors
-    // Use wedding_date if provided, otherwise fallback to today + 365 days
+    // 5. Seed milestones, vendors, checklist, planning timeline, and working timeline
     const milestoneDate = wedding_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     await supabase.rpc('seed_milestones', { p_event_id: event.id, p_wedding_date: milestoneDate })
     await supabase.rpc('seed_vendors', { p_event_id: event.id })
     await supabase.rpc('seed_checklist', { p_event_id: event.id })
     await supabase.rpc('seed_planning_timeline', { p_event_id: event.id })
+    await supabase.rpc('seed_working_timeline', { p_event_id: event.id })
 
     return new Response(
       JSON.stringify({ event_id: event.id, event_title: eventTitle }),
