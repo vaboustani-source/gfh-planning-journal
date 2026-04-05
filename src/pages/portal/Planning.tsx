@@ -156,8 +156,9 @@ export default function Planning() {
   const completedActive = activeItems.filter(i => i.status === "complete").length;
   const pctActive = totalActive > 0 ? Math.round((completedActive / totalActive) * 100) : 0;
 
+  // Always show all 6 checklist sections so "Add item" is available even when empty
   const sections = tab === "checklist"
-    ? CHECKLIST_SECTIONS.filter(s => items.some(i => i.section === s))
+    ? CHECKLIST_SECTIONS
     : TIMELINE_SECTIONS.filter(t => items.some(i => i.section === t.key)).map(t => t.key);
 
   const getSectionLabel = (section: string) => {
@@ -187,7 +188,7 @@ export default function Planning() {
 
         {isLoading ? (
           <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>
-        ) : totalActive === 0 ? (
+        ) : tab === "timeline" && totalActive === 0 ? (
           <div className="text-center py-16">
             <CheckCircle2 size={32} className="text-primary mx-auto mb-3" />
             <p className="font-display text-xl italic text-foreground">No tasks yet</p>
@@ -196,15 +197,17 @@ export default function Planning() {
         ) : (
           <>
             {/* Progress bar */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="font-body text-xs text-muted-foreground">{completedActive} of {totalActive} complete</p>
-                <p className="font-body text-xs font-medium text-foreground">{pctActive}%</p>
+            {totalActive > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="font-body text-xs text-muted-foreground">{completedActive} of {totalActive} complete</p>
+                  <p className="font-body text-xs font-medium text-foreground">{pctActive}%</p>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pctActive}%` }} />
+                </div>
               </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pctActive}%` }} />
-              </div>
-            </div>
+            )}
 
             {/* Sections */}
             <div className="space-y-3">
@@ -220,7 +223,7 @@ export default function Planning() {
                   <div key={section} className="rounded-xl bg-card border border-border shadow-soft overflow-hidden">
                     <button
                       onClick={() => toggleSection(section)}
-                      className={`w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-muted/30 ${isCurrent ? "bg-sage/8" : ""}`}
+                      className={`w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-muted/30 ${isCurrent ? "bg-sage/8" : ""}`}
                     >
                       {allDone ? (
                         <CheckCircle2 size={18} className="text-primary shrink-0" />
@@ -245,7 +248,7 @@ export default function Planning() {
                           const isItemExpanded = expandedItems.has(item.id);
                           return (
                             <div key={item.id} className="border-b border-border last:border-b-0">
-                              <div className="w-full flex items-start gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors">
+                              <div className="w-full flex items-start gap-3 p-4 py-3 hover:bg-muted/20 transition-colors">
                                 <button
                                   onClick={() => toggleItem(item.id, item.status)}
                                   className="shrink-0 mt-0.5"
