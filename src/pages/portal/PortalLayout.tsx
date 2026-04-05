@@ -83,7 +83,7 @@ function PortalLayoutInner() {
         {/* ── Desktop sidebar ─────────────────────── */}
         <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-border bg-sidebar sticky top-0 h-screen">
           {/* Brand */}
-          <div className="px-5 py-6 border-b border-border">
+          <NavLink to="/portal/today" className="block px-5 py-6 border-b border-border hover:bg-muted/30 transition-colors">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full bg-sage/15 border border-sage/25 flex items-center justify-center shrink-0">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-sage">
@@ -96,7 +96,7 @@ function PortalLayoutInner() {
                 <p className="font-body text-[10px] text-muted-foreground -mt-0.5">Farmhouse</p>
               </div>
             </div>
-          </div>
+          </NavLink>
 
           {/* Nav */}
           <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
