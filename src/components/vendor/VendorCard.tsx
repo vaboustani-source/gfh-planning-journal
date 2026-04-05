@@ -179,7 +179,7 @@ export function VendorCard({
                 </button>
               )}
               {/* Delete button — not for GF rows */}
-              {isAdmin && !isGF && onDelete && !confirmingDelete && (
+              {!isGF && onDelete && !confirmingDelete && (
                 <button onClick={() => setConfirmingDelete(true)}
                   className="p-1.5 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors">
                   <Trash2 size={13} />
@@ -210,8 +210,8 @@ export function VendorCard({
             <VendorFileUpload
               eventId={eventId}
               vendorId={vendor.id}
-              canUpload={isAdmin}
-              canDelete={isAdmin}
+              canUpload={true}
+              canDelete={true}
               onFileCountChange={setFileCount}
             />
             {fileCount === 0 && (
@@ -334,12 +334,12 @@ export function VendorCard({
 
         {/* File uploads */}
         <div>
-          <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Contracts & Files</p>
+          <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-2">{isAdmin ? "Contracts & Files" : "Documents & Files"}</p>
           <VendorFileUpload
             eventId={eventId}
             vendorId={vendor.id}
-            canUpload={isAdmin}
-            canDelete={isAdmin}
+            canUpload={true}
+            canDelete={true}
             onFileCountChange={(count) => {
               setFileCount(count);
               if (isAdmin && (count > 0) !== !!draft.contract_uploaded) {
