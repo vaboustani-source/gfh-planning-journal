@@ -121,6 +121,8 @@ Deno.serve(async (req) => {
     const milestoneDate = wedding_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     await supabase.rpc('seed_milestones', { p_event_id: event.id, p_wedding_date: milestoneDate })
     await supabase.rpc('seed_vendors', { p_event_id: event.id })
+    await supabase.rpc('seed_checklist', { p_event_id: event.id })
+    await supabase.rpc('seed_planning_timeline', { p_event_id: event.id })
 
     return new Response(
       JSON.stringify({ event_id: event.id, event_title: eventTitle }),
