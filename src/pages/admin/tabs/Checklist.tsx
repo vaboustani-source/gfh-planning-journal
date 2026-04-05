@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, User, Wrench, ChevronDown, Plus, Loader2 } from "lucide-react";
+import { Check, User, Wrench, ChevronDown, Plus, Loader2, StickyNote } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
@@ -49,11 +49,12 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
-  const [activeTab, setActiveTab] = useState<"couple" | "timeline" | "internal">("couple");
+  const [activeTab, setActiveTab] = useState<"timeline" | "couple" | "internal">("timeline");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
-  const { status, trackSave } = useAutosaveStatus();
+  const { status, trackSave, debouncedSave } = useAutosaveStatus();
 
   const fetchItems = useCallback(async () => {
     const { data } = await supabase
@@ -101,6 +102,21 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
     });
   };
 
+  const toggleItemExpand = (id: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const saveNotes = (itemId: string, notes: string) => {
+    setItems(prev => prev.map(x => x.id === itemId ? { ...x, notes } : x));
+    debouncedSave(`notes-${itemId}`, async () => {
+      await supabase.from("checklist_items").update({ notes: notes || null }).eq("id", itemId);
+    });
+  };
+
   // Determine which sections to show
   const sectionKeys = activeTab === "couple" ? CHECKLIST_SECTIONS
     : activeTab === "timeline" ? TIMELINE_KEYS
@@ -127,7 +143,7 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
     <div className="space-y-6 pb-24 animate-fade-up relative">
       {/* Tab switcher */}
       <div className="flex gap-0 border-b border-border overflow-x-auto scrollbar-none">
-        {(["couple", "timeline", "internal"] as const).map(t => (
+        {(["timeline", "couple", "internal"] as const).map(t => (
           <button
             key={t}
             onClick={() => { setActiveTab(t); setFilter("all"); }}
@@ -198,51 +214,75 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
 
                 {isExpanded && (
                   <div className="border-t border-border">
-                    {sectionItems.map(item => (
-                      <div
-                        key={item.id}
-                        className="px-4 py-3 flex items-start gap-3 border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors"
-                      >
-                        <button
-                          onClick={() => toggle(item)}
-                          className={`mt-0.5 w-[18px] h-[18px] rounded border flex items-center justify-center shrink-0 transition-colors ${
-                            item.status === "complete"
-                              ? "bg-sage border-sage"
-                              : "border-muted-foreground/40 hover:border-sage bg-background"
-                          }`}
+                    {sectionItems.map(item => {
+                      const isItemExpanded = expandedItems.has(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className="border-b border-border last:border-b-0"
                         >
-                          {item.status === "complete" && <Check size={10} className="text-white" />}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className={`font-body text-sm ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                              {item.label}
-                            </p>
-                            {item.owner === "couple" && (
-                              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                <User size={9} /> couple
-                              </span>
-                            )}
-                            {(item.owner === "brandon" || INTERNAL_SECTIONS.includes(item.section)) && (
-                              <span className="flex items-center gap-0.5 text-[10px] text-sage">
-                                <Wrench size={9} /> brandon
-                              </span>
-                            )}
+                          <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/20 transition-colors">
+                            <button
+                              onClick={() => toggle(item)}
+                              className={`mt-0.5 w-[18px] h-[18px] rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                item.status === "complete"
+                                  ? "bg-sage border-sage"
+                                  : "border-muted-foreground/40 hover:border-sage bg-background"
+                              }`}
+                            >
+                              {item.status === "complete" && <Check size={10} className="text-white" />}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className={`font-body text-sm ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                                  {item.label}
+                                </p>
+                                {item.notes && (
+                                  <StickyNote size={11} className="text-sage shrink-0" />
+                                )}
+                                {item.owner === "couple" && (
+                                  <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                                    <User size={9} /> couple
+                                  </span>
+                                )}
+                                {(item.owner === "brandon" || INTERNAL_SECTIONS.includes(item.section)) && (
+                                  <span className="flex items-center gap-0.5 text-[10px] text-sage">
+                                    <Wrench size={9} /> brandon
+                                  </span>
+                                )}
+                              </div>
+                              {item.completed_at && (
+                                <p className="font-body text-[10px] text-muted-foreground mt-0.5">
+                                  Completed {new Date(item.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </p>
+                              )}
+                              {item.paced_send_date && (
+                                <p className="font-body text-[10px] text-muted-foreground mt-0.5">
+                                  Due {new Date(item.paced_send_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => toggleItemExpand(item.id)}
+                              className="mt-0.5 p-1 rounded hover:bg-muted/40 transition-colors shrink-0"
+                            >
+                              <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isItemExpanded ? "rotate-180" : ""}`} />
+                            </button>
                           </div>
-                          {item.notes && <p className="font-body text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
-                          {item.completed_at && (
-                            <p className="font-body text-[10px] text-muted-foreground mt-0.5">
-                              Completed {new Date(item.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            </p>
-                          )}
-                          {item.paced_send_date && (
-                            <p className="font-body text-[10px] text-muted-foreground mt-0.5">
-                              Due {new Date(item.paced_send_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            </p>
+                          {isItemExpanded && (
+                            <div className="px-4 pb-3 pl-[42px]">
+                              <textarea
+                                defaultValue={item.notes ?? ""}
+                                onBlur={e => saveNotes(item.id, e.target.value)}
+                                placeholder="Add a note…"
+                                rows={2}
+                                className="w-full font-body text-xs bg-muted/30 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                              />
+                            </div>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {addingTo === section ? (
                       <div className="px-4 py-3 flex gap-2 border-t border-border">
