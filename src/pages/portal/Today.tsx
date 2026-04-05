@@ -36,7 +36,7 @@ function CountdownDisplay({ days }: { days: number | null }) {
     <div className="text-center">
       <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-4">Your wedding is</p>
       <div className="flex items-end justify-center gap-3">
-        <span className="font-display font-light text-[7rem] leading-none text-foreground tabular-nums">{days}</span>
+        <span className="font-display font-light text-[7rem] leading-none text-foreground tabular-nums py-0 my-0 pb-[15px]">{days}</span>
       </div>
       <p className="font-display text-3xl italic text-muted-foreground mt-1">
         {days === 1 ? "day away" : "days away"}
