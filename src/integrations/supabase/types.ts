@@ -1182,8 +1182,13 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      seed_checklist: { Args: { p_event_id: string }; Returns: undefined }
       seed_milestones: {
         Args: { p_event_id: string; p_wedding_date: string }
+        Returns: undefined
+      }
+      seed_planning_timeline: {
+        Args: { p_event_id: string }
         Returns: undefined
       }
       seed_vendors: { Args: { p_event_id: string }; Returns: undefined }
