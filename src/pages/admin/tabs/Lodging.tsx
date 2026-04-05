@@ -46,8 +46,9 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    hearth_village: true, farmhouse: true, grove: true, victoria: true,
+    hearth_village: false, farmhouse: false, grove: false, victoria: false,
   });
+  const [expandedRooms, setExpandedRooms] = useState<Record<string, boolean>>({});
   const { status, debouncedSave } = useAutosaveStatus();
 
   useEffect(() => {
