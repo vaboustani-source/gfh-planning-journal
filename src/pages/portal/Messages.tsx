@@ -8,7 +8,6 @@ import { Message, formatSmartTimestamp, hasTimeGap } from "@/lib/messageUtils";
 export default function Messages() {
   const { user } = useAuth();
   const { eventId } = usePortalData();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
