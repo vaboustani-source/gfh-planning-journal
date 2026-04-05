@@ -292,11 +292,16 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
             onSaveNote={v => patch({ wedding_date_note: v || null })}
           />
 
-          {/* Toggles */}
           {event.wedding_date && (
             <div className="flex items-center gap-2 -mt-2">
-              <SmallToggle label="Thursday arrival?" checked={earlyArrival} onChange={handleEarlyArrival} />
-              <SmallToggle label="Monday departure?" checked={lateDeparture} onChange={handleLateDeparture} />
+              <button type="button" onClick={() => handleEarlyArrival(!earlyArrival)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-body text-[11px] transition-colors border ${earlyArrival ? "bg-primary/10 border-primary/30 text-foreground" : "bg-background border-border text-muted-foreground hover:border-primary/20"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full transition-colors ${earlyArrival ? "bg-primary" : "bg-border"}`} />Thursday arrival?
+              </button>
+              <button type="button" onClick={() => handleLateDeparture(!lateDeparture)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-body text-[11px] transition-colors border ${lateDeparture ? "bg-primary/10 border-primary/30 text-foreground" : "bg-background border-border text-muted-foreground hover:border-primary/20"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full transition-colors ${lateDeparture ? "bg-primary" : "bg-border"}`} />Monday departure?
+              </button>
             </div>
           )}
 
