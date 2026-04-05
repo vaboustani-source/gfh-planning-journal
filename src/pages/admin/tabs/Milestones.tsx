@@ -123,7 +123,7 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
                 overdue
                   ? "bg-destructive/5 border-destructive/25"
                   : done
-                  ? "bg-sage/5 border-sage/20"
+                  ? "bg-card border-sage/40"
                   : "bg-card border-border"
               }`}
             >

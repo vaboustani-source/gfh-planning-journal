@@ -246,7 +246,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
 
       {/* Lock banner */}
       {locked ? (
-        <div className="flex items-center justify-between rounded-xl bg-sage/10 border border-sage/25 px-5 py-4">
+        <div className="flex items-center justify-between rounded-xl bg-card border border-sage/40 px-5 py-4">
           <div className="flex items-center gap-3">
             <Lock size={16} className="text-sage shrink-0" />
             <div>
@@ -311,7 +311,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
             <p className="font-body text-sm text-muted-foreground italic">Nothing added yet.</p>
           )}
           {processional.map((entry, i) => (
-            <div key={i} className="rounded-lg border border-border bg-muted/10 p-4 space-y-3 relative">
+            <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-3 relative">
               <button onClick={() => setProcessional(p => p.filter((_, idx) => idx !== i))} className="absolute top-3 right-3 text-muted-foreground hover:text-destructive transition-colors">
                 <Trash2 size={13} />
               </button>

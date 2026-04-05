@@ -30,7 +30,7 @@ interface Assignment {
 }
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  unassigned: { label: "Available", cls: "text-muted-foreground/60 italic" },
+  unassigned: { label: "Available", cls: "text-muted-foreground italic" },
   assigned: { label: "Assigned", cls: "text-sage-dark" },
   paid: { label: "Paid", cls: "text-forest-dark font-medium" },
 };
@@ -170,7 +170,7 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
                 <div className="border-t border-border">
                   {/* Couple suite */}
                   {coupleRoom && (
-                    <div className="px-5 py-3 bg-sage/6 border-b border-sage/15 flex items-center gap-2">
+                    <div className="px-5 py-3 bg-card border-b border-sage/40 flex items-center gap-2">
                       <Lock size={13} className="text-sage-dark" />
                       <span className="font-display text-sm text-foreground">{coupleRoom.room_name}</span>
                       <span className="ml-auto px-2 py-0.5 rounded-full bg-sage/20 text-sage-dark font-body text-[10px] uppercase tracking-wider font-medium">

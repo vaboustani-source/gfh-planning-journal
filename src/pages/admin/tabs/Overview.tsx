@@ -299,7 +299,7 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
     <div className="space-y-8 pb-24 animate-fade-up relative">
       {/* Countdown */}
       {daysUntil !== null && (
-        <div className="rounded-2xl bg-sage/8 border border-sage/20 px-6 py-5 flex items-center gap-4">
+        <div className="rounded-2xl bg-card border border-sage/40 px-6 py-5 flex items-center gap-4">
           <div className="text-center">
             <p className="font-display text-5xl font-light text-foreground leading-none">{Math.abs(daysUntil)}</p>
             <p className="font-body text-xs text-muted-foreground mt-1">

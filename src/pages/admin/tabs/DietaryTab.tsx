@@ -57,13 +57,13 @@ export default function DietaryTab({ eventId, onNavigateNext }: { eventId: strin
     <div className="space-y-6 pb-24">
       {/* Summary */}
       <div className="flex items-center gap-4">
-        <div className="rounded-lg bg-sage/10 border border-sage/20 px-4 py-2">
+        <div className="rounded-lg bg-card border border-border px-4 py-2">
           <p className="font-body text-sm text-foreground"><span className="font-medium">{restrictionCount}</span> with restrictions</p>
         </div>
-        <div className="rounded-lg bg-sage/10 border border-sage/20 px-4 py-2">
+        <div className="rounded-lg bg-card border border-border px-4 py-2">
           <p className="font-body text-sm text-foreground"><span className="font-medium">{childCount}</span> children</p>
         </div>
-        <div className="rounded-lg bg-sage/10 border border-sage/20 px-4 py-2">
+        <div className="rounded-lg bg-card border border-border px-4 py-2">
           <p className="font-body text-sm text-foreground"><span className="font-medium">{guests.length}</span> total guests listed</p>
         </div>
       </div>
