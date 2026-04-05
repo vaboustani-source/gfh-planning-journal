@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ParticipantsPanel from "@/components/admin/ParticipantsPanel";
 import { EventData } from "../EventDetail";
@@ -61,14 +61,17 @@ function Field({ label, value, onSave }: { label: string; value: string; onSave:
 }
 
 function SelectField({ label, value, options, onSave }: { label: string; value: string; options: string[]; onSave: (v: string) => Promise<void> }) {
+  const [localValue, setLocalValue] = useState(value);
   const [saving, setSaving] = useState(false);
+  useEffect(() => { setLocalValue(value); }, [value]);
   return (
     <div>
       <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
       <select
-        value={value}
+        value={localValue}
         disabled={saving}
         onChange={async (e) => {
+          setLocalValue(e.target.value);
           setSaving(true);
           await onSave(e.target.value);
           setSaving(false);
@@ -128,22 +131,6 @@ function DateField({ label, value, onSave, note, onSaveNote }: {
   );
 }
 
-function SmallToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-body text-[11px] transition-colors border ${
-        checked
-          ? "bg-primary/10 border-primary/30 text-foreground"
-          : "bg-background border-border text-muted-foreground hover:border-primary/20"
-      }`}
-    >
-      <span className={`w-2.5 h-2.5 rounded-full transition-colors ${checked ? "bg-primary" : "bg-border"}`} />
-      {label}
-    </button>
-  );
-}
 
 const CEREMONY_OPTIONS = ["Hilltop Cathedral", "Woodsy Ceremony Site", "Milking Parlor", "Courtyard", "Other (off-site)"];
 const COCKTAIL_OPTIONS = ["Milking Parlor", "Farmhouse Lawn", "Hayloft", "Courtyard", "Other"];
@@ -210,15 +197,9 @@ function LocationField({ label, value, options, onSave }: {
     </div>
   );
 }
-const ALL_ADDONS = [
-  "wedding_day_breakfast", "welcome_bags", "after_party", "goat_yoga",
-  "beer_burro", "haywagon", "mimosa_bar", "lawn_games", "bathroom_baskets",
-];
 
 export default function Overview({ event, coupleNames, onUpdate, onNavigateNext }: Props) {
   const { status, trackSave } = useAutosaveStatus();
-  const [addons, setAddons] = useState<{ id: string; addon: string; included: boolean }[]>([]);
-  const [addonsLoaded, setAddonsLoaded] = useState(false);
   const [earlyArrival, setEarlyArrival] = useState(() => {
     if (!event.wedding_date || !event.arrival_date) return false;
     const diff = Math.round((new Date(event.wedding_date).getTime() - new Date(event.arrival_date).getTime()) / 86400000);
@@ -229,23 +210,6 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
     const diff = Math.round((new Date(event.departure_date).getTime() - new Date(event.wedding_date).getTime()) / 86400000);
     return diff >= 2;
   });
-
-  if (!addonsLoaded) {
-    supabase.from("event_addons").select("*").eq("event_id", event.id).then(async ({ data }) => {
-      let rows = data || [];
-      const existing = new Set(rows.map(r => r.addon));
-      const missing = ALL_ADDONS.filter(a => !existing.has(a));
-      if (missing.length > 0) {
-        const inserts = missing.map(a => ({ event_id: event.id, addon: a, included: false }));
-        const { data: inserted } = await supabase.from("event_addons").insert(inserts).select();
-        if (inserted) rows = [...rows, ...inserted];
-      }
-      // Sort to match ALL_ADDONS order
-      rows.sort((a, b) => ALL_ADDONS.indexOf(a.addon) - ALL_ADDONS.indexOf(b.addon));
-      setAddons(rows);
-      setAddonsLoaded(true);
-    });
-  }
 
   const patch = async (fields: Partial<EventData>) => {
     await trackSave(async () => {
@@ -328,11 +292,16 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
             onSaveNote={v => patch({ wedding_date_note: v || null })}
           />
 
-          {/* Toggles */}
           {event.wedding_date && (
             <div className="flex items-center gap-2 -mt-2">
-              <SmallToggle label="Thursday arrival?" checked={earlyArrival} onChange={handleEarlyArrival} />
-              <SmallToggle label="Monday departure?" checked={lateDeparture} onChange={handleLateDeparture} />
+              <button type="button" onClick={() => handleEarlyArrival(!earlyArrival)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-body text-[11px] transition-colors border ${earlyArrival ? "bg-primary/10 border-primary/30 text-foreground" : "bg-background border-border text-muted-foreground hover:border-primary/20"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full transition-colors ${earlyArrival ? "bg-primary" : "bg-border"}`} />Thursday arrival?
+              </button>
+              <button type="button" onClick={() => handleLateDeparture(!lateDeparture)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-body text-[11px] transition-colors border ${lateDeparture ? "bg-primary/10 border-primary/30 text-foreground" : "bg-background border-border text-muted-foreground hover:border-primary/20"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full transition-colors ${lateDeparture ? "bg-primary" : "bg-border"}`} />Monday departure?
+              </button>
             </div>
           )}
 
@@ -383,34 +352,6 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
           <LocationField label="Rehearsal Dinner Location" value={event.rehearsal_dinner_location || ""} options={REHEARSAL_OPTIONS} onSave={v => patch({ rehearsal_dinner_location: v || null })} />
         </div>
 
-        {/* Add-ons */}
-        <div className="rounded-xl bg-card border border-border p-6 space-y-4">
-          <p className="font-display text-lg font-light text-foreground">Add-ons</p>
-          {addons.length === 0 ? (
-            <p className="font-body text-sm text-muted-foreground">No add-ons configured.</p>
-          ) : (
-            <div className="space-y-2">
-              {addons.map(a => (
-                <label key={a.id} className="flex items-center gap-3 cursor-pointer group">
-                  <div
-                    onClick={async () => {
-                      const next = !a.included;
-                      await supabase.from("event_addons").update({ included: next }).eq("id", a.id);
-                      setAddons(prev => prev.map(x => x.id === a.id ? { ...x, included: next } : x));
-                    }}
-                    className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
-                      a.included ? "bg-primary border-primary" : "border-border bg-background"
-                    }`}
-                  >
-                    {a.included && <Check size={10} className="text-primary-foreground" />}
-                  </div>
-                  <span className="font-body text-sm text-foreground capitalize">{a.addon.replace(/_/g, " ")}</span>
-                </label>
-              ))}
-            </div>
-          )}
-          <Field label="How Heard" value={event.how_heard || ""} onSave={v => patch({ how_heard: v || null })} />
-        </div>
       </div>
 
       {/* Participants */}
