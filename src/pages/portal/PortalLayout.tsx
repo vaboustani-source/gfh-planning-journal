@@ -185,7 +185,7 @@ function PortalLayoutInner() {
           </main>
 
           {/* ── Mobile bottom nav ──────────────── */}
-          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t border-border flex justify-around overflow-x-auto">
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t border-border flex justify-around overflow-x-auto pb-16">
             {navItems.map(item => (
               <MobileNavItem key={item.to} {...item} />
             ))}
