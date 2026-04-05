@@ -1,16 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
-import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { Message, formatSmartTimestamp, hasTimeGap } from "@/lib/messageUtils";
 
 export default function Messages() {
   const { user } = useAuth();
   const { eventId } = usePortalData();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -100,7 +97,7 @@ export default function Messages() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen pb-20">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen">
       {/* Header */}
       <div className="shrink-0 px-5 py-4 lg:px-8 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
@@ -208,7 +205,7 @@ export default function Messages() {
       </div>
 
       {/* Input bar */}
-      <div className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8 sticky bottom-20 z-10">
+      <div className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8 mb-14 lg:mb-0">
         <div className="max-w-5xl mx-auto flex items-end gap-2.5">
           <textarea
             ref={inputRef}
@@ -237,8 +234,6 @@ export default function Messages() {
           Press Enter to send · Shift+Enter for new line
         </p>
       </div>
-
-      <PortalStickyFooter onContinue={() => navigate("/portal/notes")} nextOnly />
     </div>
   );
 }

@@ -81,9 +81,9 @@ function PlanningJourney({ eventId }: { eventId: string }) {
                   {isActive && <div className="w-2 h-2 rounded-full bg-sage" />}
                 </div>
                 <div className="pt-0.5">
-                  <p className={`font-body text-sm ${done ? "text-muted-foreground" : isActive ? "text-foreground font-medium" : "text-muted-foreground/60"}`}>{m.title}</p>
+                  <p className={`font-body text-sm ${done ? "text-muted-foreground" : isActive ? "text-foreground font-medium" : "text-muted-foreground"}`}>{m.title}</p>
                   {m.timeframe_label && (
-                    <p className={`font-body text-[11px] ${isActive ? "text-sage" : "text-muted-foreground/50"}`}>{m.timeframe_label}</p>
+                    <p className={`font-body text-[11px] ${isActive ? "text-sage" : "text-muted-foreground"}`}>{m.timeframe_label}</p>
                   )}
                 </div>
               </div>

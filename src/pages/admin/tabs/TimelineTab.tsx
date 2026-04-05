@@ -160,7 +160,7 @@ function SortableRow({
       {/* Grid of cells */}
       <div className="flex-1 grid gap-1.5" style={{ gridTemplateColumns: gridTemplate }}>
         <Input value={block.time} onChange={e => onChange("time", e.target.value)} className="font-body text-sm h-auto min-h-[36px]" placeholder="Time" />
-        <Textarea value={block.foh} onChange={e => onChange("foh", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-white" placeholder="Couple sees…" rows={1} />
+        <Textarea value={block.foh} onChange={e => onChange("foh", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-card" placeholder="Couple sees…" rows={1} />
         <Textarea value={block.boh} onChange={e => onChange("boh", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-blue-50/60" placeholder="Vendor notes…" rows={1} />
         <Textarea value={block.internal} onChange={e => onChange("internal", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-amber-50/60" placeholder="Internal…" rows={1} />
         {customColumns.map((col, ci) => (
@@ -490,7 +490,7 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
 
       {/* Legend */}
       <div className="flex items-center gap-4 text-xs font-body text-muted-foreground flex-wrap">
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-white border border-border" /> Couple (FOH)</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-card border border-border" /> Couple (FOH)</div>
         <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-blue-50" /> Vendor (BOH)</div>
         <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-50" /> Internal</div>
       </div>
