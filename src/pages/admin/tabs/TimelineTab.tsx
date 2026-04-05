@@ -435,7 +435,11 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
         </DialogContent>
       </Dialog>
 
-      <AdminStickyFooter onContinue={onNavigateNext} />
+      <AdminStickyFooter
+        status={saveStatus}
+        onSave={() => { if (timeline) save(timeline); }}
+        onSaveAndContinue={() => { if (timeline) save(timeline).then(() => onNavigateNext?.()); }}
+      />
     </div>
   );
 }
