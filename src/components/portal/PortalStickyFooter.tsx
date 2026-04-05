@@ -9,8 +9,8 @@ interface Props {
 
 export default function PortalStickyFooter({ onContinue, saving = false, nextOnly = false }: Props) {
   return (
-    <div className="fixed bottom-14 lg:bottom-0 left-0 right-0 lg:left-60 z-30 bg-card/95 backdrop-blur-sm border-t border-sage/20">
-      <div className="max-w-lg mx-auto px-5 py-3 flex justify-center">
+    <div className="fixed bottom-0 left-0 right-0 lg:left-60 z-30 mb-14 lg:mb-0 bg-card/95 backdrop-blur-sm border-t border-sage/20">
+      <div className="max-w-5xl mx-auto px-5 py-3 flex justify-center">
         <button
           onClick={onContinue}
           disabled={saving}
