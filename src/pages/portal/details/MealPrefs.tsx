@@ -26,10 +26,14 @@ export function MealPrefs() {
       .from("meal_events")
       .select("id, meal_type, adult_count, kids_count, location, notes")
       .eq("event_id", eventId)
-      .order("meal_type")
       .then(({ data }) => {
         if (data) {
-          setMeals(data.map((m) => ({ ...m, notes: m.notes ?? "" })));
+          const sorted = [...data].sort((a, b) => {
+            const ai = MEAL_SORT_ORDER.indexOf(a.meal_type);
+            const bi = MEAL_SORT_ORDER.indexOf(b.meal_type);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+          });
+          setMeals(sorted.map((m) => ({ ...m, notes: m.notes ?? "" })));
         }
         setLoading(false);
       });
