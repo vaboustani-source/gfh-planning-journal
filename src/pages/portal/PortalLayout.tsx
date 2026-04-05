@@ -4,8 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import {
   Sunrise, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User
 } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const allNavItems = [
   { to: "/portal/today",           label: "Today",             icon: Sunrise,           tiers: [1, 2, 3, 4] },
