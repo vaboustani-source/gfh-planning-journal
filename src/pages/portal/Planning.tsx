@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Circle, Loader2, ChevronDown, Plus, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, ChevronDown, Plus, AlertTriangle, StickyNote } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 
@@ -61,12 +61,16 @@ function getCurrentTimeframe(daysUntil: number | null): string | null {
 }
 
 export default function Planning() {
-  const { eventId, event, loading: eventLoading, refreshChecklist } = usePortalData();
+  const { eventId: portalEventId, event, loading: eventLoading, refreshChecklist } = usePortalData();
+  const { eventId: routeEventId } = useParams<{ eventId: string }>();
+  const eventId = portalEventId || routeEventId || null;
+
   const navigate = useNavigate();
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("checklist");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
 
@@ -112,6 +116,19 @@ export default function Planning() {
       next.has(section) ? next.delete(section) : next.add(section);
       return next;
     });
+  };
+
+  const toggleItemExpand = (id: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const saveNotes = async (itemId: string, notes: string) => {
+    setItems(prev => prev.map(x => x.id === itemId ? { ...x, notes } : x));
+    await supabase.from("checklist_items").update({ notes: notes || null }).eq("id", itemId);
   };
 
   const addItem = async (section: string) => {
@@ -224,28 +241,54 @@ export default function Planning() {
 
                     {isExpanded && (
                       <div className="border-t border-border">
-                        {sectionItems.map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => toggleItem(item.id, item.status)}
-                            className="w-full flex items-start gap-3 px-5 py-3.5 text-left hover:bg-muted/20 transition-colors border-b border-border last:border-b-0"
-                          >
-                            {item.status === "complete"
-                              ? <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
-                              : <Circle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
-                            }
-                            <div className="min-w-0">
-                              <p className={`font-body text-sm leading-snug ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                                {item.label}
-                              </p>
-                              {item.completed_at && (
-                                <p className="font-body text-[10px] text-muted-foreground mt-0.5">
-                                  Completed {new Date(item.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                                </p>
+                        {sectionItems.map((item) => {
+                          const isItemExpanded = expandedItems.has(item.id);
+                          return (
+                            <div key={item.id} className="border-b border-border last:border-b-0">
+                              <div className="w-full flex items-start gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors">
+                                <button
+                                  onClick={() => toggleItem(item.id, item.status)}
+                                  className="shrink-0 mt-0.5"
+                                >
+                                  {item.status === "complete"
+                                    ? <CheckCircle2 size={16} className="text-primary" />
+                                    : <Circle size={16} className="text-muted-foreground" />
+                                  }
+                                </button>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <p className={`font-body text-sm leading-snug ${item.status === "complete" ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                                      {item.label}
+                                    </p>
+                                    {item.notes && <StickyNote size={11} className="text-sage shrink-0" />}
+                                  </div>
+                                  {item.completed_at && (
+                                    <p className="font-body text-[10px] text-muted-foreground mt-0.5">
+                                      Completed {new Date(item.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => toggleItemExpand(item.id)}
+                                  className="mt-0.5 p-1 rounded hover:bg-muted/40 transition-colors shrink-0"
+                                >
+                                  <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isItemExpanded ? "rotate-180" : ""}`} />
+                                </button>
+                              </div>
+                              {isItemExpanded && (
+                                <div className="px-5 pb-3 pl-[44px]">
+                                  <textarea
+                                    defaultValue={item.notes ?? ""}
+                                    onBlur={e => saveNotes(item.id, e.target.value)}
+                                    placeholder="Add a note…"
+                                    rows={2}
+                                    className="w-full font-body text-xs bg-muted/30 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                                  />
+                                </div>
                               )}
                             </div>
-                          </button>
-                        ))}
+                          );
+                        })}
 
                         {/* Add item */}
                         {addingTo === section ? (
