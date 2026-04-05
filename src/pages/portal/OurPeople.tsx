@@ -26,8 +26,9 @@ export default function OurPeople() {
 
         {tab === "lodging" && <LodgingList />}
         {tab === "headcounts" && <Headcounts />}
-        <PortalStickyFooter onContinue={() => navigate("/portal/financials")} />
       </div>
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/financials")} />
+    </>
   );
 }

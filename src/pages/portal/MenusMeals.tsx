@@ -32,8 +32,9 @@ export default function MenusMeals() {
         {tab === "headcounts" && <Headcounts />}
         {tab === "dietary" && <DietaryRestrictions />}
         {tab === "bar" && <BarSelections />}
-        <PortalStickyFooter onContinue={() => navigate("/portal/our-people")} />
       </div>
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/our-people")} />
+    </>
   );
 }

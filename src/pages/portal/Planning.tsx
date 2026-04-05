@@ -562,5 +562,7 @@ export default function Planning() {
         <PortalStickyFooter onContinue={() => navigate("/portal/vendors")} nextOnly />
       </div>
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/vendors")} nextOnly />
+    </>
   );
 }

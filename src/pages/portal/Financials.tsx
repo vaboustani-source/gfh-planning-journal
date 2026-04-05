@@ -160,8 +160,9 @@ export default function Financials() {
           </>
         )}
 
-        <PortalStickyFooter onContinue={() => navigate("/portal/messages")} nextOnly />
       </div>
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/messages")} nextOnly />
+    </>
   );
 }

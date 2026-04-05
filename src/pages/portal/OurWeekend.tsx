@@ -220,8 +220,9 @@ export default function OurWeekend() {
             {eventId && <WeekendTimeline eventId={eventId} />}
           </>
         )}
-        <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
       </div>
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
+    </>
   );
 }

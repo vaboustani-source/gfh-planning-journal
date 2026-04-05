@@ -13,8 +13,9 @@ export default function Decor() {
         </p>
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Décor</h1>
         <DecorSelections />
-        <PortalStickyFooter onContinue={() => navigate("/portal/menus-meals")} nextOnly />
       </div>
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/menus-meals")} nextOnly />
+    </>
   );
 }
