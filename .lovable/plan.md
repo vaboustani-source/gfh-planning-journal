@@ -1,66 +1,43 @@
 
 
-# Plan: Couple-Side Vendor Delete + Document Upload
+# Fix Admin Checklist Tab: Reorder, Notes, and EventId Fallback
 
-## Current State
+## Summary
 
-- **VendorCard** already has delete button logic but it's gated behind `isAdmin` (line 182)
-- **VendorFileUpload** already has full upload/delete/download UI but `canUpload` and `canDelete` are passed as `false` from the couple side (lines 213-214 in VendorCard, lines 339-342 in edit mode)
-- **VendorList** (couple side) doesn't pass `onDelete` to VendorCard at all
-- Couples have an RLS UPDATE policy on vendors but no DELETE policy
-- The `documents` table has full CRUD RLS for couples via `event_users`
-- Storage bucket `vendor-contracts` needs couple upload access (currently scoped by event folder)
+Reorder the admin checklist tabs (Planning Timeline first, Couple Checklist second, Internal third), add expandable per-item notes with autosave to all tabs, and fix the couple portal's eventId resolution so checklist data actually loads.
 
 ## Changes
 
-### 1. Database Migration — Add DELETE RLS on vendors for couples
+### 1. Admin Checklist Tab (`src/pages/admin/tabs/Checklist.tsx`)
 
-Add a policy so couples can delete non-GF vendor rows linked to their event:
+**Tab reorder:** Change the tab array from `["couple", "timeline", "internal"]` to `["timeline", "couple", "internal"]`. Set default `activeTab` to `"timeline"`.
 
-```sql
-CREATE POLICY "Couples can delete vendors"
-ON public.vendors FOR DELETE
-USING (
-  EXISTS (
-    SELECT 1 FROM event_users
-    WHERE event_users.event_id = vendors.event_id
-    AND event_users.user_id = auth.uid()
-  )
-);
-```
+**Expandable notes per item:** Add an `expandedItems` state (`Set<string>`) tracking which item rows are expanded. Each item row gets a chevron button on the right. When expanded, show a `<textarea>` below the label for `notes`. Autosave notes on blur via `debouncedSave`. Show a small `StickyNote` icon next to items that have existing notes.
 
-Also add a storage policy so couples can upload to the `vendor-contracts` bucket for their event folder:
+**Add item with notes:** The existing "Add item" flow already works. After adding, the new item can be expanded to add notes.
 
-```sql
-CREATE POLICY "Couples upload vendor files"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'vendor-contracts'
-  AND EXISTS (
-    SELECT 1 FROM event_users
-    WHERE event_users.event_id::text = (storage.foldername(name))[1]
-    AND event_users.user_id = auth.uid()
-  )
-);
-```
+### 2. Couple Portal Planning (`src/pages/portal/Planning.tsx`)
 
-### 2. VendorList.tsx — Add delete handler + pass it to VendorCard
+**Notes per item:** Same expandable notes pattern. Each checklist item gets an expand chevron. When expanded, shows a textarea for the couple to add/edit notes. Autosave on blur.
 
-- Add a `deleteVendor` function that calls `supabase.from("vendors").delete().eq("id", id)` and removes from local state
-- Pass `onDelete={deleteVendor}` to each `VendorCard`
+**EventId fallback:** At the top of the component, if `eventId` from `usePortalData()` is null, fall back to `useParams<{ eventId: string }>()` to read it from the URL. This fixes preview mode and edge cases where the context hasn't resolved yet.
 
-### 3. VendorCard.tsx — Enable delete + file upload for couples
+### 3. Today Page (`src/pages/portal/Today.tsx`)
 
-- Remove the `isAdmin` gate on the delete button (line 182) — keep only the `!isGF` check so GF rows remain non-deletable
-- Change `canUpload` and `canDelete` on `VendorFileUpload` from `isAdmin` to `true` in both view and edit modes, so couples can upload contracts, inspo photos, and docs per vendor
-- Update the label from "Contracts & Files" to "Documents & Files" for the couple view
+**Same eventId fallback:** Import `useParams`, and if `usePortalData()` returns no eventId/nextTask/checklistProgress but URL has an eventId param, fetch checklist data directly as a fallback.
 
-### Files Modified
+### 4. Files Modified
 
 | File | Change |
 |------|--------|
-| Migration SQL | DELETE policy on `vendors`, INSERT policy on `storage.objects` |
-| `src/pages/portal/people/VendorList.tsx` | Add `deleteVendor` handler, pass to VendorCard |
-| `src/components/vendor/VendorCard.tsx` | Show delete button for non-GF rows regardless of role; enable file upload/delete for couples |
+| `src/pages/admin/tabs/Checklist.tsx` | Reorder tabs, add per-item expandable notes with autosave |
+| `src/pages/portal/Planning.tsx` | Add per-item notes, eventId fallback from useParams |
+| `src/pages/portal/Today.tsx` | EventId fallback for next-step card and progress bar |
+
+### Technical Details
+
+- Notes autosave uses the existing `useAutosaveStatus` hook's `debouncedSave` (admin) or direct `supabase.update` on blur (couple portal)
+- The `notes` column already exists on `checklist_items` — no migration needed
+- The expandable note row uses a simple conditional render below the item label, not a modal
+- The note icon is a small `StickyNote` (lucide) shown inline when `item.notes` is non-empty
 
