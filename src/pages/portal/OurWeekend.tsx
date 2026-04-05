@@ -38,7 +38,6 @@ function PlanningJourney({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     if (!eventId) return;
-
     const load = async () => {
       const { data } = await supabase
         .from("milestones")
@@ -50,27 +49,15 @@ function PlanningJourney({ eventId }: { eventId: string }) {
     };
     load();
 
-    // Realtime subscription
     const channel = supabase
       .channel(`milestones-portal-${eventId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "milestones", filter: `event_id=eq.${eventId}` },
-        (payload) => {
-          setMilestones(prev => prev.map(m =>
-            m.id === payload.new.id ? { ...m, status: payload.new.status } : m
-          ));
-        }
-      )
-      .subscribe();
-
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "milestones", filter: `event_id=eq.${eventId}` },
+        (payload) => { setMilestones(prev => prev.map(m => m.id === payload.new.id ? { ...m, status: payload.new.status } : m)); }
+      ).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [eventId]);
 
-  if (loading) {
-    return <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-10 rounded-lg bg-muted animate-pulse" />)}</div>;
-  }
-
+  if (loading) return <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-10 rounded-lg bg-muted animate-pulse" />)}</div>;
   if (milestones.length === 0) return null;
 
   const firstIncompleteIdx = milestones.findIndex(m => m.status !== "complete");
@@ -79,43 +66,24 @@ function PlanningJourney({ eventId }: { eventId: string }) {
     <div className="mt-10">
       <p className="font-display text-2xl font-light text-foreground mb-1">Your Planning Journey</p>
       <p className="font-body text-sm text-muted-foreground mb-6">Here's where you are in the process.</p>
-
       <div className="relative">
-        {/* Vertical line */}
         <div className="absolute left-[11px] top-3 bottom-3 w-px bg-border" />
-
         <div className="space-y-1">
           {milestones.map((m, i) => {
             const done = m.status === "complete";
             const isActive = i === firstIncompleteIdx;
-
             return (
               <div key={m.id} className="flex items-start gap-4 relative py-2.5">
-                {/* Circle */}
                 <div className={`relative z-10 w-[23px] h-[23px] rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                  done
-                    ? "bg-sage border-sage"
-                    : isActive
-                    ? "bg-sage/15 border-sage animate-pulse"
-                    : "bg-muted border-border"
+                  done ? "bg-sage border-sage" : isActive ? "bg-sage/15 border-sage animate-pulse" : "bg-muted border-border"
                 }`}>
                   {done && <Check size={11} className="text-white" />}
                   {isActive && <div className="w-2 h-2 rounded-full bg-sage" />}
                 </div>
-
-                {/* Text */}
                 <div className="pt-0.5">
-                  <p className={`font-body text-sm ${
-                    done ? "text-muted-foreground" : isActive ? "text-foreground font-medium" : "text-muted-foreground/60"
-                  }`}>
-                    {m.title}
-                  </p>
+                  <p className={`font-body text-sm ${done ? "text-muted-foreground" : isActive ? "text-foreground font-medium" : "text-muted-foreground/60"}`}>{m.title}</p>
                   {m.timeframe_label && (
-                    <p className={`font-body text-[11px] ${
-                      isActive ? "text-sage" : "text-muted-foreground/50"
-                    }`}>
-                      {m.timeframe_label}
-                    </p>
+                    <p className={`font-body text-[11px] ${isActive ? "text-sage" : "text-muted-foreground/50"}`}>{m.timeframe_label}</p>
                   )}
                 </div>
               </div>
@@ -127,40 +95,47 @@ function PlanningJourney({ eventId }: { eventId: string }) {
   );
 }
 
-interface TimeBlock {
-  time: string;
-  foh_label: string;
-  boh_notes: string;
-  internal_notes: string;
-}
+/* ── New timeline types ── */
+interface TimelineBlock { time: string; foh: string; highlight?: string | null; }
+interface TimelineDayV2 { id: string; label: string; blocks: TimelineBlock[]; }
+interface TimelineDataV2 { days: TimelineDayV2[]; }
+interface LegacyBlock { time: string; foh_label: string; }
+interface LegacyData { arrival_day?: LegacyBlock[]; wedding_day?: LegacyBlock[]; farewell_day?: LegacyBlock[]; }
 
-interface TimelineData {
-  arrival_day: TimeBlock[];
-  wedding_day: TimeBlock[];
-  farewell_day: TimeBlock[];
+function migrateForPortal(raw: any): TimelineDayV2[] {
+  if (raw?.days && Array.isArray(raw.days)) {
+    return (raw as TimelineDataV2).days.map(d => ({
+      id: d.id,
+      label: d.label,
+      blocks: d.blocks.filter(b => b.foh).map(b => ({ time: b.time, foh: b.foh, highlight: b.highlight })),
+    }));
+  }
+  const legacy = raw as LegacyData;
+  const map: { key: keyof LegacyData; label: string }[] = [
+    { key: "arrival_day", label: "Arrival Day" },
+    { key: "wedding_day", label: "Wedding Day" },
+    { key: "farewell_day", label: "Farewell Day" },
+  ];
+  return map
+    .filter(d => legacy[d.key])
+    .map((d, i) => ({
+      id: `day_${i + 1}`,
+      label: d.label,
+      blocks: (legacy[d.key] || []).filter(b => b.foh_label).map(b => ({ time: b.time, foh: b.foh_label, highlight: null })),
+    }));
 }
-
-const DAY_LABELS: Record<string, string> = {
-  arrival_day: "Arrival Day",
-  wedding_day: "Wedding Day",
-  farewell_day: "Farewell Day",
-};
 
 function WeekendTimeline({ eventId }: { eventId: string }) {
-  const [timeline, setTimeline] = useState<TimelineData | null>(null);
+  const [days, setDays] = useState<TimelineDayV2[]>([]);
   const [published, setPublished] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!eventId) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("working_timeline")
-        .select("timeline_data, published")
-        .eq("event_id", eventId)
-        .maybeSingle();
+      const { data } = await supabase.from("working_timeline").select("timeline_data, published").eq("event_id", eventId).maybeSingle();
       if (data) {
-        setTimeline(data.timeline_data as unknown as TimelineData);
+        setDays(migrateForPortal(data.timeline_data));
         setPublished(data.published || false);
       }
       setLoading(false);
@@ -168,54 +143,38 @@ function WeekendTimeline({ eventId }: { eventId: string }) {
     load();
   }, [eventId]);
 
-  if (loading) {
-    return (
-      <div className="mt-10 flex justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (loading) return <div className="mt-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
 
-  if (!published || !timeline) {
+  if (!published || days.length === 0) {
     return (
       <div className="mt-10">
         <p className="font-display text-2xl font-light text-foreground mb-2">Your Weekend Timeline</p>
         <div className="rounded-xl bg-card border border-border shadow-soft p-6 text-center">
-          <p className="font-body text-sm text-muted-foreground">
-            Your weekend timeline is being finalized by Brandon — check back soon.
-          </p>
+          <p className="font-body text-sm text-muted-foreground">Your weekend timeline is being finalized by Brandon — check back soon.</p>
         </div>
       </div>
     );
   }
 
-  const dayKeys: (keyof TimelineData)[] = ["arrival_day", "wedding_day", "farewell_day"];
-
   return (
     <div className="mt-10">
       <p className="font-display text-2xl font-light text-foreground mb-1">Your Weekend Timeline</p>
       <p className="font-body text-sm text-muted-foreground mb-6">Your complete weekend itinerary at Gilbertsville Farmhouse.</p>
-
       <div className="space-y-8">
-        {dayKeys.map((dk) => {
-          const blocks = timeline[dk]?.filter((b) => b.foh_label) || [];
-          if (blocks.length === 0) return null;
+        {days.map(day => {
+          if (day.blocks.length === 0) return null;
           return (
-            <div key={dk}>
-              <p className="font-display text-lg font-light text-foreground mb-4">{DAY_LABELS[dk]}</p>
+            <div key={day.id}>
+              <p className="font-display text-lg font-light text-foreground mb-4">{day.label}</p>
               <div className="relative pl-8">
-                {/* Vertical line */}
                 <div className="absolute left-[11px] top-2 bottom-2 w-px bg-sage/30" />
                 <div className="space-y-0">
-                  {blocks.map((b, i) => (
+                  {day.blocks.map((b, i) => (
                     <div key={i} className="flex items-start gap-4 relative py-3">
-                      {/* Dot */}
                       <div className="absolute left-[-21px] top-[18px] w-[9px] h-[9px] rounded-full bg-sage border-2 border-background z-10" />
                       <div className="flex items-baseline gap-3 min-w-0">
-                        <span className="font-body text-xs text-sage font-medium whitespace-nowrap w-[80px] shrink-0">
-                          {b.time}
-                        </span>
-                        <span className="font-body text-sm text-foreground">{b.foh_label}</span>
+                        <span className="font-body text-xs text-sage font-medium whitespace-nowrap w-[80px] shrink-0">{b.time}</span>
+                        <span className="font-body text-sm text-foreground">{b.foh}</span>
                       </div>
                     </div>
                   ))}
@@ -240,9 +199,7 @@ export default function OurWeekend() {
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Our Weekend</h1>
 
         {loading ? (
-          <div className="space-y-3">
-            {[1,2,3,4].map(i => <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />)}
-          </div>
+          <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />)}</div>
         ) : !event ? (
           <p className="font-body text-sm text-muted-foreground">Event details will appear here once your coordinator sets things up.</p>
         ) : (
@@ -259,7 +216,6 @@ export default function OurWeekend() {
                 <InfoRow icon={Clock} label="Package" value={formatPackageTier(event.package_tier)} />
               </div>
             </div>
-
             {eventId && <PlanningJourney eventId={eventId} />}
             {eventId && <WeekendTimeline eventId={eventId} />}
           </>
