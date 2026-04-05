@@ -1,17 +1,8 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SectionTabs } from "@/components/portal/SectionTabs";
 import { LodgingList } from "./people/LodgingList";
-import { Headcounts } from "./people/Headcounts";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 
-const TABS = [
-  { id: "lodging", label: "Lodging" },
-  { id: "headcounts", label: "Headcounts" },
-];
-
 export default function OurPeople() {
-  const [tab, setTab] = useState("lodging");
   const navigate = useNavigate();
 
   return (
@@ -23,10 +14,7 @@ export default function OurPeople() {
         </p>
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Our People</h1>
 
-        <SectionTabs tabs={TABS} active={tab} onChange={setTab} />
-
-        {tab === "lodging" && <LodgingList />}
-        {tab === "headcounts" && <Headcounts />}
+        <LodgingList />
       </div>
     </div>
     <PortalStickyFooter onContinue={() => navigate("/portal/financials")} />
