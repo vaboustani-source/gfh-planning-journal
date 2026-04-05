@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { Save, Check, Loader2, Minus, Plus } from "lucide-react";
-import { formatMealType } from "@/lib/formatMealType";
+import { formatMealType, MEAL_SORT_ORDER } from "@/lib/formatMealType";
 
 interface MealEvent {
   id: string;
@@ -65,11 +65,15 @@ export function Headcounts() {
       .from("meal_events")
       .select("id, meal_type, adult_count, kids_count, location")
       .eq("event_id", eventId)
-      .order("meal_type")
       .then(({ data }) => {
         if (data) {
+          const sorted = [...data].sort((a, b) => {
+            const ai = MEAL_SORT_ORDER.indexOf(a.meal_type);
+            const bi = MEAL_SORT_ORDER.indexOf(b.meal_type);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+          });
           setMeals(
-            data.map((m) => ({
+            sorted.map((m) => ({
               ...m,
               adult_count: m.adult_count ?? 0,
               kids_count: m.kids_count ?? 0,
