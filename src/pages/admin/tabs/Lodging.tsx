@@ -184,103 +184,79 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
                     const a = getAssignment(room.id);
                     const roomStatus = getStatus(a);
                     const badge = STATUS_BADGE[roomStatus];
+                    const isExpanded = expandedRooms[room.id] ?? false;
 
                     return (
-                      <div key={room.id} className={`px-5 py-4 ${idx < guestRooms.length - 1 ? "border-b border-border" : ""}`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="font-display text-sm font-light text-foreground">{room.room_name}</p>
-                          <span className={`font-body text-[10px] ${badge.cls}`}>{badge.label}</span>
-                        </div>
+                      <div key={room.id} className={`${idx < guestRooms.length - 1 ? "border-b border-border" : ""}`}>
+                        {/* Collapsed row */}
+                        <button
+                          onClick={() => setExpandedRooms(prev => ({ ...prev, [room.id]: !prev[room.id] }))}
+                          className="w-full px-5 py-3 flex items-center justify-between hover:bg-muted/20 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <p className="font-display text-sm font-light text-foreground">{room.room_name}</p>
+                            <span className="font-body text-xs text-muted-foreground truncate">
+                              {a?.assigned_guest_name?.trim() || "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`font-body text-[10px] ${badge.cls}`}>{badge.label}</span>
+                            <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </div>
+                        </button>
 
-                        {/* Core fields */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                          <div className="space-y-1">
-                            <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Guest Name</label>
-                            <input
-                              type="text"
-                              value={a?.assigned_guest_name ?? ""}
-                              onChange={e => handleFieldChange(room.id, "assigned_guest_name", e.target.value || null)}
-                              placeholder="Full name"
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Guest Email</label>
-                            <input
-                              type="email"
-                              value={a?.assigned_guest_email ?? ""}
-                              onChange={e => handleFieldChange(room.id, "assigned_guest_email", e.target.value || null)}
-                              placeholder="email@example.com"
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Admin fields */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-                          <div className="flex items-center justify-between sm:col-span-1">
-                            <div>
-                              <p className="font-body text-xs text-foreground">Who pays?</p>
-                              <p className="font-body text-[10px] text-muted-foreground">{a?.host_pays ? "Host" : "Guest"}</p>
-                            </div>
-                            <button
-                              onClick={() => handleFieldChange(room.id, "host_pays", !(a?.host_pays))}
-                              className={`relative w-11 h-6 rounded-full transition-colors ${a?.host_pays ? "bg-sage" : "bg-muted border border-border"}`}
-                            >
-                              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${a?.host_pays ? "translate-x-5" : "translate-x-0.5"}`} />
-                            </button>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Payment Method</label>
-                            <input
-                              type="text"
-                              value={a?.payment_method ?? ""}
-                              onChange={e => handleFieldChange(room.id, "payment_method", e.target.value || null)}
-                              placeholder="Venmo, check, etc."
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Payment Complete</label>
-                            <input
-                              type="date"
-                              value={a?.payment_completed_date ?? ""}
-                              onChange={e => handleFieldChange(room.id, "payment_completed_date", e.target.value || null)}
-                              className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Invoice toggles */}
-                        <div className="flex flex-wrap gap-4 mb-3">
-                          {([
-                            { field: "invoice_1_sent" as const, label: "Invoice 1" },
-                            { field: "invoice_2_sent" as const, label: "Invoice 2" },
-                            { field: "invoice_final_sent" as const, label: "Final" },
-                          ]).map(inv => (
-                            <label key={inv.field} className="flex items-center gap-2 cursor-pointer">
-                              <div
-                                onClick={() => handleFieldChange(room.id, inv.field, !(a?.[inv.field]))}
-                                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${a?.[inv.field] ? "bg-sage border-sage" : "border-border bg-background"}`}
-                              >
-                                {a?.[inv.field] && <Check size={9} className="text-white" />}
+                        {/* Expanded detail */}
+                        {isExpanded && (
+                          <div className="px-5 pb-4 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Guest Name</label>
+                                <input type="text" value={a?.assigned_guest_name ?? ""} onChange={e => handleFieldChange(room.id, "assigned_guest_name", e.target.value || null)} placeholder="Full name" className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors" />
                               </div>
-                              <span className="font-body text-xs text-foreground">{inv.label}</span>
-                            </label>
-                          ))}
-                        </div>
-
-                        {/* Notes */}
-                        <div className="space-y-1">
-                          <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Internal Notes</label>
-                          <textarea
-                            value={a?.brandon_notes ?? ""}
-                            onChange={e => handleFieldChange(room.id, "brandon_notes", e.target.value || null)}
-                            rows={1}
-                            placeholder="Notes…"
-                            className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 resize-none transition-colors"
-                          />
-                        </div>
+                              <div className="space-y-1">
+                                <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Guest Email</label>
+                                <input type="email" value={a?.assigned_guest_email ?? ""} onChange={e => handleFieldChange(room.id, "assigned_guest_email", e.target.value || null)} placeholder="email@example.com" className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors" />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="flex items-center justify-between sm:col-span-1">
+                                <div>
+                                  <p className="font-body text-xs text-foreground">Who pays?</p>
+                                  <p className="font-body text-[10px] text-muted-foreground">{a?.host_pays ? "Host" : "Guest"}</p>
+                                </div>
+                                <button onClick={() => handleFieldChange(room.id, "host_pays", !(a?.host_pays))} className={`relative w-11 h-6 rounded-full transition-colors ${a?.host_pays ? "bg-sage" : "bg-muted border border-border"}`}>
+                                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${a?.host_pays ? "translate-x-5" : "translate-x-0.5"}`} />
+                                </button>
+                              </div>
+                              <div className="space-y-1">
+                                <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Payment Method</label>
+                                <input type="text" value={a?.payment_method ?? ""} onChange={e => handleFieldChange(room.id, "payment_method", e.target.value || null)} placeholder="Venmo, check, etc." className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors" />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Payment Complete</label>
+                                <input type="date" value={a?.payment_completed_date ?? ""} onChange={e => handleFieldChange(room.id, "payment_completed_date", e.target.value || null)} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors" />
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-4">
+                              {([
+                                { field: "invoice_1_sent" as const, label: "Invoice 1" },
+                                { field: "invoice_2_sent" as const, label: "Invoice 2" },
+                                { field: "invoice_final_sent" as const, label: "Final" },
+                              ]).map(inv => (
+                                <label key={inv.field} className="flex items-center gap-2 cursor-pointer">
+                                  <div onClick={() => handleFieldChange(room.id, inv.field, !(a?.[inv.field]))} className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${a?.[inv.field] ? "bg-sage border-sage" : "border-border bg-background"}`}>
+                                    {a?.[inv.field] && <Check size={9} className="text-white" />}
+                                  </div>
+                                  <span className="font-body text-xs text-foreground">{inv.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                            <div className="space-y-1">
+                              <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Internal Notes</label>
+                              <textarea value={a?.brandon_notes ?? ""} onChange={e => handleFieldChange(room.id, "brandon_notes", e.target.value || null)} rows={1} placeholder="Notes…" className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 resize-none transition-colors" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
