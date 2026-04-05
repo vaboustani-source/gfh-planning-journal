@@ -3,6 +3,7 @@ import { SectionTabs } from "@/components/portal/SectionTabs";
 import BarTab from "./BarTab";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import { formatMealType } from "@/lib/formatMealType";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
@@ -71,7 +72,7 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
         <div key={meal.id} className="rounded-xl bg-card border border-border p-5 shadow-soft space-y-3">
           <div className="flex items-center justify-between">
             <input
-              value={meal.meal_type}
+              value={formatMealType(meal.meal_type)}
               onChange={e => updateMeal(meal.id, "meal_type", e.target.value)}
               className="font-display text-lg font-light text-foreground bg-transparent outline-none border-b border-transparent focus:border-primary/30 w-full"
             />
