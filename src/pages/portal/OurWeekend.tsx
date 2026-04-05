@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
-import { CalendarHeart, MapPin, Users, Clock, Check } from "lucide-react";
+import { CalendarHeart, MapPin, Users, Clock, Check, Loader2 } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPackageTier } from "@/lib/formatMealType";
@@ -159,6 +159,7 @@ export default function OurWeekend() {
             </div>
 
             {eventId && <PlanningJourney eventId={eventId} />}
+            {eventId && <WeekendTimeline eventId={eventId} />}
           </>
         )}
         <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
