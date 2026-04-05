@@ -22,7 +22,6 @@ export function VendorList() {
   }, [eventId]);
 
   const updateVendor = async (id: string, fields: Partial<Vendor>) => {
-    // Couples can only update safe fields — strip admin-only fields
     const safeFields: Partial<Vendor> = {};
     const allowedKeys: (keyof Vendor)[] = ["business_name", "contact_name", "phone", "email", "instagram"];
     for (const key of allowedKeys) {
@@ -30,6 +29,11 @@ export function VendorList() {
     }
     await supabase.from("vendors").update(safeFields).eq("id", id);
     setVendors(prev => prev.map(v => v.id === id ? { ...v, ...safeFields } : v));
+  };
+
+  const deleteVendor = async (id: string) => {
+    await supabase.from("vendors").delete().eq("id", id);
+    setVendors(prev => prev.filter(v => v.id !== id));
   };
 
   if (loading) {
@@ -53,7 +57,7 @@ export function VendorList() {
             <div className="space-y-2">
               {groupVendors.map(v => (
                 <VendorCard key={v.id} vendor={v} eventId={eventId!} isAdmin={false}
-                  onUpdate={updateVendor} />
+                   onUpdate={updateVendor} onDelete={deleteVendor} />
               ))}
             </div>
           </div>
