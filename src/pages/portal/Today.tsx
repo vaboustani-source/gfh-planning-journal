@@ -191,6 +191,7 @@ export default function Today() {
   }
 
   return (
+    <>
     <div className="max-w-5xl mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
       {/* Countdown */}
       <section className="animate-fade-up mb-10">
@@ -245,7 +246,8 @@ export default function Today() {
         </button>
       </section>
 
-      <PortalStickyFooter onContinue={() => navigate("/portal/our-wedding")} nextOnly />
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/our-wedding")} nextOnly />
+    </>
   );
 }

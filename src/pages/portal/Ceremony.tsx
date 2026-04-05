@@ -6,6 +6,7 @@ export default function Ceremony() {
   const navigate = useNavigate();
 
   return (
+    <>
     <div className="max-w-5xl mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
       <div className="animate-fade-up">
         <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-2">
@@ -13,8 +14,9 @@ export default function Ceremony() {
         </p>
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Ceremony & Music</h1>
         <CeremonyMusic />
-        <PortalStickyFooter onContinue={() => navigate("/portal/decor")} />
       </div>
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/decor")} />
+    </>
   );
 }
