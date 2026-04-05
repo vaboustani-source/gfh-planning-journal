@@ -189,6 +189,33 @@ function PortalLayoutInner() {
             {navItems.map(item => (
               <MobileNavItem key={item.to} {...item} />
             ))}
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="flex flex-col items-center gap-1 px-2 py-1.5 text-muted-foreground">
+                  <User size={20} strokeWidth={1.75} />
+                  <span className="font-body text-[10px] leading-tight">Account</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="rounded-t-2xl pb-10">
+                <div className="pt-2 pb-4 flex flex-col items-center gap-4">
+                  <div className="text-center">
+                    <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
+                    <p className="font-body text-base font-medium text-foreground">
+                      {profile?.first_name && profile?.last_name
+                        ? `${profile.first_name} ${profile.last_name}`
+                        : profile?.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => signOut().then(() => navigate("/login"))}
+                    className="flex items-center gap-2 rounded-xl bg-muted px-6 py-2.5 font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <LogOut size={16} strokeWidth={1.75} />
+                    Sign out
+                  </button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </nav>
         </div>
 
