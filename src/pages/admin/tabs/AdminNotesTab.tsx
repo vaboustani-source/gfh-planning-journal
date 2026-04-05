@@ -84,8 +84,12 @@ export default function AdminNotesTab({ eventId, onNavigateNext }: { eventId: st
           <div className="space-y-3">
             {coupleNotes.map(note => (
               <div key={note.id} className="rounded-xl bg-card border border-border p-5 shadow-soft">
-                <p className="font-display text-lg font-light text-foreground mb-1">{note.title || "Untitled"}</p>
-                <p className="font-body text-sm text-foreground whitespace-pre-wrap">{note.body}</p>
+                <p className="font-display text-lg font-light text-foreground mb-1">{note.title || "Untitled Note"}</p>
+                {note.body ? (
+                  <p className="font-body text-sm text-foreground whitespace-pre-wrap">{note.body}</p>
+                ) : (
+                  <p className="font-body text-sm text-muted-foreground italic">No content</p>
+                )}
                 {note.created_at && (
                   <p className="font-body text-[10px] text-muted-foreground mt-3">
                     {new Date(note.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}

@@ -4,6 +4,7 @@ import { usePortalData } from "@/hooks/usePortalData";
 import { CalendarHeart, MapPin, Users, Clock, Check } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPackageTier } from "@/lib/formatMealType";
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null }) {
   if (!value) return null;
@@ -153,7 +154,7 @@ export default function OurWeekend() {
                 <InfoRow icon={MapPin} label="Cocktail Hour" value={event.cocktail_hour_location} />
                 <InfoRow icon={MapPin} label="Rehearsal Dinner" value={event.rehearsal_dinner_location} />
                 <InfoRow icon={Users} label="Estimated Guests" value={event.estimated_guest_count ? `${event.estimated_guest_count} guests` : null} />
-                <InfoRow icon={Clock} label="Package" value={event.package_tier} />
+                <InfoRow icon={Clock} label="Package" value={formatPackageTier(event.package_tier)} />
               </div>
             </div>
 

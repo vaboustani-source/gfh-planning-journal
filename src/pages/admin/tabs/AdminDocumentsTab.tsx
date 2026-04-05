@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Upload, Download, Trash2, FileText, Image as ImageIcon, File } from "lucide-react";
+import { Loader2, Upload, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload } from "lucide-react";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 
 interface Doc {
@@ -33,7 +33,10 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadType, setUploadType] = useState("other");
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchDocs();
@@ -49,15 +52,20 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     setLoading(false);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const uploadFile = async (file: globalThis.File) => {
     if (!file) return;
+    const maxSize = 20 * 1024 * 1024;
+    if (file.size > maxSize) return;
+
     setUploading(true);
+    setUploadProgress(10);
 
     const filePath = `${eventId}/admin/${Date.now()}_${file.name}`;
+    setUploadProgress(30);
     const { error: upErr } = await supabase.storage.from("vendor-contracts").upload(filePath, file);
-    if (upErr) { setUploading(false); return; }
+    if (upErr) { setUploading(false); setUploadProgress(0); return; }
 
+    setUploadProgress(70);
     const { data: urlData } = supabase.storage.from("vendor-contracts").getPublicUrl(filePath);
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -69,13 +77,38 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
       uploaded_by: user?.id || null,
     });
 
+    setUploadProgress(100);
     await fetchDocs();
-    setUploading(false);
+    setTimeout(() => {
+      setUploading(false);
+      setUploadProgress(0);
+    }, 400);
+  };
+
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
     e.target.value = "";
   };
 
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadFile(file);
+  }, [eventId, uploadType]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  }, []);
+
   const deleteDoc = async (doc: Doc) => {
-    // Extract path from URL for storage delete
     const pathMatch = doc.file_url.match(/vendor-contracts\/(.+)$/);
     if (pathMatch) {
       await supabase.storage.from("vendor-contracts").remove([pathMatch[1]]);
@@ -99,27 +132,60 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
       {/* Upload section */}
       <div className="rounded-xl bg-card border border-border p-5 shadow-soft">
         <p className="font-display text-lg font-light text-foreground mb-3">Upload Document</p>
-        <div className="flex items-end gap-3 flex-wrap">
-          <div>
-            <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground block mb-1">Type</label>
-            <select
-              value={uploadType}
-              onChange={e => setUploadType(e.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 font-body text-sm"
-            >
-              <option value="vendor_contract">Vendor Contract</option>
-              <option value="couple_upload">Couple Upload</option>
-              <option value="insurance">Insurance / COI</option>
-              <option value="menu">Menu</option>
-              <option value="timeline">Timeline</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <label className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-body text-sm text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer">
-            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            {uploading ? "Uploading…" : "Choose File"}
-            <input type="file" className="hidden" onChange={handleUpload} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
-          </label>
+
+        <div className="mb-3">
+          <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground block mb-1">Type</label>
+          <select
+            value={uploadType}
+            onChange={e => setUploadType(e.target.value)}
+            className="rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground"
+          >
+            <option value="vendor_contract">Vendor Contract</option>
+            <option value="couple_upload">Couple Upload</option>
+            <option value="insurance">Insurance / COI</option>
+            <option value="menu">Menu</option>
+            <option value="timeline">Timeline</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        {/* Drop zone */}
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          className={`relative rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors ${
+            dragOver
+              ? "border-sage bg-sage/5"
+              : "border-border hover:border-muted-foreground/40 hover:bg-muted/20"
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileInput}
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+          />
+          {uploading ? (
+            <div className="space-y-3">
+              <Loader2 size={28} className="animate-spin text-sage mx-auto" />
+              <p className="font-body text-sm text-foreground">Uploading…</p>
+              <div className="w-48 mx-auto h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-sage rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <CloudUpload size={32} className="text-muted-foreground mx-auto mb-2" />
+              <p className="font-body text-sm text-foreground">Drop files here or click to browse</p>
+              <p className="font-body text-[11px] text-muted-foreground mt-1">PDF, JPG, PNG up to 20MB</p>
+            </>
+          )}
         </div>
       </div>
 
