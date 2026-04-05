@@ -197,15 +197,17 @@ export default function Planning() {
         ) : (
           <>
             {/* Progress bar */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="font-body text-xs text-muted-foreground">{completedActive} of {totalActive} complete</p>
-                <p className="font-body text-xs font-medium text-foreground">{pctActive}%</p>
+            {totalActive > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="font-body text-xs text-muted-foreground">{completedActive} of {totalActive} complete</p>
+                  <p className="font-body text-xs font-medium text-foreground">{pctActive}%</p>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pctActive}%` }} />
+                </div>
               </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pctActive}%` }} />
-              </div>
-            </div>
+            )}
 
             {/* Sections */}
             <div className="space-y-3">
