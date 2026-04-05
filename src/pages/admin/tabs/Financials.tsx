@@ -16,8 +16,17 @@ interface PaymentLine {
   method: string | null;
 }
 
+interface FinancialsRow {
+  site_fee_total: number | null;
+  catering_estimate: number | null;
+}
+
 const TRACKS = ["site_fee", "catering"] as const;
 const TRACK_LABELS: Record<string, string> = { site_fee: "Site Fee", catering: "Catering" };
+const TRACK_COLUMN: Record<string, keyof FinancialsRow> = {
+  site_fee: "site_fee_total",
+  catering: "catering_estimate",
+};
 
 function fmt(n: number | null) {
   if (n == null) return "—";
@@ -25,20 +34,25 @@ function fmt(n: number | null) {
 }
 
 function TrackPanel({
-  track, lines, onAdd, onUpdate, onDelete, onSaveStart, onSaveEnd,
+  track, lines, trackTotal, onTrackTotalChange, onAdd, onUpdate, onDelete, onSaveStart, onSaveEnd,
 }: {
   track: string;
   lines: PaymentLine[];
+  trackTotal: number | null;
+  onTrackTotalChange: (track: string, value: number | null) => void;
   onAdd: (track: string) => Promise<void>;
   onUpdate: (id: string, fields: Partial<PaymentLine>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onSaveStart: () => void;
   onSaveEnd: () => void;
 }) {
-  const total = lines.reduce((s, l) => s + (l.amount ?? 0), 0);
+  const total = trackTotal ?? 0;
   const paid = lines.filter(l => l.paid).reduce((s, l) => s + (l.amount ?? 0), 0);
   const remaining = total - paid;
   const debounceRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const [localTotal, setLocalTotal] = useState<number | null>(trackTotal);
+
+  useEffect(() => { setLocalTotal(trackTotal); }, [trackTotal]);
 
   const debouncedUpdate = useCallback((id: string, fields: Partial<PaymentLine>) => {
     const key = `${id}-${Object.keys(fields).join(",")}`;
@@ -58,13 +72,35 @@ function TrackPanel({
     onSaveEnd();
   };
 
+  const totalDebounce = useRef<ReturnType<typeof setTimeout>>();
+  const handleTotalChange = (val: string) => {
+    const v = parseFloat(val) || null;
+    setLocalTotal(v);
+    if (totalDebounce.current) clearTimeout(totalDebounce.current);
+    totalDebounce.current = setTimeout(() => {
+      onTrackTotalChange(track, v);
+    }, 800);
+  };
+
   return (
     <div className="rounded-xl bg-card border border-border overflow-hidden">
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20">
-        <p className="font-display text-lg font-light text-foreground">{TRACK_LABELS[track]}</p>
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20 gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <p className="font-display text-lg font-light text-foreground shrink-0">{TRACK_LABELS[track]}</p>
+          <div className="relative">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-body text-xs text-muted-foreground">$</span>
+            <input
+              type="number"
+              value={localTotal ?? ""}
+              onChange={e => handleTotalChange(e.target.value)}
+              placeholder="0.00"
+              className="border border-border rounded-md pl-5 pr-2.5 py-1.5 font-body text-sm bg-background focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 w-32"
+            />
+          </div>
+        </div>
         <button
           onClick={() => onAdd(track)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-body text-xs hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-body text-xs hover:opacity-90 transition-opacity shrink-0"
         >
           <Plus size={12} />
           Add
@@ -162,27 +198,39 @@ function LineRow({ line, onDebouncedUpdate, onImmediateUpdate, onDelete }: {
 
 export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [lines, setLines] = useState<PaymentLine[]>([]);
+  const [financials, setFinancials] = useState<FinancialsRow>({ site_fee_total: null, catering_estimate: null });
   const [loading, setLoading] = useState(true);
   const { status, markSaving, markSaved } = useAutosaveStatus();
 
-  useEffect(() => { fetchLines(); }, [eventId]);
+  useEffect(() => { fetchData(); }, [eventId]);
 
-  const fetchLines = async () => {
-    const { data } = await supabase
-      .from("payment_schedule")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("due_date", { ascending: true });
-    if (data) setLines(data);
+  const fetchData = async () => {
+    const [{ data: linesData }, { data: finData }] = await Promise.all([
+      supabase.from("payment_schedule").select("*").eq("event_id", eventId).order("due_date", { ascending: true }),
+      supabase.from("financials").select("site_fee_total, catering_estimate").eq("event_id", eventId).maybeSingle(),
+    ]);
+    if (linesData) setLines(linesData);
+    if (finData) {
+      setFinancials(finData);
+    } else {
+      // Create a financials row if none exists
+      await supabase.from("financials").upsert({ event_id: eventId, site_fee_total: 0, catering_estimate: 0 }, { onConflict: "event_id" });
+      setFinancials({ site_fee_total: 0, catering_estimate: 0 });
+    }
     setLoading(false);
+  };
+
+  const handleTrackTotalChange = async (track: string, value: number | null) => {
+    const col = TRACK_COLUMN[track];
+    setFinancials(prev => ({ ...prev, [col]: value }));
+    markSaving();
+    await supabase.from("financials").update({ [col]: value ?? 0 }).eq("event_id", eventId);
+    markSaved();
   };
 
   const addLine = async (track: string) => {
     const { data } = await supabase.from("payment_schedule").insert({
-      event_id: eventId,
-      track,
-      label: "New payment",
-      paid: false,
+      event_id: eventId, track, label: "New payment", paid: false,
     }).select().single();
     if (data) setLines(prev => [...prev, data]);
   };
@@ -207,6 +255,8 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
             key={track}
             track={track}
             lines={lines.filter(l => l.track === track)}
+            trackTotal={financials[TRACK_COLUMN[track]]}
+            onTrackTotalChange={handleTrackTotalChange}
             onAdd={addLine}
             onUpdate={updateLine}
             onDelete={deleteLine}
