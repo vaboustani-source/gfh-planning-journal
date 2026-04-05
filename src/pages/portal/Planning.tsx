@@ -83,7 +83,6 @@ export default function Planning() {
       .from("checklist_items")
       .select("id, label, section, status, owner, paced_send_date, completed_at, notes, sort_order")
       .eq("event_id", eventId)
-      .eq("owner", "couple")
       .order("sort_order", { ascending: true });
     if (data) setItems(data);
     setLoading(false);
