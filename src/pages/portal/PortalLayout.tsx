@@ -98,16 +98,6 @@ function PortalLayoutInner() {
             </div>
           </div>
 
-          {/* Profile */}
-          <div className="px-5 py-4 border-b border-border">
-            <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
-            <p className="font-body text-sm font-medium text-foreground truncate">
-              {profile?.first_name && profile?.last_name
-                ? `${profile.first_name} ${profile.last_name}`
-                : profile?.email}
-            </p>
-          </div>
-
           {/* Nav */}
           <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
             {navItems.map(item => (
@@ -115,11 +105,17 @@ function PortalLayoutInner() {
             ))}
           </nav>
 
-          {/* Sign out */}
-          <div className="px-3 py-4 border-t border-border">
+          {/* Profile + Sign out */}
+          <div className="px-5 py-4 border-t border-border">
+            <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
+            <p className="font-body text-sm font-medium text-foreground truncate mb-3">
+              {profile?.first_name && profile?.last_name
+                ? `${profile.first_name} ${profile.last_name}`
+                : profile?.email}
+            </p>
             <button
               onClick={() => signOut().then(() => navigate("/login"))}
-              className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg font-body text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              className="flex items-center gap-3 px-0 py-1 w-full font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <LogOut size={16} strokeWidth={1.75} />
               Sign out
