@@ -268,7 +268,7 @@ function MyChecklistView({
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <button
-                        onClick={() => { setEditingId(isEditing ? null : item.id); setEditNotes(item.notes ?? ""); }}
+                        onClick={() => { setEditingId(isEditing ? null : item.id); setEditNotes(item.notes ?? ""); setEditDueDate(item.paced_send_date ?? ""); }}
                         className="p-1 rounded hover:bg-muted/40 transition-colors"
                       >
                         <Pencil size={13} className="text-muted-foreground" />
