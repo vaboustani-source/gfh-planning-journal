@@ -94,24 +94,21 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
   const fetchChecklist = async (eventId: string) => {
     const { data: allItems } = await supabase
       .from("checklist_items")
-      .select("id, status, label, section, paced_send_date, owner")
-      .eq("event_id", eventId);
+      .select("id, status, label, section, paced_send_date, owner, sort_order")
+      .eq("event_id", eventId)
+      .order("sort_order", { ascending: true });
 
     if (!allItems) return;
 
-    const total = allItems.length;
-    const completed = allItems.filter(i => i.status === "complete").length;
+    // Only count couple-owned non-timeline items for progress
+    const coupleItems = allItems.filter(i => i.owner === "couple" && !i.section.startsWith("timeline_"));
+    const total = coupleItems.length;
+    const completed = coupleItems.filter(i => i.status === "complete").length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     setChecklistProgress({ total, completed, percentage });
 
-    const incomplete = allItems
-      .filter(i => i.owner === "couple" && i.status !== "complete")
-      .sort((a, b) => {
-        if (!a.paced_send_date && !b.paced_send_date) return 0;
-        if (!a.paced_send_date) return 1;
-        if (!b.paced_send_date) return -1;
-        return a.paced_send_date.localeCompare(b.paced_send_date);
-      });
+    const incomplete = coupleItems
+      .filter(i => i.status !== "complete");
 
     setNextTask(incomplete[0] ?? null);
   };
