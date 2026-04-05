@@ -1,38 +1,38 @@
 
 
-# Add Due Dates to Admin Internal Checklist & Couple My Checklist
+# Add Editable Track Totals to Admin Financials
 
-## What changes
+## Current behavior
+The "Total" at the bottom of each card is computed by summing all payment line amounts. There's no way to set the overall bill/contract amount independently.
 
-Both the admin Internal tab and the couple-facing My Checklist get an optional due date picker on each item. No database changes needed — the `paced_send_date` column already exists on `checklist_items`.
+## New behavior
+Each card header shows an editable dollar input next to the track title (e.g. "Site Fee — $45,000"). The admin types the contract total directly. The footer then shows:
+- **Total**: the admin-set value (from `financials` table)
+- **Paid**: sum of payment lines marked paid
+- **Remaining**: Total minus Paid
 
-## Changes
+This uses the existing `financials` table (`site_fee_total` and `catering_estimate` columns). No database changes needed.
 
-### 1. Admin Checklist — Internal tab (`src/pages/admin/tabs/Checklist.tsx`)
+## Changes — `src/pages/admin/tabs/Financials.tsx`
 
-**Add item form**: Add an optional date input next to the "New task…" text field so the admin can set a due date when creating items. Save to `paced_send_date`.
+1. **Fetch financials row** on mount alongside payment lines. If no row exists, insert one with zeros.
 
-**Expanded item detail**: When an item is expanded (chevron click), show a date picker below the notes textarea. On change, autosave `paced_send_date` to Supabase. This applies to all three tabs (timeline, couple, internal) but is most critical for internal.
+2. **Pass `trackTotal` and `onTrackTotalChange` props** to each `TrackPanel`. Map `site_fee` → `site_fee_total` and `catering` → `catering_estimate`.
 
-**Due date display**: The due date line already renders (`item.paced_send_date && ...`) but only when present. No change needed there.
+3. **Card header redesign** — Add an inline editable dollar input next to the title:
+```
+┌──────────────────────────────────────────────┐
+│  Site Fee          $[  45,000  ]    [+ Add]  │
+├──────────────────────────────────────────────┤
+```
+The input uses debounced save to update the `financials` row.
 
-### 2. Couple Portal — My Checklist (`src/pages/portal/Planning.tsx`)
-
-**Add task form**: Add an optional "Due date" date input inside the inline add form (below category select). Save to `paced_send_date`.
-
-**Item row**: Show the due date below the label when present, with overdue styling (text-amber-600) if the date is in the past and item is incomplete.
-
-**Edit mode**: When the pencil icon is clicked and the notes textarea appears, also show a date input to edit the due date. On blur/change, save to Supabase.
+4. **Footer "Total" row** uses the admin-set `trackTotal` instead of summing line amounts. "Paid" remains the sum of paid lines. "Remaining" = trackTotal - paid.
 
 ### Technical details
-
-- Use `<input type="date">` for simplicity — matches the existing admin style (no need for a full calendar popover for a single optional field).
-- Save handler: `supabase.from("checklist_items").update({ paced_send_date: value || null }).eq("id", itemId)`
-- Admin add item: extend the `addItem` function to accept an optional date parameter.
-- Couple add item: extend the `handleSave` function to include `paced_send_date`.
-- Both sides update local state optimistically.
-
-### Files modified
-- `src/pages/admin/tabs/Checklist.tsx`
-- `src/pages/portal/Planning.tsx`
+- Field mapping: `{ site_fee: "site_fee_total", catering: "catering_estimate" }`
+- On change: `supabase.from("financials").update({ [column]: value }).eq("event_id", eventId)`
+- If no financials row exists: `supabase.from("financials").upsert({ event_id: eventId, site_fee_total: 0, catering_estimate: 0 })`
+- Local state for the financials totals with optimistic updates
+- Debounced save (800ms) same pattern as existing line edits
 
