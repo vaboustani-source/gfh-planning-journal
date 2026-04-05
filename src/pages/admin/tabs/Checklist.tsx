@@ -54,6 +54,7 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
   const { status, trackSave, debouncedSave } = useAutosaveStatus();
 
   const fetchItems = useCallback(async () => {
@@ -88,9 +89,11 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
       status: "incomplete",
       owner,
       sort_order: maxSort + 1,
+      paced_send_date: newDueDate || null,
     }).select().single();
     if (data) setItems(prev => [...prev, data]);
     setNewLabel("");
+    setNewDueDate("");
     setAddingTo(null);
   };
 
@@ -114,6 +117,13 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
     setItems(prev => prev.map(x => x.id === itemId ? { ...x, notes } : x));
     debouncedSave(`notes-${itemId}`, async () => {
       await supabase.from("checklist_items").update({ notes: notes || null }).eq("id", itemId);
+    });
+  };
+
+  const saveDueDate = (itemId: string, date: string) => {
+    setItems(prev => prev.map(x => x.id === itemId ? { ...x, paced_send_date: date || null } : x));
+    trackSave(async () => {
+      await supabase.from("checklist_items").update({ paced_send_date: date || null }).eq("id", itemId);
     });
   };
 
@@ -270,7 +280,7 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
                             </button>
                           </div>
                           {isItemExpanded && (
-                            <div className="px-4 pb-3 pl-[42px]">
+                            <div className="px-4 pb-3 pl-[42px] space-y-2">
                               <textarea
                                 defaultValue={item.notes ?? ""}
                                 onBlur={e => saveNotes(item.id, e.target.value)}
@@ -278,6 +288,23 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
                                 rows={2}
                                 className="w-full font-body text-xs bg-muted/30 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                               />
+                              <div className="flex items-center gap-2">
+                                <label className="font-body text-[11px] text-muted-foreground shrink-0">Due date</label>
+                                <input
+                                  type="date"
+                                  value={item.paced_send_date ?? ""}
+                                  onChange={e => saveDueDate(item.id, e.target.value)}
+                                  className="font-body text-xs bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                {item.paced_send_date && (
+                                  <button
+                                    onClick={() => saveDueDate(item.id, "")}
+                                    className="font-body text-[10px] text-muted-foreground hover:text-foreground"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -285,17 +312,27 @@ export default function ChecklistTab({ eventId, onNavigateNext }: { eventId: str
                     })}
 
                     {addingTo === section ? (
-                      <div className="px-4 py-3 flex gap-2 border-t border-border">
-                        <input
-                          autoFocus
-                          value={newLabel}
-                          onChange={e => setNewLabel(e.target.value)}
-                          onKeyDown={e => e.key === "Enter" && addItem(section)}
-                          placeholder="New task…"
-                          className="flex-1 font-body text-sm bg-transparent border-b border-border focus:border-primary outline-none py-1 text-foreground placeholder:text-muted-foreground"
-                        />
-                        <button onClick={() => addItem(section)} className="font-body text-xs text-primary hover:underline">Add</button>
-                        <button onClick={() => { setAddingTo(null); setNewLabel(""); }} className="font-body text-xs text-muted-foreground hover:underline">Cancel</button>
+                      <div className="px-4 py-3 space-y-2 border-t border-border">
+                        <div className="flex gap-2">
+                          <input
+                            autoFocus
+                            value={newLabel}
+                            onChange={e => setNewLabel(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && addItem(section)}
+                            placeholder="New task…"
+                            className="flex-1 font-body text-sm bg-transparent border-b border-border focus:border-primary outline-none py-1 text-foreground placeholder:text-muted-foreground"
+                          />
+                          <input
+                            type="date"
+                            value={newDueDate}
+                            onChange={e => setNewDueDate(e.target.value)}
+                            className="font-body text-xs bg-muted/30 border border-border rounded-lg px-2 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => addItem(section)} className="font-body text-xs text-primary hover:underline">Add</button>
+                          <button onClick={() => { setAddingTo(null); setNewLabel(""); setNewDueDate(""); }} className="font-body text-xs text-muted-foreground hover:underline">Cancel</button>
+                        </div>
                       </div>
                     ) : (
                       <button

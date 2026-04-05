@@ -93,9 +93,11 @@ function MyChecklistView({
   const [newLabel, setNewLabel] = useState("");
   const [newCategory, setNewCategory] = useState("logistics");
   const [newNotes, setNewNotes] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
 
   const incomplete = items.filter(i => i.status !== "complete").sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   const completed = items.filter(i => i.status === "complete").sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
@@ -123,10 +125,12 @@ function MyChecklistView({
       status: "incomplete",
       owner: "couple",
       sort_order: maxSort + 1,
+      paced_send_date: newDueDate || null,
     }).select().single();
     if (data) onItemAdded(data);
     setNewLabel("");
     setNewNotes("");
+    setNewDueDate("");
     setNewCategory("logistics");
     setShowAddForm(false);
     setSaving(false);
@@ -181,6 +185,15 @@ function MyChecklistView({
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
+            <div className="flex items-center gap-2">
+              <label className="font-body text-xs text-muted-foreground shrink-0">Due date</label>
+              <input
+                type="date"
+                value={newDueDate}
+                onChange={e => setNewDueDate(e.target.value)}
+                className="font-body text-sm bg-muted/30 border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
           </div>
           <textarea
             value={newNotes}
@@ -241,6 +254,14 @@ function MyChecklistView({
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm text-foreground leading-snug">{item.label}</p>
+                      {item.paced_send_date && !isEditing && (
+                        <p className={`font-body text-[10px] mt-0.5 ${
+                          item.status !== "complete" && new Date(item.paced_send_date + "T00:00:00") < new Date()
+                            ? "text-amber-600" : "text-muted-foreground"
+                        }`}>
+                          Due {new Date(item.paced_send_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </p>
+                      )}
                       {item.notes && !isEditing && (
                         <p className="font-body text-xs text-muted-foreground mt-0.5 truncate">{item.notes}</p>
                       )}
@@ -261,7 +282,7 @@ function MyChecklistView({
                     </div>
                   </div>
                   {isEditing && (
-                    <div className="px-4 pb-3 pl-[44px]">
+                    <div className="px-4 pb-3 pl-[44px] space-y-2">
                       <textarea
                         autoFocus
                         value={editNotes}
@@ -271,6 +292,30 @@ function MyChecklistView({
                         rows={2}
                         className="w-full font-body text-xs bg-muted/30 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                       />
+                      <div className="flex items-center gap-2">
+                        <label className="font-body text-[11px] text-muted-foreground shrink-0">Due date</label>
+                        <input
+                          type="date"
+                          value={editDueDate}
+                          onChange={e => {
+                            setEditDueDate(e.target.value);
+                            const updated = e.target.value || null;
+                            supabase.from("checklist_items").update({ paced_send_date: updated }).eq("id", item.id);
+                          }}
+                          className="font-body text-xs bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        {editDueDate && (
+                          <button
+                            onClick={() => {
+                              setEditDueDate("");
+                              supabase.from("checklist_items").update({ paced_send_date: null }).eq("id", item.id);
+                            }}
+                            className="font-body text-[10px] text-muted-foreground hover:text-foreground"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
