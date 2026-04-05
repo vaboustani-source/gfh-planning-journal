@@ -1,50 +1,38 @@
 
 
-# Fix Admin Overview: Dropdowns, Remove Sections
+# Add Due Dates to Admin Internal Checklist & Couple My Checklist
 
-## Problems
+## What changes
 
-1. **Dropdowns (Status, Package Tier) don't visually update when clicked** — The `SelectField` component uses `value={value}` (the prop from parent) as a controlled input, but the parent state only updates after the async Supabase call completes. React immediately snaps the select back to the old prop value before the save finishes, making it appear broken.
-
-2. **Add-ons section and How Heard field need to be removed** from the Overview page.
+Both the admin Internal tab and the couple-facing My Checklist get an optional due date picker on each item. No database changes needed — the `paced_send_date` column already exists on `checklist_items`.
 
 ## Changes
 
-### File: `src/pages/admin/tabs/Overview.tsx`
+### 1. Admin Checklist — Internal tab (`src/pages/admin/tabs/Checklist.tsx`)
 
-**Fix SelectField** — Add local optimistic state so the dropdown updates immediately on click, then syncs with the saved value:
+**Add item form**: Add an optional date input next to the "New task…" text field so the admin can set a due date when creating items. Save to `paced_send_date`.
 
-```tsx
-function SelectField({ label, value, options, onSave }) {
-  const [localValue, setLocalValue] = useState(value);
-  const [saving, setSaving] = useState(false);
+**Expanded item detail**: When an item is expanded (chevron click), show a date picker below the notes textarea. On change, autosave `paced_send_date` to Supabase. This applies to all three tabs (timeline, couple, internal) but is most critical for internal.
 
-  // Sync if prop changes from outside
-  useEffect(() => { setLocalValue(value); }, [value]);
+**Due date display**: The due date line already renders (`item.paced_send_date && ...`) but only when present. No change needed there.
 
-  return (
-    <select
-      value={localValue}
-      onChange={async (e) => {
-        setLocalValue(e.target.value);  // optimistic
-        setSaving(true);
-        await onSave(e.target.value);
-        setSaving(false);
-      }}
-    />
-  );
-}
-```
+### 2. Couple Portal — My Checklist (`src/pages/portal/Planning.tsx`)
 
-**Remove Add-ons and How Heard** — Delete the entire fourth card in the grid (lines 387–413) containing the Add-ons toggles and the "How Heard" field. Also remove the `addons` state, `addonsLoaded` state, the `ALL_ADDONS` constant, the `SmallToggle` component, and the addon-fetching logic — all now unused.
+**Add task form**: Add an optional "Due date" date input inside the inline add form (below category select). Save to `paced_send_date`.
 
-**Guest Count** — Already editable via the `Field` component on line 375. No change needed.
+**Item row**: Show the due date below the label when present, with overdue styling (text-amber-600) if the date is in the past and item is incomplete.
 
-### Summary of removals
-- `ALL_ADDONS` constant (line 213–216)
-- `SmallToggle` component (lines 131–146)
-- `addons` / `addonsLoaded` state and the fetch block (lines 220–248)
-- The Add-ons card JSX (lines 387–413)
+**Edit mode**: When the pencil icon is clicked and the notes textarea appears, also show a date input to edit the due date. On blur/change, save to Supabase.
 
-Grid goes from 4 cards to 3 cards (Key Dates, Event Info, Locations).
+### Technical details
+
+- Use `<input type="date">` for simplicity — matches the existing admin style (no need for a full calendar popover for a single optional field).
+- Save handler: `supabase.from("checklist_items").update({ paced_send_date: value || null }).eq("id", itemId)`
+- Admin add item: extend the `addItem` function to accept an optional date parameter.
+- Couple add item: extend the `handleSave` function to include `paced_send_date`.
+- Both sides update local state optimistically.
+
+### Files modified
+- `src/pages/admin/tabs/Checklist.tsx`
+- `src/pages/portal/Planning.tsx`
 
