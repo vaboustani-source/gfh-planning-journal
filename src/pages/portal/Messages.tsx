@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
-import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
+import { Message, formatSmartTimestamp, hasTimeGap } from "@/lib/messageUtils";
 import { Message, formatSmartTimestamp, hasTimeGap } from "@/lib/messageUtils";
 
 export default function Messages() {
