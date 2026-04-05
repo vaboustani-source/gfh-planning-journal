@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { Loader2, Save, Check } from "lucide-react";
-import { formatMealType } from "@/lib/formatMealType";
+import { formatMealType, MEAL_SORT_ORDER } from "@/lib/formatMealType";
 
 interface MealEvent {
   id: string;
