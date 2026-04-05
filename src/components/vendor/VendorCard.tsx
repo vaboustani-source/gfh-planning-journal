@@ -111,7 +111,7 @@ export function VendorCard({
   // ─── VIEW MODE ───
   if (!editing) {
     return (
-      <div className={`rounded-xl border overflow-hidden ${isGF ? "border-sage/25 bg-sage/5" : "border-border bg-card"}`}>
+      <div className={`rounded-xl border overflow-hidden ${isGF ? "border-sage/40 bg-card" : "border-border bg-card"}`}>
         <div className="p-4">
           <div className="flex items-start gap-3">
             {/* Drag handle */}
@@ -149,7 +149,7 @@ export function VendorCard({
               {vendor.business_name ? (
                 <p className="font-body text-sm font-medium text-foreground">{vendor.business_name}</p>
               ) : (
-                <p className="font-body text-sm italic text-muted-foreground/50">Not yet confirmed</p>
+                <p className="font-body text-sm italic text-muted-foreground">Not yet confirmed</p>
               )}
               <div className="flex items-center gap-4 mt-1 flex-wrap">
                 {vendor.contact_name && (
@@ -225,7 +225,7 @@ export function VendorCard({
 
   // ─── EDIT MODE ───
   return (
-    <div className={`rounded-xl border bg-card overflow-hidden ${isGF ? "border-sage/25" : "border-border"}`}>
+    <div className={`rounded-xl border bg-card overflow-hidden ${isGF ? "border-sage/40" : "border-border"}`}>
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="shrink-0 w-20">
