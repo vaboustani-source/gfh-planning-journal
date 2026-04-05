@@ -121,7 +121,7 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
   const [exportBoh, setExportBoh] = useState(true);
   const [exportInternal, setExportInternal] = useState(false);
   const [exportAudience, setExportAudience] = useState("");
-  const { status: saveStatus, trigger: triggerSave } = useAutosaveStatus();
+  const { status: saveStatus, trackSave, markSaving, markSaved } = useAutosaveStatus();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -165,7 +165,7 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
 
   const save = useCallback(async (data: TimelineData, pub?: boolean) => {
     if (!timelineId) return;
-    triggerSave();
+    markSaving();
     await supabase
       .from("working_timeline")
       .update({
@@ -174,7 +174,8 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
         last_updated: new Date().toISOString(),
       })
       .eq("id", timelineId);
-  }, [timelineId, published, triggerSave]);
+    markSaved();
+  }, [timelineId, published, markSaving, markSaved]);
 
   const updateBlock = (dayKey: keyof TimelineData, index: number, field: keyof TimeBlock, value: string) => {
     if (!timeline) return;
