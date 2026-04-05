@@ -1192,6 +1192,10 @@ export type Database = {
         Returns: undefined
       }
       seed_vendors: { Args: { p_event_id: string }; Returns: undefined }
+      seed_working_timeline: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

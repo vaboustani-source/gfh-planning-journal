@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
-import { CalendarHeart, MapPin, Users, Clock, Check } from "lucide-react";
+import { CalendarHeart, MapPin, Users, Clock, Check, Loader2 } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPackageTier } from "@/lib/formatMealType";
@@ -127,6 +127,108 @@ function PlanningJourney({ eventId }: { eventId: string }) {
   );
 }
 
+interface TimeBlock {
+  time: string;
+  foh_label: string;
+  boh_notes: string;
+  internal_notes: string;
+}
+
+interface TimelineData {
+  arrival_day: TimeBlock[];
+  wedding_day: TimeBlock[];
+  farewell_day: TimeBlock[];
+}
+
+const DAY_LABELS: Record<string, string> = {
+  arrival_day: "Arrival Day",
+  wedding_day: "Wedding Day",
+  farewell_day: "Farewell Day",
+};
+
+function WeekendTimeline({ eventId }: { eventId: string }) {
+  const [timeline, setTimeline] = useState<TimelineData | null>(null);
+  const [published, setPublished] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!eventId) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("working_timeline")
+        .select("timeline_data, published")
+        .eq("event_id", eventId)
+        .maybeSingle();
+      if (data) {
+        setTimeline(data.timeline_data as unknown as TimelineData);
+        setPublished(data.published || false);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [eventId]);
+
+  if (loading) {
+    return (
+      <div className="mt-10 flex justify-center">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!published || !timeline) {
+    return (
+      <div className="mt-10">
+        <p className="font-display text-2xl font-light text-foreground mb-2">Your Weekend Timeline</p>
+        <div className="rounded-xl bg-card border border-border shadow-soft p-6 text-center">
+          <p className="font-body text-sm text-muted-foreground">
+            Your weekend timeline is being finalized by Brandon — check back soon.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const dayKeys: (keyof TimelineData)[] = ["arrival_day", "wedding_day", "farewell_day"];
+
+  return (
+    <div className="mt-10">
+      <p className="font-display text-2xl font-light text-foreground mb-1">Your Weekend Timeline</p>
+      <p className="font-body text-sm text-muted-foreground mb-6">Your complete weekend itinerary at Gilbertsville Farmhouse.</p>
+
+      <div className="space-y-8">
+        {dayKeys.map((dk) => {
+          const blocks = timeline[dk]?.filter((b) => b.foh_label) || [];
+          if (blocks.length === 0) return null;
+          return (
+            <div key={dk}>
+              <p className="font-display text-lg font-light text-foreground mb-4">{DAY_LABELS[dk]}</p>
+              <div className="relative pl-8">
+                {/* Vertical line */}
+                <div className="absolute left-[11px] top-2 bottom-2 w-px bg-sage/30" />
+                <div className="space-y-0">
+                  {blocks.map((b, i) => (
+                    <div key={i} className="flex items-start gap-4 relative py-3">
+                      {/* Dot */}
+                      <div className="absolute left-[-21px] top-[18px] w-[9px] h-[9px] rounded-full bg-sage border-2 border-background z-10" />
+                      <div className="flex items-baseline gap-3 min-w-0">
+                        <span className="font-body text-xs text-sage font-medium whitespace-nowrap w-[80px] shrink-0">
+                          {b.time}
+                        </span>
+                        <span className="font-body text-sm text-foreground">{b.foh_label}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function OurWeekend() {
   const { event, eventId, loading } = usePortalData();
   const navigate = useNavigate();
@@ -159,6 +261,7 @@ export default function OurWeekend() {
             </div>
 
             {eventId && <PlanningJourney eventId={eventId} />}
+            {eventId && <WeekendTimeline eventId={eventId} />}
           </>
         )}
         <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
