@@ -35,7 +35,6 @@ export default function MenusMeals() {
         {tab === "bar" && <BarSelections />}
       </div>
     </div>
-    <PortalStickyFooter onContinue={() => navigate("/portal/our-people")} />
     </>
   );
 }
