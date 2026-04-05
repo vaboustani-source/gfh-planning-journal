@@ -375,7 +375,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
             <p className="font-body text-sm text-muted-foreground italic">Nothing added yet.</p>
           )}
           {parentDances.map((d, i) => (
-            <div key={i} className="rounded-lg border border-border bg-muted/10 p-4 space-y-3 relative">
+            <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-3 relative">
               <button onClick={() => setParentDances(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-3 right-3 text-muted-foreground hover:text-destructive transition-colors">
                 <Trash2 size={13} />
               </button>
@@ -403,7 +403,7 @@ export default function CeremonyTab({ eventId, onNavigateNext }: { eventId: stri
             <p className="font-body text-sm text-muted-foreground italic">No introductions added yet.</p>
           )}
           {introductions.map((entry, i) => (
-            <div key={i} className="rounded-lg border border-border bg-muted/10 p-4 space-y-3 relative">
+            <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-3 relative">
               <button onClick={() => setIntroductions(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-3 right-3 text-muted-foreground hover:text-destructive transition-colors">
                 <Trash2 size={13} />
               </button>
