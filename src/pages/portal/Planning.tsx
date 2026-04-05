@@ -156,8 +156,9 @@ export default function Planning() {
   const completedActive = activeItems.filter(i => i.status === "complete").length;
   const pctActive = totalActive > 0 ? Math.round((completedActive / totalActive) * 100) : 0;
 
+  // Always show all 6 checklist sections so "Add item" is available even when empty
   const sections = tab === "checklist"
-    ? CHECKLIST_SECTIONS.filter(s => items.some(i => i.section === s))
+    ? CHECKLIST_SECTIONS
     : TIMELINE_SECTIONS.filter(t => items.some(i => i.section === t.key)).map(t => t.key);
 
   const getSectionLabel = (section: string) => {
@@ -187,7 +188,7 @@ export default function Planning() {
 
         {isLoading ? (
           <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>
-        ) : totalActive === 0 ? (
+        ) : tab === "timeline" && totalActive === 0 ? (
           <div className="text-center py-16">
             <CheckCircle2 size={32} className="text-primary mx-auto mb-3" />
             <p className="font-display text-xl italic text-foreground">No tasks yet</p>
