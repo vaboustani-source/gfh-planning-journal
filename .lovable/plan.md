@@ -1,26 +1,50 @@
 
 
-# Fix Couple Portal Content Width
+# Fix Admin Overview: Dropdowns, Remove Sections
 
-## Summary
-Change `max-w-lg` to `max-w-5xl` on the outer content container div in 10 portal page components to match the Vendors page width.
+## Problems
+
+1. **Dropdowns (Status, Package Tier) don't visually update when clicked** — The `SelectField` component uses `value={value}` (the prop from parent) as a controlled input, but the parent state only updates after the async Supabase call completes. React immediately snaps the select back to the old prop value before the save finishes, making it appear broken.
+
+2. **Add-ons section and How Heard field need to be removed** from the Overview page.
 
 ## Changes
 
-One-line change per file — replace `max-w-lg` with `max-w-5xl` in the outermost container div's className:
+### File: `src/pages/admin/tabs/Overview.tsx`
 
-| File | Line pattern |
-|------|-------------|
-| `src/pages/portal/MenusMeals.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/Planning.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/OurPeople.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/Financials.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/Today.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/OurWeekend.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/Ceremony.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/Decor.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/Notes.tsx` | `max-w-lg` → `max-w-5xl` |
-| `src/pages/portal/Messages.tsx` | `max-w-lg` → `max-w-5xl` |
+**Fix SelectField** — Add local optimistic state so the dropdown updates immediately on click, then syncs with the saved value:
 
-No other changes. Width only.
+```tsx
+function SelectField({ label, value, options, onSave }) {
+  const [localValue, setLocalValue] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  // Sync if prop changes from outside
+  useEffect(() => { setLocalValue(value); }, [value]);
+
+  return (
+    <select
+      value={localValue}
+      onChange={async (e) => {
+        setLocalValue(e.target.value);  // optimistic
+        setSaving(true);
+        await onSave(e.target.value);
+        setSaving(false);
+      }}
+    />
+  );
+}
+```
+
+**Remove Add-ons and How Heard** — Delete the entire fourth card in the grid (lines 387–413) containing the Add-ons toggles and the "How Heard" field. Also remove the `addons` state, `addonsLoaded` state, the `ALL_ADDONS` constant, the `SmallToggle` component, and the addon-fetching logic — all now unused.
+
+**Guest Count** — Already editable via the `Field` component on line 375. No change needed.
+
+### Summary of removals
+- `ALL_ADDONS` constant (line 213–216)
+- `SmallToggle` component (lines 131–146)
+- `addons` / `addonsLoaded` state and the fetch block (lines 220–248)
+- The Add-ons card JSX (lines 387–413)
+
+Grid goes from 4 cards to 3 cards (Key Dates, Event Info, Locations).
 
