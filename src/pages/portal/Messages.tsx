@@ -205,7 +205,7 @@ export default function Messages() {
       </div>
 
       {/* Input bar */}
-      <div className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8 mb-14 lg:mb-0">
+      <div className="fixed bottom-0 left-0 right-0 lg:left-60 z-30 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8">
         <div className="max-w-5xl mx-auto flex items-end gap-2.5">
           <textarea
             ref={inputRef}
