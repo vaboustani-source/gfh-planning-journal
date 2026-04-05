@@ -134,8 +134,8 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
                   done
                     ? "bg-sage border-sage text-white"
                     : overdue
-                    ? "border-destructive hover:border-destructive"
-                    : "border-muted-foreground/40 hover:border-sage"
+                    ? "border-destructive/70 hover:border-destructive"
+                    : "border-muted-foreground/60 hover:border-sage"
                 }`}
               >
                 {done && <Check size={12} className="text-white" />}
@@ -144,7 +144,7 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <p className={`font-body text-sm font-semibold ${done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <p className={`font-body text-sm font-semibold ${done ? "line-through text-muted-foreground/70" : "text-foreground"}`}>
                     {m.title}
                   </p>
                   {overdue && (
