@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -42,48 +43,111 @@ interface PortalDataContextType {
   isPreviewMode: boolean;
 }
 
+const CHECKLIST_SECTIONS = ["arrival", "ceremony", "reception", "attire", "decor", "logistics"] as const;
+const EMPTY_CHECKLIST_PROGRESS: ChecklistProgress = { total: 0, completed: 0, percentage: 0 };
+
 const PortalDataContext = createContext<PortalDataContextType | undefined>(undefined);
+
+const isChecklistSection = (section: string) =>
+  CHECKLIST_SECTIONS.includes(section as (typeof CHECKLIST_SECTIONS)[number]);
 
 export function PortalDataProvider({ children, previewEventId }: { children: ReactNode; previewEventId?: string }) {
   const { user } = useAuth();
+  const location = useLocation();
+  const { eventId: routeEventId } = useParams<{ eventId?: string }>();
+  const isPreviewMode = location.pathname.startsWith("/admin/preview/");
+  const previewEventIdFromRoute = isPreviewMode ? (previewEventId ?? routeEventId ?? null) : null;
+
   const [event, setEvent] = useState<PortalEvent | null>(null);
+  const [eventId, setEventId] = useState<string | null>(previewEventIdFromRoute);
   const [accessTier, setAccessTier] = useState<number>(3);
   const [roleInEvent, setRoleInEvent] = useState<string | null>(null);
-  const [checklistProgress, setChecklistProgress] = useState<ChecklistProgress>({ total: 0, completed: 0, percentage: 0 });
+  const [checklistProgress, setChecklistProgress] = useState<ChecklistProgress>(EMPTY_CHECKLIST_PROGRESS);
   const [nextTask, setNextTask] = useState<NextTask | null>(null);
   const [loading, setLoading] = useState(true);
-  const isPreviewMode = !!previewEventId;
+
+  const resetChecklistState = () => {
+    setChecklistProgress(EMPTY_CHECKLIST_PROGRESS);
+    setNextTask(null);
+  };
+
+  const fetchChecklist = async (targetEventId: string) => {
+    const { data: allItems } = await supabase
+      .from("checklist_items")
+      .select("id, status, label, section, paced_send_date, owner, sort_order")
+      .eq("event_id", targetEventId)
+      .order("sort_order", { ascending: true });
+
+    if (!allItems) {
+      resetChecklistState();
+      return;
+    }
+
+    const checklistItems = allItems.filter((item) => isChecklistSection(item.section));
+    const total = checklistItems.length;
+    const completed = checklistItems.filter((item) => item.status === "complete").length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    setChecklistProgress({ total, completed, percentage });
+
+    const incomplete = checklistItems.filter((item) => item.status !== "complete");
+    setNextTask(incomplete[0] ?? null);
+  };
 
   const fetchEventData = async () => {
-    if (!user) return;
-    try {
-      let eventId: string;
+    if (!user && !previewEventIdFromRoute) {
+      setEvent(null);
+      setEventId(null);
+      setRoleInEvent(null);
+      resetChecklistState();
+      setLoading(false);
+      return;
+    }
 
-      if (previewEventId) {
-        eventId = previewEventId;
+    setLoading(true);
+
+    try {
+      let activeEventId: string | null = previewEventIdFromRoute;
+
+      if (activeEventId) {
         setAccessTier(3);
         setRoleInEvent("preview");
-      } else {
+      } else if (user) {
         const { data: eu } = await supabase
           .from("event_users")
           .select("event_id, access_tier, role_in_event")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (!eu?.event_id) { setLoading(false); return; }
+        if (!eu?.event_id) {
+          setEvent(null);
+          setEventId(null);
+          setRoleInEvent(null);
+          resetChecklistState();
+          return;
+        }
+
+        activeEventId = eu.event_id;
         setAccessTier(eu.access_tier ?? 3);
         setRoleInEvent(eu.role_in_event);
-        eventId = eu.event_id;
       }
+
+      if (!activeEventId) {
+        setEvent(null);
+        setEventId(null);
+        resetChecklistState();
+        return;
+      }
+
+      setEventId(activeEventId);
 
       const { data: eventData } = await supabase
         .from("events")
         .select("id, title, wedding_date, arrival_date, departure_date, ceremony_location, cocktail_hour_location, rehearsal_dinner_location, status, package_tier, estimated_guest_count")
-        .eq("id", eventId)
-        .single();
+        .eq("id", activeEventId)
+        .maybeSingle();
 
-      if (eventData) setEvent(eventData);
-      await fetchChecklist(eventId);
+      setEvent(eventData ?? null);
+      await fetchChecklist(activeEventId);
     } catch (err) {
       console.error("Portal data error:", err);
     } finally {
@@ -91,31 +155,9 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
     }
   };
 
-  const fetchChecklist = async (eventId: string) => {
-    const { data: allItems } = await supabase
-      .from("checklist_items")
-      .select("id, status, label, section, paced_send_date, owner, sort_order")
-      .eq("event_id", eventId)
-      .order("sort_order", { ascending: true });
-
-    if (!allItems) return;
-
-    // Only count couple-owned non-timeline items for progress
-    const coupleItems = allItems.filter(i => i.owner === "couple" && !i.section.startsWith("timeline_"));
-    const total = coupleItems.length;
-    const completed = coupleItems.filter(i => i.status === "complete").length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    setChecklistProgress({ total, completed, percentage });
-
-    const incomplete = coupleItems
-      .filter(i => i.status !== "complete");
-
-    setNextTask(incomplete[0] ?? null);
-  };
-
   useEffect(() => {
     fetchEventData();
-  }, [user, previewEventId]);
+  }, [user, previewEventIdFromRoute]);
 
   const daysUntilArrival = (() => {
     if (!event?.arrival_date) return null;
@@ -125,13 +167,13 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
   })();
 
   const refreshChecklist = () => {
-    if (event?.id) fetchChecklist(event.id);
+    if (eventId) void fetchChecklist(eventId);
   };
 
   return (
     <PortalDataContext.Provider value={{
       event,
-      eventId: event?.id ?? null,
+      eventId,
       accessTier,
       roleInEvent,
       checklistProgress,

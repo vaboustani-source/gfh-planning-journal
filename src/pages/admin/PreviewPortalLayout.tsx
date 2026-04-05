@@ -54,7 +54,7 @@ export default function PreviewPortalLayout() {
   if (!eventId) return null;
 
   return (
-    <PortalDataProvider previewEventId={eventId}>
+    <PortalDataProvider key={eventId} previewEventId={eventId}>
       <div className="min-h-screen bg-background flex flex-col">
         {/* Preview banner */}
         <div className="sticky top-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-2.5">
