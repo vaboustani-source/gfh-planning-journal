@@ -223,7 +223,7 @@ export default function Planning() {
                   <div key={section} className="rounded-xl bg-card border border-border shadow-soft overflow-hidden">
                     <button
                       onClick={() => toggleSection(section)}
-                      className={`w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-muted/30 ${isCurrent ? "bg-sage/8" : ""}`}
+                      className={`w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-muted/30 ${isCurrent ? "bg-sage/8" : ""}`}
                     >
                       {allDone ? (
                         <CheckCircle2 size={18} className="text-primary shrink-0" />
@@ -248,7 +248,7 @@ export default function Planning() {
                           const isItemExpanded = expandedItems.has(item.id);
                           return (
                             <div key={item.id} className="border-b border-border last:border-b-0">
-                              <div className="w-full flex items-start gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors">
+                              <div className="w-full flex items-start gap-3 p-4 py-3 hover:bg-muted/20 transition-colors">
                                 <button
                                   onClick={() => toggleItem(item.id, item.status)}
                                   className="shrink-0 mt-0.5"
