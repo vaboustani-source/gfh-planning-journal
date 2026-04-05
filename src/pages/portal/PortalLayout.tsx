@@ -4,8 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import {
   Sunrise, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User
 } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const allNavItems = [
   { to: "/portal/today",           label: "Today",             icon: Sunrise,           tiers: [1, 2, 3, 4] },
@@ -97,16 +98,6 @@ function PortalLayoutInner() {
             </div>
           </div>
 
-          {/* Profile */}
-          <div className="px-5 py-4 border-b border-border">
-            <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
-            <p className="font-body text-sm font-medium text-foreground truncate">
-              {profile?.first_name && profile?.last_name
-                ? `${profile.first_name} ${profile.last_name}`
-                : profile?.email}
-            </p>
-          </div>
-
           {/* Nav */}
           <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
             {navItems.map(item => (
@@ -114,11 +105,17 @@ function PortalLayoutInner() {
             ))}
           </nav>
 
-          {/* Sign out */}
-          <div className="px-3 py-4 border-t border-border">
+          {/* Profile + Sign out */}
+          <div className="px-5 py-4 border-t border-border">
+            <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
+            <p className="font-body text-sm font-medium text-foreground truncate mb-3">
+              {profile?.first_name && profile?.last_name
+                ? `${profile.first_name} ${profile.last_name}`
+                : profile?.email}
+            </p>
             <button
               onClick={() => signOut().then(() => navigate("/login"))}
-              className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg font-body text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              className="flex items-center gap-3 px-0 py-1 w-full font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <LogOut size={16} strokeWidth={1.75} />
               Sign out
@@ -192,6 +189,33 @@ function PortalLayoutInner() {
             {navItems.map(item => (
               <MobileNavItem key={item.to} {...item} />
             ))}
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="flex flex-col items-center gap-1 px-2 py-1.5 text-muted-foreground">
+                  <User size={20} strokeWidth={1.75} />
+                  <span className="font-body text-[10px] leading-tight">Account</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="rounded-t-2xl pb-10">
+                <div className="pt-2 pb-4 flex flex-col items-center gap-4">
+                  <div className="text-center">
+                    <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
+                    <p className="font-body text-base font-medium text-foreground">
+                      {profile?.first_name && profile?.last_name
+                        ? `${profile.first_name} ${profile.last_name}`
+                        : profile?.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => signOut().then(() => navigate("/login"))}
+                    className="flex items-center gap-2 rounded-xl bg-muted px-6 py-2.5 font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <LogOut size={16} strokeWidth={1.75} />
+                    Sign out
+                  </button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </nav>
         </div>
 
