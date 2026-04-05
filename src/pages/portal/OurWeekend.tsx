@@ -4,6 +4,7 @@ import { usePortalData } from "@/hooks/usePortalData";
 import { CalendarHeart, MapPin, Users, Clock, Check } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPackageTier } from "@/lib/formatMealType";
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null }) {
   if (!value) return null;
