@@ -92,8 +92,8 @@ function PortalLayoutInner() {
                 </svg>
               </div>
               <div>
-                <p className="font-display text-base font-light leading-tight text-foreground">Gilbertsville</p>
-                <p className="font-body text-[10px] text-muted-foreground -mt-0.5">Farmhouse</p>
+                <p className="font-display text-base font-light leading-tight text-foreground">Gilbertsville Farmhouse</p>
+                <p className="font-body text-[10px] text-muted-foreground -mt-0.5 pt-[2px]">Planning Journal</p>
               </div>
             </div>
           </NavLink>
