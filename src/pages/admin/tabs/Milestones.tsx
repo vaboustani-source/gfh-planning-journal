@@ -130,21 +130,21 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
               {/* Checkbox */}
               <button
                 onClick={() => toggleComplete(m)}
-                className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                className={`mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                   done
                     ? "bg-sage border-sage text-white"
                     : overdue
-                    ? "border-destructive/50 hover:border-destructive"
-                    : "border-border hover:border-sage"
+                    ? "border-destructive hover:border-destructive"
+                    : "border-muted-foreground/40 hover:border-sage"
                 }`}
               >
-                {done && <Check size={11} className="text-white" />}
+                {done && <Check size={12} className="text-white" />}
               </button>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <p className={`font-body text-sm font-medium ${done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <p className={`font-body text-sm font-semibold ${done ? "line-through text-muted-foreground" : "text-foreground"}`}>
                     {m.title}
                   </p>
                   {overdue && (

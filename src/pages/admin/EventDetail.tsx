@@ -20,7 +20,7 @@ const TABS = [
   { id: "milestones", label: "Milestones" },
   { id: "checklist", label: "Checklist" },
   { id: "vendors", label: "Vendors" },
-  { id: "ceremony", label: "Ceremony" },
+  { id: "ceremony", label: "Ceremony & Music" },
   { id: "menus-bar", label: "Menus & Bar" },
   { id: "dietary", label: "Dietary & Kids" },
   { id: "lodging", label: "Lodging" },

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { Save, Check, Loader2, Minus, Plus } from "lucide-react";
+import { formatMealType } from "@/lib/formatMealType";
 
 interface MealEvent {
   id: string;
@@ -9,13 +10,6 @@ interface MealEvent {
   adult_count: number;
   kids_count: number;
   location: string | null;
-}
-
-function formatMealType(raw: string) {
-  return raw
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
 }
 
 function Stepper({
