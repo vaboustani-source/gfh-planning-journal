@@ -82,13 +82,46 @@ export default function Planning() {
   })();
 
   const fetchItems = useCallback(async () => {
-    if (!eventId) return;
-    const { data } = await supabase
-      .from("checklist_items")
-      .select("id, label, section, status, owner, paced_send_date, completed_at, notes, sort_order")
-      .eq("event_id", eventId)
-      .order("sort_order", { ascending: true });
-    if (data) setItems(data);
+    if (!eventId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const selectFields = "id, label, section, status, owner, paced_send_date, completed_at, notes, sort_order";
+
+    const [
+      { data: checklistData, error: checklistError },
+      { data: timelineData, error: timelineError },
+    ] = await Promise.all([
+      supabase
+        .from("checklist_items")
+        .select(selectFields)
+        .eq("event_id", eventId)
+        .in("section", CHECKLIST_SECTIONS)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("checklist_items")
+        .select(selectFields)
+        .eq("event_id", eventId)
+        .in("section", TIMELINE_SECTIONS.map(({ key }) => key))
+        .order("sort_order", { ascending: true }),
+    ]);
+
+    console.log("Planning My Checklist query result", {
+      eventId,
+      sections: CHECKLIST_SECTIONS,
+      count: checklistData?.length ?? 0,
+      items: checklistData ?? [],
+      error: checklistError ?? null,
+    });
+
+    if (checklistError || timelineError) {
+      console.error("Failed to load planning items", { checklistError, timelineError });
+    }
+
+    setItems([...(checklistData ?? []), ...(timelineData ?? [])]);
     setLoading(false);
   }, [eventId]);
 

@@ -103,7 +103,7 @@ export default function Messages() {
     <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen pb-20">
       {/* Header */}
       <div className="shrink-0 px-5 py-4 lg:px-8 border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-sage/15 border border-sage/25 flex items-center justify-center shrink-0">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-sage">
               <path d="M12 2C8 2 4 6 4 10c0 5.5 8 12 8 12s8-6.5 8-12c0-4-4-8-8-8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -119,7 +119,7 @@ export default function Messages() {
 
       {/* Message thread */}
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 lg:px-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {loading && (
             <div className="flex justify-center py-16">
               <Loader2 size={20} className="animate-spin text-muted-foreground" />
@@ -209,7 +209,7 @@ export default function Messages() {
 
       {/* Input bar */}
       <div className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8 sticky bottom-20 z-10">
-        <div className="max-w-2xl mx-auto flex items-end gap-2.5">
+        <div className="max-w-5xl mx-auto flex items-end gap-2.5">
           <textarea
             ref={inputRef}
             value={newMessage}
@@ -233,7 +233,7 @@ export default function Messages() {
             {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           </button>
         </div>
-        <p className="max-w-2xl mx-auto font-body text-[10px] text-muted-foreground mt-1.5 pl-1">
+        <p className="max-w-5xl mx-auto font-body text-[10px] text-muted-foreground mt-1.5 pl-1">
           Press Enter to send · Shift+Enter for new line
         </p>
       </div>
