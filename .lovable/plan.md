@@ -1,59 +1,47 @@
 
 
-# Mirror Admin Ceremony Tab in Couple Portal
+# Separate Wedding Timeline into Its Own Portal Tab
 
-## Gap Analysis
+## What changes
 
-The couple's CeremonyMusic component is missing these sections that exist on the admin side:
+The wedding timeline (currently embedded at the bottom of "Our Weekend") becomes its own dedicated portal page at `/portal/timeline`. The timeline blocks get redesigned as cards with a side-by-side day layout on desktop.
 
-| Admin Section | Couple Has? |
-|---|---|
-| Officiant | Yes |
-| Ceremony Music Provider (musician, mic, speakers) | No |
-| Processional Order | Yes |
-| Post-ceremony (photos, cocktail hour checkboxes) | No |
-| Wedding Party at Altar (sit/stand) | No |
-| Music Selections (+ cake cutting song) | Partial — missing cake cutting |
-| Parent Dances | Yes |
-| Reception — Formal Introductions | No |
-| Welcome Toast | No |
-| DJ / Band | No |
-| Speeches (rehearsal + reception) | No |
-| Miscellaneous Notes | No |
-| Special Notes | Yes |
+## Changes
 
-## Plan
+### 1. New file: `src/pages/portal/Timeline.tsx`
 
-### File: `src/pages/portal/details/CeremonyMusic.tsx` — Major expansion
+- Extract and redesign the `WeekendTimeline` component from `OurWeekend.tsx`
+- Each day becomes a card (`bg-card border border-border rounded-xl shadow-soft`) with the day label as a card header
+- Days use `lg:grid-cols-2 gap-6` on desktop (side by side), single column on mobile
+- Inside each day card, timeline blocks become individual rows with a time badge (sage background chip) and the event description
+- Highlighted rows get a `border-l-2 border-gold` accent
+- Keep the "being finalized" placeholder when unpublished
+- Include `PortalStickyFooter` navigating to the next section (Vendors)
 
-Add all missing state fields matching the admin component's types:
-- `MusicianSinger`, `IntroEntry`, `SpeechEntry` interfaces
-- State for: `musicianSinger`, `micSpeakers`, `microphone`, `ceremonyMusicVendor`, `djBandVendor`, `couplePhotos`, `coupleCocktail`, `altarChoice`, `altarNotes`, `cakeCuttingSong`, `introductions`, `welcomeToast`, `djAfterParty`, `djPlaylist`, `djEvents`, `speechesRehearsal`, `speechesReception`, `miscNotes`
+### 2. Update `src/pages/portal/OurWeekend.tsx`
 
-Load all new fields from the `ceremony_details` row on mount (same cast pattern as admin).
+- Remove the `WeekendTimeline` component and its related types/functions (`migrateForPortal`, `TimelineBlock`, etc.)
+- Remove the `{eventId && <WeekendTimeline eventId={eventId} />}` render
+- Update the sticky footer to navigate to `/portal/timeline` instead of `/portal/planning`
 
-Add matching sections in portal styling (rounded cards, `SectionHeading`, `TextInput`):
-1. **Ceremony Music Provider** — musician booked checkbox, name, mic & speakers checkbox, mic type dropdown, vendor name
-2. **Post-processional** — two checkboxes after processional section (photos, cocktail hour)
-3. **Wedding Party at Altar** — sit/stand select + notes
-4. **Music Selections** — add cake cutting song field
-5. **Formal Introductions** — add/remove entries with name, role, unescorted toggle, escorted by, song
-6. **Welcome Toast** — single text input
-7. **DJ / Band** — vendor name, after-party checkbox, playlist name, event checkboxes
-8. **Speeches** — rehearsal dinner + reception speakers with time estimates
-9. **Miscellaneous Notes** — textarea with backup email reminder
+### 3. Update `src/pages/portal/PortalLayout.tsx`
 
-All fields respect the `locked` state (readOnly inputs, no add/remove buttons when locked).
+- Add nav item: `{ to: "/portal/timeline", label: "Timeline", icon: Clock, tiers: [1, 3, 4] }` after "Our Wedding"
 
-Update `handleSave` payload to include all new fields, matching the admin's `buildPayload` column names.
+### 4. Update `src/App.tsx`
 
-### File: `src/pages/portal/Ceremony.tsx` — No changes needed
+- Import `Timeline` from `./pages/portal/Timeline`
+- Add `<Route path="timeline" element={<Timeline />} />` under both `/portal` and `/admin/preview/:eventId` route groups
 
-Already wraps `CeremonyMusic` correctly.
+### 5. Update navigation flow
+
+- `OurWeekend` footer → `/portal/timeline`
+- `Timeline` footer → `/portal/planning`
+- `Planning` footer stays → `/portal/vendors`
 
 ### Technical notes
-- All new fields map to existing `ceremony_details` columns (same ones the admin already reads/writes)
-- No database changes needed
-- Same `as Record<string, unknown>` cast pattern for columns not in the generated types
-- Portal uses manual save button; no autosave change needed
+
+- The `migrateForPortal` function moves to `Timeline.tsx` (handles both legacy 3-key format and new `days[]` format from `working_timeline`)
+- Desktop grid: `grid grid-cols-1 lg:grid-cols-2 gap-6` — if there's an odd number of days, the last card spans full width naturally
+- Each time block inside a card: horizontal layout with a fixed-width time chip and description text
 
