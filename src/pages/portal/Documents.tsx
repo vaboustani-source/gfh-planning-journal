@@ -229,7 +229,8 @@ export default function Documents() {
         </div>
       )}
 
-      <PortalStickyFooter onContinue={() => navigate("/portal/today")} nextOnly />
     </div>
+    <PortalStickyFooter onContinue={() => navigate("/portal/today")} nextOnly />
+    </>
   );
 }
