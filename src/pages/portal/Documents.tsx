@@ -152,7 +152,8 @@ export default function Documents() {
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="max-w-3xl mx-auto px-5 py-10 space-y-8">
+    <>
+    <div className="max-w-3xl mx-auto px-5 py-10 space-y-8 pb-32">
       <div>
         <h1 className="font-display text-2xl font-light text-foreground">Documents</h1>
         <p className="font-body text-sm text-muted-foreground mt-1">View shared documents and upload your own files.</p>
