@@ -518,29 +518,43 @@ export default function AdminDashboard() {
 
             {/* ─── Season View ─── */}
             {!loading && events.length > 0 && (
-              <div className="mt-10">
-                <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-4">Full Season</p>
-                <div className="rounded-xl bg-card border border-border overflow-hidden">
-                  {Object.entries(eventsByMonth).map(([month, monthEvents]) => (
+              <div className="mt-12">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-7 h-7 rounded-full bg-sage/10 flex items-center justify-center">
+                    <Calendar className="w-3.5 h-3.5 text-sage" />
+                  </div>
+                  <div>
+                    <p className="font-display text-lg font-light text-foreground">Full Season</p>
+                    <p className="font-body text-xs text-muted-foreground">All events at a glance</p>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-card border border-border/60 overflow-hidden shadow-soft">
+                  {Object.entries(eventsByMonth).map(([month, monthEvents], groupIdx) => (
                     <div key={month}>
-                      <div className="px-5 py-2 bg-muted/30 border-b border-border sticky top-16 z-10">
-                        <p className="font-body text-xs font-medium text-foreground">{month}</p>
+                      <div className="px-5 py-2.5 bg-muted/20 border-b border-border/40 sticky top-16 z-10">
+                        <p className="font-display text-sm font-medium text-foreground tracking-wide">{month}</p>
                       </div>
-                      {monthEvents.map(e => {
+                      {monthEvents.map((e, idx) => {
                         const d = daysFromNow(e.arrival_date || e.wedding_date);
                         const st = autoStatus(e.milestones.completed);
+                        const isLast = idx === monthEvents.length - 1;
                         return (
                           <button
                             key={e.id}
                             onClick={() => navigate(`/admin/events/${e.id}`)}
-                            className="w-full text-left px-5 py-3 flex items-center gap-4 border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors"
+                            className={`w-full text-left px-5 py-3.5 flex items-center gap-4 hover:bg-muted/15 transition-colors group ${!isLast ? "border-b border-border/30" : ""}`}
                           >
-                            <span className="font-body text-sm text-foreground flex-1 min-w-0 truncate">{e.couple_names}</span>
-                            <span className="font-body text-xs text-muted-foreground shrink-0">
-                              {(e.arrival_date || e.wedding_date) ? format(parseISO(e.arrival_date || e.wedding_date!), "MMM d") : "TBD"}
-                            </span>
-                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-body text-[10px] font-medium shrink-0 ${st.color}`}>{st.label}</span>
-                            <span className="font-body text-xs text-muted-foreground shrink-0 w-20 text-right">{d !== null ? `${d}d away` : ""}</span>
+                            <div className="flex-1 min-w-0">
+                              <span className="font-body text-sm font-medium text-foreground truncate block">{e.couple_names}</span>
+                              <span className="font-body text-[11px] text-muted-foreground mt-0.5 block">
+                                {(e.arrival_date || e.wedding_date) ? format(parseISO(e.arrival_date || e.wedding_date!), "MMMM d, yyyy") : "Date TBD"}
+                              </span>
+                            </div>
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-body text-[10px] font-medium shrink-0 ${st.color}`}>{st.label}</span>
+                            {d !== null && (
+                              <span className="font-body text-xs text-muted-foreground shrink-0 w-16 text-right tabular-nums">{d}d</span>
+                            )}
+                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 group-hover:text-foreground/60 transition-colors" />
                           </button>
                         );
                       })}
