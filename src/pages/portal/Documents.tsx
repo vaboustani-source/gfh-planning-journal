@@ -5,6 +5,7 @@ import { usePortalData } from "@/hooks/usePortalData";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
+import { toast } from "sonner";
 
 interface Doc {
   id: string;
@@ -13,6 +14,7 @@ interface Doc {
   document_type: string | null;
   uploaded_at: string | null;
   uploaded_by: string | null;
+  signedUrl?: string;
 }
 
 const DOC_GROUPS: { key: string; label: string; types: string[] }[] = [
@@ -31,6 +33,11 @@ function getDocIcon(name: string) {
   return <File size={16} className="text-muted-foreground" />;
 }
 
+function extractStoragePath(fileUrl: string): string | null {
+  const match = fileUrl.match(/vendor-contracts\/(.+?)(?:\?|$)/);
+  return match ? match[1] : null;
+}
+
 export default function Documents() {
   const { eventId } = usePortalData();
   const { user } = useAuth();
@@ -42,31 +49,57 @@ export default function Documents() {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (eventId) fetchDocs();
-  }, [eventId]);
-
-  const fetchDocs = async () => {
+  const fetchDocs = useCallback(async () => {
+    if (!eventId) return;
     const { data } = await supabase
       .from("documents")
       .select("*")
-      .eq("event_id", eventId!)
+      .eq("event_id", eventId)
       .order("uploaded_at", { ascending: false });
-    if (data) setDocs(data);
+    if (data) {
+      // Generate signed URLs for all docs
+      const withUrls = await Promise.all(
+        data.map(async (doc) => {
+          const path = extractStoragePath(doc.file_url);
+          if (path) {
+            const { data: signed } = await supabase.storage
+              .from("vendor-contracts")
+              .createSignedUrl(path, 3600);
+            return { ...doc, signedUrl: signed?.signedUrl || doc.file_url };
+          }
+          return { ...doc, signedUrl: doc.file_url };
+        })
+      );
+      setDocs(withUrls);
+    }
     setLoading(false);
-  };
+  }, [eventId]);
 
-  const uploadFile = async (file: globalThis.File) => {
-    if (!file || file.size > 20 * 1024 * 1024) return;
+  useEffect(() => {
+    if (eventId) fetchDocs();
+  }, [eventId, fetchDocs]);
+
+  const uploadFile = useCallback(async (file: globalThis.File) => {
+    if (!file || !eventId) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File too large — 20MB max");
+      return;
+    }
     setUploading(true);
     setUploadProgress(10);
 
     const filePath = `${eventId}/couple/${Date.now()}_${file.name}`;
     setUploadProgress(30);
     const { error } = await supabase.storage.from("vendor-contracts").upload(filePath, file);
-    if (error) { setUploading(false); setUploadProgress(0); return; }
+    if (error) {
+      toast.error("Upload failed — please try again");
+      setUploading(false);
+      setUploadProgress(0);
+      return;
+    }
 
     setUploadProgress(70);
+    // Store the base public URL for reference; we generate signed URLs on fetch
     const { data: urlData } = supabase.storage.from("vendor-contracts").getPublicUrl(filePath);
 
     await supabase.from("documents").insert({
@@ -78,9 +111,10 @@ export default function Documents() {
     });
 
     setUploadProgress(100);
+    toast.success("File uploaded");
     await fetchDocs();
     setTimeout(() => { setUploading(false); setUploadProgress(0); }, 400);
-  };
+  }, [eventId, user, fetchDocs]);
 
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,16 +127,17 @@ export default function Documents() {
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) await uploadFile(file);
-  }, [eventId]);
+  }, [uploadFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragOver(true); }, []);
   const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragOver(false); }, []);
 
   const deleteDoc = async (doc: Doc) => {
-    const pathMatch = doc.file_url.match(/vendor-contracts\/(.+)$/);
-    if (pathMatch) await supabase.storage.from("vendor-contracts").remove([pathMatch[1]]);
+    const path = extractStoragePath(doc.file_url);
+    if (path) await supabase.storage.from("vendor-contracts").remove([path]);
     await supabase.from("documents").delete().eq("id", doc.id);
     setDocs(prev => prev.filter(d => d.id !== doc.id));
+    toast.success("Document deleted");
   };
 
   const groupedDocs = DOC_GROUPS.map(group => ({
@@ -170,7 +205,7 @@ export default function Documents() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                  <a href={doc.signedUrl || doc.file_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
                     <Download size={14} />
                   </a>
                   {doc.uploaded_by === user?.id && (
