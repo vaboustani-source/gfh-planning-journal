@@ -15,6 +15,7 @@ import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
+import Timeline from "./pages/portal/Timeline";
 import Planning from "./pages/portal/Planning";
 import Vendors from "./pages/portal/Vendors";
 import Ceremony from "./pages/portal/Ceremony";
@@ -87,6 +88,7 @@ const App = () => (
               <Route index element={<Navigate to="today" replace />} />
               <Route path="today" element={<Today />} />
               <Route path="our-wedding" element={<OurWeekend />} />
+              <Route path="timeline" element={<Timeline />} />
               <Route path="planning" element={<Planning />} />
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
@@ -111,6 +113,7 @@ const App = () => (
               <Route index element={<Navigate to="/portal/today" replace />} />
               <Route path="today" element={<Today />} />
               <Route path="our-wedding" element={<OurWeekend />} />
+              <Route path="timeline" element={<Timeline />} />
               <Route path="planning" element={<Planning />} />
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />

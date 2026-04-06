@@ -95,98 +95,6 @@ function PlanningJourney({ eventId }: { eventId: string }) {
   );
 }
 
-/* ── New timeline types ── */
-interface TimelineBlock { time: string; foh: string; highlight?: string | null; }
-interface TimelineDayV2 { id: string; label: string; blocks: TimelineBlock[]; }
-interface TimelineDataV2 { days: TimelineDayV2[]; }
-interface LegacyBlock { time: string; foh_label: string; }
-interface LegacyData { arrival_day?: LegacyBlock[]; wedding_day?: LegacyBlock[]; farewell_day?: LegacyBlock[]; }
-
-function migrateForPortal(raw: any): TimelineDayV2[] {
-  if (raw?.days && Array.isArray(raw.days)) {
-    return (raw as TimelineDataV2).days.map(d => ({
-      id: d.id,
-      label: d.label,
-      blocks: d.blocks.filter(b => b.foh).map(b => ({ time: b.time, foh: b.foh, highlight: b.highlight })),
-    }));
-  }
-  const legacy = raw as LegacyData;
-  const map: { key: keyof LegacyData; label: string }[] = [
-    { key: "arrival_day", label: "Arrival Day" },
-    { key: "wedding_day", label: "Wedding Day" },
-    { key: "farewell_day", label: "Farewell Day" },
-  ];
-  return map
-    .filter(d => legacy[d.key])
-    .map((d, i) => ({
-      id: `day_${i + 1}`,
-      label: d.label,
-      blocks: (legacy[d.key] || []).filter(b => b.foh_label).map(b => ({ time: b.time, foh: b.foh_label, highlight: null })),
-    }));
-}
-
-function WeekendTimeline({ eventId }: { eventId: string }) {
-  const [days, setDays] = useState<TimelineDayV2[]>([]);
-  const [published, setPublished] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!eventId) return;
-    const load = async () => {
-      const { data } = await supabase.from("working_timeline").select("timeline_data, published").eq("event_id", eventId).maybeSingle();
-      if (data) {
-        setDays(migrateForPortal(data.timeline_data));
-        setPublished(data.published || false);
-      }
-      setLoading(false);
-    };
-    load();
-  }, [eventId]);
-
-  if (loading) return <div className="mt-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
-
-  if (!published || days.length === 0) {
-    return (
-      <div className="mt-10">
-        <p className="font-display text-2xl font-light text-foreground mb-2">Your Weekend Timeline</p>
-        <div className="rounded-xl bg-card border border-border shadow-soft p-6 text-center">
-          <p className="font-body text-sm text-muted-foreground">Your weekend timeline is being finalized by Brandon — check back soon.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-10">
-      <p className="font-display text-2xl font-light text-foreground mb-1">Your Weekend Timeline</p>
-      <p className="font-body text-sm text-muted-foreground mb-6">Your complete weekend itinerary at Gilbertsville Farmhouse.</p>
-      <div className="space-y-8">
-        {days.map(day => {
-          if (day.blocks.length === 0) return null;
-          return (
-            <div key={day.id}>
-              <p className="font-display text-lg font-light text-foreground mb-4">{day.label}</p>
-              <div className="relative pl-8">
-                <div className="absolute left-[11px] top-2 bottom-2 w-px bg-sage/30" />
-                <div className="space-y-0">
-                  {day.blocks.map((b, i) => (
-                    <div key={i} className="flex items-start gap-4 relative py-3">
-                      <div className="absolute left-[-21px] top-[18px] w-[9px] h-[9px] rounded-full bg-sage border-2 border-background z-10" />
-                      <div className="flex items-baseline gap-3 min-w-0">
-                        <span className="font-body text-xs text-sage font-medium whitespace-nowrap w-[80px] shrink-0">{b.time}</span>
-                        <span className="font-body text-sm text-foreground">{b.foh}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export default function OurWeekend() {
   const { event, eventId, loading } = usePortalData();
@@ -218,12 +126,12 @@ export default function OurWeekend() {
               </div>
             </div>
             {eventId && <PlanningJourney eventId={eventId} />}
-            {eventId && <WeekendTimeline eventId={eventId} />}
+            
           </>
         )}
       </div>
     </div>
-    <PortalStickyFooter onContinue={() => navigate("/portal/planning")} nextOnly />
+    <PortalStickyFooter onContinue={() => navigate("/portal/timeline")} nextOnly />
     </>
   );
 }
