@@ -154,29 +154,30 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
   return (
     <div className="space-y-8">
       {/* Upload section */}
-      {/* Header with Upload + Download All */}
-      <div className="flex items-center justify-between mb-2">
-        <p className="font-display text-lg font-light text-foreground">Upload Document</p>
-        {docs.length > 0 && (
-          <button
-            onClick={downloadAllZip}
-            disabled={zipping}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 font-body text-xs font-medium text-foreground hover:bg-muted/50 transition-colors disabled:opacity-60"
-          >
-            {zipping ? (
-              <>
-                <Loader2 size={14} className="animate-spin" />
-                Zipping {zipProgress}%
-              </>
-            ) : (
-              <>
-                <Archive size={14} />
-                Download All (.zip)
-              </>
-            )}
-          </button>
-        )}
-      </div>
+      <div className="rounded-xl bg-card border border-border p-5 shadow-soft">
+        {/* Header with Upload + Download All */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-display text-lg font-light text-foreground">Upload Document</p>
+          {docs.length > 0 && (
+            <button
+              onClick={downloadAllZip}
+              disabled={zipping}
+              className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-body text-xs font-medium text-foreground hover:bg-muted/50 transition-colors disabled:opacity-60"
+            >
+              {zipping ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Zipping {zipProgress}%
+                </>
+              ) : (
+                <>
+                  <Archive size={14} />
+                  Download All (.zip)
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         <div className="mb-3">
           <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground block mb-1">Type</label>
