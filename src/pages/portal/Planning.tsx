@@ -370,7 +370,7 @@ export default function Planning() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("checklist");
+  const [tab, setTab] = useState("timeline");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [addingTo, setAddingTo] = useState<string | null>(null);
@@ -464,8 +464,8 @@ export default function Planning() {
 
         <SectionTabs
           tabs={[
-            { id: "checklist", label: "My Checklist" },
             { id: "timeline", label: "Planning Timeline" },
+            { id: "checklist", label: "My Checklist" },
           ]}
           active={tab}
           onChange={setTab}
