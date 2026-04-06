@@ -23,6 +23,7 @@ import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
 import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
+import Documents from "./pages/portal/Documents";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

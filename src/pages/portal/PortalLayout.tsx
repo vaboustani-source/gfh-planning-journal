@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -20,6 +20,7 @@ const allNavItems = [
   { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4] },
   { to: "/portal/messages",        label: "Messages",          icon: MessageCircle,     tiers: [1, 2, 3, 4] },
   { to: "/portal/notes",           label: "Notes",             icon: StickyNote,        tiers: [1, 3, 4] },
+  { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4] },
 ];
 
 function NavItem({ to, label, icon: Icon, onClick }: { to: string; label: string; icon: React.ElementType; onClick?: () => void }) {
