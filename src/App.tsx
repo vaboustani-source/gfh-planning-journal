@@ -23,6 +23,7 @@ import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
 import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
+import Documents from "./pages/portal/Documents";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="documents" element={<Documents />} />
             </Route>
 
             {/* Couple Portal — nested */}
@@ -109,6 +111,7 @@ const App = () => (
               <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="documents" element={<Documents />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

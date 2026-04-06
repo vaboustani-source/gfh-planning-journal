@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Upload, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload } from "lucide-react";
+import { Loader2, Upload, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, Archive } from "lucide-react";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 interface Doc {
   id: string;
@@ -36,6 +38,8 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadType, setUploadType] = useState("other");
   const [dragOver, setDragOver] = useState(false);
+  const [zipping, setZipping] = useState(false);
+  const [zipProgress, setZipProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -117,6 +121,26 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     setDocs(prev => prev.filter(d => d.id !== doc.id));
   };
 
+  const downloadAllZip = async () => {
+    if (docs.length === 0 || zipping) return;
+    setZipping(true);
+    setZipProgress(0);
+    const zip = new JSZip();
+    for (let i = 0; i < docs.length; i++) {
+      try {
+        const res = await fetch(docs[i].file_url);
+        const blob = await res.blob();
+        zip.file(docs[i].file_name, blob);
+      } catch { /* skip failed fetches */ }
+      setZipProgress(Math.round(((i + 1) / docs.length) * 80));
+    }
+    setZipProgress(90);
+    const content = await zip.generateAsync({ type: "blob" });
+    setZipProgress(100);
+    saveAs(content, `event_documents.zip`);
+    setTimeout(() => { setZipping(false); setZipProgress(0); }, 500);
+  };
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>;
 
   const groupedDocs = DOC_GROUPS.map(group => ({
@@ -131,7 +155,29 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     <div className="space-y-8">
       {/* Upload section */}
       <div className="rounded-xl bg-card border border-border p-5 shadow-soft">
-        <p className="font-display text-lg font-light text-foreground mb-3">Upload Document</p>
+        {/* Header with Upload + Download All */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-display text-lg font-light text-foreground">Upload Document</p>
+          {docs.length > 0 && (
+            <button
+              onClick={downloadAllZip}
+              disabled={zipping}
+              className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-body text-xs font-medium text-foreground hover:bg-muted/50 transition-colors disabled:opacity-60"
+            >
+              {zipping ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Zipping {zipProgress}%
+                </>
+              ) : (
+                <>
+                  <Archive size={14} />
+                  Download All (.zip)
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         <div className="mb-3">
           <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground block mb-1">Type</label>
