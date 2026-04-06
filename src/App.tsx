@@ -66,6 +66,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/messages"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminAllMessages />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin Preview of Couple Portal */}
             <Route

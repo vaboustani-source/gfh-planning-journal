@@ -303,13 +303,14 @@ export default function AdminDashboard() {
   });
 
   /* Attention grouped by type */
-  const attentionGroups: { type: AttentionType; title: string; items: AttentionItem[] }[] = [
-    { type: "message", title: "Unread Messages", items: attention.filter(a => a.type === "message") },
-    { type: "milestone", title: "Milestones", items: attention.filter(a => a.type === "milestone") },
-    { type: "payment", title: "Payments", items: attention.filter(a => a.type === "payment") },
-    { type: "timeline", title: "Timelines", items: attention.filter(a => a.type === "timeline") },
-    { type: "quiet", title: "Quiet Couples", items: attention.filter(a => a.type === "quiet") },
-  ].filter(g => g.items.length > 0);
+  const attentionGroupsDef: { type: AttentionType; title: string; items: AttentionItem[] }[] = [
+    { type: "message" as AttentionType, title: "Unread Messages", items: attention.filter(a => a.type === "message") },
+    { type: "milestone" as AttentionType, title: "Milestones", items: attention.filter(a => a.type === "milestone") },
+    { type: "payment" as AttentionType, title: "Payments", items: attention.filter(a => a.type === "payment") },
+    { type: "timeline" as AttentionType, title: "Timelines", items: attention.filter(a => a.type === "timeline") },
+    { type: "quiet" as AttentionType, title: "Quiet Couples", items: attention.filter(a => a.type === "quiet") },
+  ];
+  const attentionGroups = attentionGroupsDef.filter(g => g.items.length > 0);
 
   const attentionIcon = (type: AttentionType) => {
     if (type === "message") return <MessageCircle size={12} className="text-primary shrink-0" />;
