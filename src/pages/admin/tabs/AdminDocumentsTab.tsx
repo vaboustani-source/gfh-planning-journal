@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Upload, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, Archive } from "lucide-react";
+import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, Archive } from "lucide-react";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { toast } from "sonner";
 
 interface Doc {
   id: string;
@@ -12,7 +13,7 @@ interface Doc {
   document_type: string | null;
   uploaded_at: string | null;
   uploaded_by: string | null;
-  uploaderName?: string;
+  signedUrl?: string;
 }
 
 const DOC_GROUPS: { key: string; label: string; types: string[] }[] = [
@@ -31,6 +32,11 @@ function getDocIcon(name: string) {
   return <File size={16} className="text-muted-foreground" />;
 }
 
+function extractStoragePath(fileUrl: string): string | null {
+  const match = fileUrl.match(/vendor-contracts\/(.+?)(?:\?|$)/);
+  return match ? match[1] : null;
+}
+
 export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext: () => void }) {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,24 +48,40 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
   const [zipProgress, setZipProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchDocs();
-  }, [eventId]);
-
-  const fetchDocs = async () => {
+  const fetchDocs = useCallback(async () => {
     const { data } = await supabase
       .from("documents")
       .select("*")
       .eq("event_id", eventId)
       .order("uploaded_at", { ascending: false });
-    if (data) setDocs(data);
+    if (data) {
+      const withUrls = await Promise.all(
+        data.map(async (doc) => {
+          const path = extractStoragePath(doc.file_url);
+          if (path) {
+            const { data: signed } = await supabase.storage
+              .from("vendor-contracts")
+              .createSignedUrl(path, 3600);
+            return { ...doc, signedUrl: signed?.signedUrl || doc.file_url };
+          }
+          return { ...doc, signedUrl: doc.file_url };
+        })
+      );
+      setDocs(withUrls);
+    }
     setLoading(false);
-  };
+  }, [eventId]);
 
-  const uploadFile = async (file: globalThis.File) => {
+  useEffect(() => {
+    fetchDocs();
+  }, [fetchDocs]);
+
+  const uploadFile = useCallback(async (file: globalThis.File) => {
     if (!file) return;
-    const maxSize = 20 * 1024 * 1024;
-    if (file.size > maxSize) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File too large — 20MB max");
+      return;
+    }
 
     setUploading(true);
     setUploadProgress(10);
@@ -67,7 +89,12 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     const filePath = `${eventId}/admin/${Date.now()}_${file.name}`;
     setUploadProgress(30);
     const { error: upErr } = await supabase.storage.from("vendor-contracts").upload(filePath, file);
-    if (upErr) { setUploading(false); setUploadProgress(0); return; }
+    if (upErr) {
+      toast.error("Upload failed — please try again");
+      setUploading(false);
+      setUploadProgress(0);
+      return;
+    }
 
     setUploadProgress(70);
     const { data: urlData } = supabase.storage.from("vendor-contracts").getPublicUrl(filePath);
@@ -82,12 +109,13 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     });
 
     setUploadProgress(100);
+    toast.success("File uploaded");
     await fetchDocs();
     setTimeout(() => {
       setUploading(false);
       setUploadProgress(0);
     }, 400);
-  };
+  }, [eventId, uploadType, fetchDocs]);
 
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,7 +128,7 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) await uploadFile(file);
-  }, [eventId, uploadType]);
+  }, [uploadFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -113,12 +141,11 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
   }, []);
 
   const deleteDoc = async (doc: Doc) => {
-    const pathMatch = doc.file_url.match(/vendor-contracts\/(.+)$/);
-    if (pathMatch) {
-      await supabase.storage.from("vendor-contracts").remove([pathMatch[1]]);
-    }
+    const path = extractStoragePath(doc.file_url);
+    if (path) await supabase.storage.from("vendor-contracts").remove([path]);
     await supabase.from("documents").delete().eq("id", doc.id);
     setDocs(prev => prev.filter(d => d.id !== doc.id));
+    toast.success("Document deleted");
   };
 
   const downloadAllZip = async () => {
@@ -128,7 +155,8 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     const zip = new JSZip();
     for (let i = 0; i < docs.length; i++) {
       try {
-        const res = await fetch(docs[i].file_url);
+        const url = docs[i].signedUrl || docs[i].file_url;
+        const res = await fetch(url);
         const blob = await res.blob();
         zip.file(docs[i].file_name, blob);
       } catch { /* skip failed fetches */ }
@@ -155,7 +183,6 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     <div className="space-y-8">
       {/* Upload section */}
       <div className="rounded-xl bg-card border border-border p-5 shadow-soft">
-        {/* Header with Upload + Download All */}
         <div className="flex items-center justify-between mb-3">
           <p className="font-display text-lg font-light text-foreground">Upload Document</p>
           {docs.length > 0 && (
@@ -195,7 +222,6 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
           </select>
         </div>
 
-        {/* Drop zone */}
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -256,7 +282,7 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <a
-                      href={doc.file_url}
+                      href={doc.signedUrl || doc.file_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
