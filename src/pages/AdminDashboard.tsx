@@ -333,8 +333,8 @@ export default function AdminDashboard() {
               </svg>
             </div>
             <div>
-              <span className="font-display text-lg font-light text-foreground tracking-wide">Gilbertsville</span>
-              <span className="font-body text-xs text-muted-foreground ml-2">Farmhouse</span>
+              <span className="font-display text-lg font-light text-foreground tracking-wide">Gilbertsville Farmhouse</span>
+              <span className="font-body text-xs text-muted-foreground ml-2">Admin Planning Journal</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
