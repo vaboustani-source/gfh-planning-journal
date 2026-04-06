@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import farmhouseHero from "@/assets/farmhouse-hero.jpg";
+
 
 const LOGIN_TIMEOUT_MS = 10_000;
 
@@ -85,26 +85,7 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left: illustration */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <img
-          src={farmhouseHero}
-          alt="Gilbertsville Farmhouse"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-forest/30 to-transparent px-0" />
-        <div className="absolute bottom-12 left-12 text-primary-foreground">
-          <p className="font-body text-xs tracking-widest uppercase opacity-70 mb-2">
-            EST. SOUTH NEW BERLIN, NY
-          </p>
-          <p className="font-display text-2xl italic text-primary-foreground/90">
-            Where every detail is<br />tended with care.
-          </p>
-        </div>
-      </div>
-
-      {/* Right: login form */}
-      <div className="flex w-full lg:w-1/2 flex-col items-center justify-center bg-background px-8 py-16">
+      <div className="flex w-full flex-col items-center justify-center bg-background px-8 py-16">
         <div className="w-full max-w-md animate-fade-up">
           {/* Wordmark */}
           <div className="mb-10 text-center">
