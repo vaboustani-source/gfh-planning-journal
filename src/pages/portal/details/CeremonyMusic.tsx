@@ -250,7 +250,7 @@ export function CeremonyMusic() {
         <CheckRow label="Microphone & Speakers needed" checked={micSpeakers}
           onChange={locked ? undefined : setMicSpeakers} readOnly={locked} />
         <div className="space-y-1.5">
-          <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Microphone Type</label>
+          <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground pr-[11px]">Microphone Type</label>
           {locked ? (
             <p className="font-body text-sm text-muted-foreground">{microphone}</p>
           ) : (
