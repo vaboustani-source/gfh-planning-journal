@@ -1,71 +1,59 @@
 
 
-# Rebuild Admin Dashboard
+# Mirror Admin Ceremony Tab in Couple Portal
 
-## Overview
+## Gap Analysis
 
-Rebuild `/admin` (AdminDashboard.tsx) with full situational awareness: quick stats, upcoming events spotlight, upgraded event cards with milestone progress, expanded attention sidebar, season view, and an all-messages page.
+The couple's CeremonyMusic component is missing these sections that exist on the admin side:
 
-## Changes
+| Admin Section | Couple Has? |
+|---|---|
+| Officiant | Yes |
+| Ceremony Music Provider (musician, mic, speakers) | No |
+| Processional Order | Yes |
+| Post-ceremony (photos, cocktail hour checkboxes) | No |
+| Wedding Party at Altar (sit/stand) | No |
+| Music Selections (+ cake cutting song) | Partial — missing cake cutting |
+| Parent Dances | Yes |
+| Reception — Formal Introductions | No |
+| Welcome Toast | No |
+| DJ / Band | No |
+| Speeches (rehearsal + reception) | No |
+| Miscellaneous Notes | No |
+| Special Notes | Yes |
 
-### 1. AdminDashboard.tsx — Full rewrite
+## Plan
 
-**Quick Stats Bar** (full width, top, next to "New Event" button)
-- 4 chips: Active Events, Upcoming This Month, Unread Messages, Overdue Milestones
-- Each with icon (Calendar, CalendarClock, MessageCircle, AlertCircle), count, label
-- Clicking navigates: Active → scrolls to cards, Upcoming → scrolls to upcoming section, Unread → `/admin/messages`, Overdue → scrolls to attention sidebar
-- Style: `bg-sage/10 rounded-xl px-4 py-3`
+### File: `src/pages/portal/details/CeremonyMusic.tsx` — Major expansion
 
-**Data fetching additions** — fetch milestones per event (for progress bars + status chips), arrival_date from events, working_timeline published status, last message dates per event, payment_schedule for upcoming payments.
+Add all missing state fields matching the admin component's types:
+- `MusicianSinger`, `IntroEntry`, `SpeechEntry` interfaces
+- State for: `musicianSinger`, `micSpeakers`, `microphone`, `ceremonyMusicVendor`, `djBandVendor`, `couplePhotos`, `coupleCocktail`, `altarChoice`, `altarNotes`, `cakeCuttingSong`, `introductions`, `welcomeToast`, `djAfterParty`, `djPlaylist`, `djEvents`, `speechesRehearsal`, `speechesReception`, `miscNotes`
 
-**Upcoming Soon section** (full width, below stats)
-- Shows events with `arrival_date` within 60 days
-- Card per event: couple name, arrival date, days away, "Final prep" badge
-- Hidden entirely if no events qualify
+Load all new fields from the `ceremony_details` row on mount (same cast pattern as admin).
 
-**Upgraded Event Cards** — keep grid layout, add:
-- Milestone progress bar: query `milestones` count total + completed per event
-- Auto-status chip: Onboarding (0–2), Active Planning (3–10), Final Phase (11–14), Ready (15)
-- Unread message badge (existing, keep)
-- Next upcoming milestone name + date in muted text
-- 3 icon buttons at bottom: MessageCircle → `?tab=messages`, Eye → preview, Clock → `?tab=timeline`
+Add matching sections in portal styling (rounded cards, `SectionHeading`, `TextInput`):
+1. **Ceremony Music Provider** — musician booked checkbox, name, mic & speakers checkbox, mic type dropdown, vendor name
+2. **Post-processional** — two checkboxes after processional section (photos, cocktail hour)
+3. **Wedding Party at Altar** — sit/stand select + notes
+4. **Music Selections** — add cake cutting song field
+5. **Formal Introductions** — add/remove entries with name, role, unescorted toggle, escorted by, song
+6. **Welcome Toast** — single text input
+7. **DJ / Band** — vendor name, after-party checkbox, playlist name, event checkboxes
+8. **Speeches** — rehearsal dinner + reception speakers with time estimates
+9. **Miscellaneous Notes** — textarea with backup email reminder
 
-**Today's Attention Sidebar** — expand existing to 5 categories with section headers:
-- Unread messages per event (existing, keep)
-- Overdue milestones (milestone name + couple, link to milestones tab)
-- Payments due within 14 days (expand from 7 → 14 days)
-- Unpublished timelines where wedding < 90 days
-- Couples with no message in 14+ days (query latest message per event)
-- Section headers separate categories, empty sections hidden
-- Critical items get `border-l-2 border-[#C9A84C]` accent
+All fields respect the `locked` state (readOnly inputs, no add/remove buttons when locked).
 
-**Season View** (full width, below event cards)
-- Compact list of all events sorted by arrival_date ascending
-- Grouped by month ("May 2027", "June 2027")
-- Each row: couple name, arrival date, status chip, days away
-- Month headers as sticky labels
+Update `handleSave` payload to include all new fields, matching the admin's `buildPayload` column names.
 
-### 2. New file: `src/pages/admin/AdminAllMessages.tsx`
+### File: `src/pages/portal/Ceremony.tsx` — No changes needed
 
-A page showing all message threads across events. Route: `/admin/messages`.
-- List of events with latest message preview, unread count, and timestamp
-- Click opens thread inline or navigates to `?tab=messages` on that event
-- Reuses AdminMessages component for the thread view
+Already wraps `CeremonyMusic` correctly.
 
-### 3. App.tsx — Add route
-
-Add `/admin/messages` route with `ProtectedRoute requiredRole="admin"` wrapping the new AdminAllMessages page.
-
-### 4. Data queries (all from existing tables, no migrations needed)
-
-- `events`: fetch `arrival_date` in addition to existing fields
-- `milestones`: count by event_id where status = 'complete' and total count
-- `working_timeline`: fetch `published` flag per event
-- `messages`: fetch latest `created_at` per event for "no message in 14 days" check
-- `payment_schedule`: expand window to 14 days
-
-### Files modified
-- `src/pages/AdminDashboard.tsx` — major rewrite
-- `src/App.tsx` — add `/admin/messages` route
-- `src/pages/admin/AdminAllMessages.tsx` — new file
+### Technical notes
+- All new fields map to existing `ceremony_details` columns (same ones the admin already reads/writes)
+- No database changes needed
+- Same `as Record<string, unknown>` cast pattern for columns not in the generated types
+- Portal uses manual save button; no autosave change needed
 
