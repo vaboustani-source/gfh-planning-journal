@@ -87,6 +87,7 @@ const App = () => (
               <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="documents" element={<Documents />} />
             </Route>
 
             {/* Couple Portal — nested */}
@@ -110,6 +111,7 @@ const App = () => (
               <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="documents" element={<Documents />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

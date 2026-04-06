@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Upload, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload } from "lucide-react";
+import { Loader2, Upload, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, Archive } from "lucide-react";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 interface Doc {
   id: string;
