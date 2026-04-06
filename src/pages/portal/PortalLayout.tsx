@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const allNavItems = [
   { to: "/portal/today",           label: "Home",              icon: Home,              tiers: [1, 2, 3, 4] },
   { to: "/portal/our-wedding",     label: "Our Wedding",       icon: CalendarHeart,     tiers: [1, 3, 4] },
+  { to: "/portal/timeline",        label: "Timeline",          icon: Clock,             tiers: [1, 3, 4] },
   { to: "/portal/planning",        label: "Planning",          icon: CheckSquare,       tiers: [1, 3, 4] },
   { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4] },
   { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4] },
