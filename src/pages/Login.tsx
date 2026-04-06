@@ -92,10 +92,10 @@ export default function Login() {
           alt="Gilbertsville Farmhouse"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-forest/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-forest/30 to-transparent px-0" />
         <div className="absolute bottom-12 left-12 text-primary-foreground">
           <p className="font-body text-xs tracking-widest uppercase opacity-70 mb-2">
-            Est. Gilbertsville, PA
+            EST. SOUTH NEW BERLIN, NY
           </p>
           <p className="font-display text-2xl italic text-primary-foreground/90">
             Where every detail is<br />tended with care.
@@ -115,10 +115,10 @@ export default function Login() {
               </svg>
             </div>
             <h1 className="font-display text-4xl font-light tracking-wide text-foreground mb-1">
-              Gilbertsville
+              Gilbertsville Farmhouse
             </h1>
             <p className="font-display text-xl italic text-muted-foreground font-light">
-              Farmhouse
+              Planning Journal
             </p>
             <div className="mt-4 h-px w-16 bg-sage/30 mx-auto" />
           </div>
