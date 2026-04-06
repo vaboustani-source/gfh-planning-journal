@@ -92,7 +92,8 @@ export default function Documents() {
     setUploadProgress(30);
     const { error } = await supabase.storage.from("vendor-contracts").upload(filePath, file);
     if (error) {
-      toast.error("Upload failed — please try again");
+      console.error("Storage upload error:", error.message, error);
+      toast.error(`Upload failed: ${error.message}`);
       setUploading(false);
       setUploadProgress(0);
       return;
