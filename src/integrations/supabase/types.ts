@@ -567,6 +567,53 @@ export type Database = {
           },
         ]
       }
+      event_participants: {
+        Row: {
+          added_by: string | null
+          color: string
+          created_at: string | null
+          display_name: string
+          email: string
+          event_id: string
+          id: string
+          role: Database["public"]["Enums"]["participant_role"]
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          color?: string
+          created_at?: string | null
+          display_name: string
+          email: string
+          event_id: string
+          id?: string
+          role?: Database["public"]["Enums"]["participant_role"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          color?: string
+          created_at?: string | null
+          display_name?: string
+          email?: string
+          event_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["participant_role"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_users: {
         Row: {
           access_tier: number | null
@@ -912,30 +959,75 @@ export type Database = {
         }
         Relationships: []
       }
+      message_reads: {
+        Row: {
+          id: string
+          message_id: string
+          participant_id: string
+          read_at: string | null
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          participant_id: string
+          read_at?: string | null
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          participant_id?: string
+          read_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reads_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reads_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "event_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
           created_at: string | null
           event_id: string | null
           id: string
+          mentions: string[] | null
           read_at: string | null
+          reply_to_message_id: string | null
           sender_id: string | null
+          sender_participant_id: string | null
         }
         Insert: {
           body: string
           created_at?: string | null
           event_id?: string | null
           id?: string
+          mentions?: string[] | null
           read_at?: string | null
+          reply_to_message_id?: string | null
           sender_id?: string | null
+          sender_participant_id?: string | null
         }
         Update: {
           body?: string
           created_at?: string | null
           event_id?: string | null
           id?: string
+          mentions?: string[] | null
           read_at?: string | null
+          reply_to_message_id?: string | null
           sender_id?: string | null
+          sender_participant_id?: string | null
         }
         Relationships: [
           {
@@ -946,10 +1038,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_participant_id_fkey"
+            columns: ["sender_participant_id"]
+            isOneToOne: false
+            referencedRelation: "event_participants"
             referencedColumns: ["id"]
           },
         ]
@@ -1262,6 +1368,13 @@ export type Database = {
     }
     Enums: {
       notification_status: "pending" | "sent" | "failed" | "permanent_failure"
+      participant_role:
+        | "partner"
+        | "admin"
+        | "planner"
+        | "family"
+        | "vendor"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1390,6 +1503,14 @@ export const Constants = {
   public: {
     Enums: {
       notification_status: ["pending", "sent", "failed", "permanent_failure"],
+      participant_role: [
+        "partner",
+        "admin",
+        "planner",
+        "family",
+        "vendor",
+        "other",
+      ],
     },
   },
 } as const
