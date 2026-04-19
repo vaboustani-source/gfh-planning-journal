@@ -132,7 +132,7 @@ export default function ActivityTab({ eventId }: Props) {
             const userLabel = entry.user_email || "System";
             const tableLabel = TABLE_LABELS[entry.table_name] || entry.table_name;
 
-            const visibleFields = (entry.changed_fields || []).filter((f) => !HIDDEN_FIELDS.has(f));
+            const visibleFields = (entry.changed_fields || []).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f));
 
             return (
               <div key={entry.id} className="rounded-xl border border-border bg-card overflow-hidden">
@@ -151,7 +151,7 @@ export default function ActivityTab({ eventId }: Props) {
                       {entry.action === "UPDATE" && visibleFields.length > 0 && (
                         <span className="text-muted-foreground">
                           {" — "}
-                          {visibleFields.slice(0, 3).map(formatFieldName).join(", ")}
+                          {visibleFields.slice(0, 3).map((f) => formatAuditField(entry.table_name, f)).join(", ")}
                           {visibleFields.length > 3 && ` +${visibleFields.length - 3} more`}
                         </span>
                       )}
@@ -176,19 +176,19 @@ export default function ActivityTab({ eventId }: Props) {
 
                 {isOpen && entry.action === "UPDATE" && visibleFields.length > 0 && (
                   <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-2">
-                    {visibleFields.map((field) => (
-                      <div key={field} className="grid grid-cols-[140px_1fr] gap-3 font-body text-xs">
-                        <span className="text-muted-foreground">{formatFieldName(field)}</span>
-                        <div className="space-y-0.5">
-                          <div className="text-rose-700 line-through truncate" title={formatValue(entry.old_values?.[field])}>
-                            {formatValue(entry.old_values?.[field])}
-                          </div>
-                          <div className="text-emerald-700 truncate" title={formatValue(entry.new_values?.[field])}>
-                            {formatValue(entry.new_values?.[field])}
+                    {visibleFields.map((field) => {
+                      const oldVal = formatAuditValue(entry.table_name, field, entry.old_values?.[field]);
+                      const newVal = formatAuditValue(entry.table_name, field, entry.new_values?.[field]);
+                      return (
+                        <div key={field} className="grid grid-cols-[160px_1fr] gap-3 font-body text-xs">
+                          <span className="text-muted-foreground">{formatAuditField(entry.table_name, field)}</span>
+                          <div className="space-y-0.5">
+                            <div className="text-rose-700 line-through truncate" title={oldVal}>{oldVal}</div>
+                            <div className="text-emerald-700 truncate" title={newVal}>{newVal}</div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
