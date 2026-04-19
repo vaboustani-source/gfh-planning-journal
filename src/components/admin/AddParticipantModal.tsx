@@ -50,13 +50,18 @@ export default function AddParticipantModal({ eventId, onClose, onAdded }: Props
           email: email.trim().toLowerCase(),
           role_in_event: role,
           access_tier: tier,
+          redirect_to: `${window.location.origin}/set-password`,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Participant added successfully");
+      toast.success(
+        data?.invited
+          ? "Invite sent — they'll get an email to set their password"
+          : "Added to event — they can sign in with their existing password"
+      );
       onAdded();
       onClose();
     } catch (err: any) {
