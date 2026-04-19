@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChevronDown, ChevronRight, User, Shield, Plus, Pencil, Trash2 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import {
+  formatAuditField,
+  formatAuditValue,
+  TABLE_LABELS,
+  HIDDEN_AUDIT_FIELDS,
+} from "@/lib/auditLabels";
 
 interface AuditEntry {
   id: string;
@@ -17,37 +23,11 @@ interface AuditEntry {
   created_at: string;
 }
 
-const TABLE_LABELS: Record<string, string> = {
-  events: "Event details",
-  vendors: "Vendor",
-  checklist_items: "Checklist item",
-  ceremony_details: "Ceremony & music",
-  bar_selections: "Bar selections",
-  lodging_assignments: "Lodging assignment",
-  decor_items: "Décor item",
-  dietary_restrictions: "Dietary restriction",
-  financials: "Financials",
-  meal_events: "Meal event",
-};
-
-const HIDDEN_FIELDS = new Set(["id", "created_at", "updated_at", "last_updated", "sort_order"]);
-
 const ACTION_CONFIG = {
   INSERT: { label: "Created", Icon: Plus, color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
   UPDATE: { label: "Updated", Icon: Pencil, color: "text-amber-700 bg-amber-50 border-amber-200" },
   DELETE: { label: "Deleted", Icon: Trash2, color: "text-rose-700 bg-rose-50 border-rose-200" },
 } as const;
-
-function formatFieldName(name: string): string {
-  return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}
 
 interface Props {
   eventId: string;
@@ -152,7 +132,7 @@ export default function ActivityTab({ eventId }: Props) {
             const userLabel = entry.user_email || "System";
             const tableLabel = TABLE_LABELS[entry.table_name] || entry.table_name;
 
-            const visibleFields = (entry.changed_fields || []).filter((f) => !HIDDEN_FIELDS.has(f));
+            const visibleFields = (entry.changed_fields || []).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f));
 
             return (
               <div key={entry.id} className="rounded-xl border border-border bg-card overflow-hidden">
@@ -171,7 +151,7 @@ export default function ActivityTab({ eventId }: Props) {
                       {entry.action === "UPDATE" && visibleFields.length > 0 && (
                         <span className="text-muted-foreground">
                           {" — "}
-                          {visibleFields.slice(0, 3).map(formatFieldName).join(", ")}
+                          {visibleFields.slice(0, 3).map((f) => formatAuditField(entry.table_name, f)).join(", ")}
                           {visibleFields.length > 3 && ` +${visibleFields.length - 3} more`}
                         </span>
                       )}
@@ -196,19 +176,19 @@ export default function ActivityTab({ eventId }: Props) {
 
                 {isOpen && entry.action === "UPDATE" && visibleFields.length > 0 && (
                   <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-2">
-                    {visibleFields.map((field) => (
-                      <div key={field} className="grid grid-cols-[140px_1fr] gap-3 font-body text-xs">
-                        <span className="text-muted-foreground">{formatFieldName(field)}</span>
-                        <div className="space-y-0.5">
-                          <div className="text-rose-700 line-through truncate" title={formatValue(entry.old_values?.[field])}>
-                            {formatValue(entry.old_values?.[field])}
-                          </div>
-                          <div className="text-emerald-700 truncate" title={formatValue(entry.new_values?.[field])}>
-                            {formatValue(entry.new_values?.[field])}
+                    {visibleFields.map((field) => {
+                      const oldVal = formatAuditValue(entry.table_name, field, entry.old_values?.[field]);
+                      const newVal = formatAuditValue(entry.table_name, field, entry.new_values?.[field]);
+                      return (
+                        <div key={field} className="grid grid-cols-[160px_1fr] gap-3 font-body text-xs">
+                          <span className="text-muted-foreground">{formatAuditField(entry.table_name, field)}</span>
+                          <div className="space-y-0.5">
+                            <div className="text-rose-700 line-through truncate" title={oldVal}>{oldVal}</div>
+                            <div className="text-emerald-700 truncate" title={newVal}>{newVal}</div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
