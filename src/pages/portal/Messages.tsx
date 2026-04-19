@@ -84,7 +84,7 @@ export default function Messages() {
     if (!loading) scrollToBottom("instant");
   }, [loading]);
 
-  const handleSend = async (text: string) => {
+  const handleSend = async (text: string, mentionIds: string[]) => {
     if (!eventId || !user) return;
     let eventUserId = currentEventUserId;
     if (!eventUserId) {
@@ -95,11 +95,14 @@ export default function Messages() {
       sender_id: user.id,
       sender_event_user_id: eventUserId,
       body: text,
+      mentions: mentionIds,
     });
     supabase.functions.invoke("enqueue-message-notification", {
       body: { event_id: eventId, sender_id: user.id, message_body: text },
     }).catch(err => console.warn("Notification enqueue failed:", err));
   };
+
+  const participantList = Object.values(participants);
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen" style={{ backgroundColor: "#FAF8F4" }}>
