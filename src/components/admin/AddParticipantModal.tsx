@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLES = [
@@ -80,6 +80,18 @@ export default function AddParticipantModal({ eventId, onClose, onAdded }: Props
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
             <X size={16} />
           </button>
+        </div>
+
+        <div className="mb-5 flex gap-2.5 rounded-lg border border-sage/30 bg-sage/5 p-3">
+          <Mail size={14} className="mt-0.5 flex-shrink-0 text-sage-dark" />
+          <div className="space-y-1">
+            <p className="font-body text-[12px] font-medium text-foreground leading-snug">
+              They'll get a branded invite email
+            </p>
+            <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
+              We'll email them a link to set their password and access the portal at their assigned access level. If they already have an account, they'll get a password reset link instead. You can resend the email anytime from the participant list.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
