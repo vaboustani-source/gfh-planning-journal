@@ -358,6 +358,41 @@ export function MessageComposer({
         </div>
       )}
 
+      {replyTarget && (
+        <div
+          className="mb-2 flex items-start gap-2 rounded-md"
+          style={{
+            backgroundColor: "#F5F2EC",
+            borderLeft: `3px solid ${replyTarget.senderColor}`,
+            padding: "12px",
+          }}
+        >
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-body uppercase"
+              style={{ fontSize: "11px", letterSpacing: "0.08em", color: "#2C3E2D" }}
+            >
+              Replying to {replyTarget.senderName}
+            </p>
+            <p
+              className="font-body truncate mt-0.5"
+              style={{ fontSize: "13px", color: "#6B6B6B" }}
+            >
+              {truncate(replyTarget.preview, 80)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onCancelReply?.()}
+            aria-label="Cancel reply"
+            className="shrink-0 p-1 rounded hover:bg-black/5 transition-colors"
+            style={{ color: "#6B6B6B" }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <div className="flex items-end gap-2.5">
         <div className="flex-1 relative">
           <div
