@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-import { Loader2, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Message,
@@ -9,7 +7,10 @@ import {
   isGroupedWithPrev,
   hexToRgba,
   initialOf,
+  parseMessageBody,
 } from "@/lib/messageUtils";
+import { MentionChip } from "./MentionChip";
+export { MessageComposer } from "./MessageComposer";
 
 interface MessageThreadProps {
   messages: Message[];
