@@ -89,3 +89,47 @@ export function initialOf(name: string | null | undefined): string {
   if (!name) return "?";
   return name.trim().charAt(0).toUpperCase() || "?";
 }
+
+/** Darken a hex color by a small amount for chip text legibility. */
+export function darkenHex(hex: string | null | undefined, amount = 0.35): string {
+  const fallback = "#648857";
+  const h = (hex && /^#?[0-9a-fA-F]{6}$/.test((hex || "").replace("#", "")) ? hex! : fallback).replace("#", "");
+  const r = Math.max(0, Math.floor(parseInt(h.slice(0, 2), 16) * (1 - amount)));
+  const g = Math.max(0, Math.floor(parseInt(h.slice(2, 4), 16) * (1 - amount)));
+  const b = Math.max(0, Math.floor(parseInt(h.slice(4, 6), 16) * (1 - amount)));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+export type MessageBodyPart =
+  | { type: "text"; value: string }
+  | { type: "mention"; eventUserId: string };
+
+/** Parse stored body markup `[[@event_user_id]]` into ordered parts. */
+export function parseMessageBody(body: string): MessageBodyPart[] {
+  if (!body) return [];
+  const parts: MessageBodyPart[] = [];
+  const regex = /\[\[@([0-9a-fA-F-]{8,})\]\]/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(body)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: "text", value: body.slice(lastIndex, match.index) });
+    }
+    parts.push({ type: "mention", eventUserId: match[1] });
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < body.length) parts.push({ type: "text", value: body.slice(lastIndex) });
+  return parts;
+}
+
+/** Extract event_user_ids referenced via [[@...]] in order, deduped. */
+export function extractMentionIds(body: string): string[] {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const regex = /\[\[@([0-9a-fA-F-]{8,})\]\]/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(body)) !== null) {
+    if (!seen.has(m[1])) { seen.add(m[1]); ids.push(m[1]); }
+  }
+  return ids;
+}

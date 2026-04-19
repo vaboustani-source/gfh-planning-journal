@@ -74,7 +74,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
 
   useEffect(() => { if (!loading) scrollToBottom("instant"); }, [loading]);
 
-  const handleSend = async (text: string) => {
+  const handleSend = async (text: string, mentionIds: string[]) => {
     if (!user) return;
     let eventUserId = currentEventUserId;
     if (!eventUserId) {
@@ -85,11 +85,14 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
       sender_id: user.id,
       sender_event_user_id: eventUserId,
       body: text,
+      mentions: mentionIds,
     });
     supabase.functions.invoke("enqueue-message-notification", {
       body: { event_id: eventId, sender_id: user.id, message_body: text },
     }).catch(err => console.warn("Notification enqueue failed:", err));
   };
+
+  const participantList = Object.values(participants);
 
   return (
     <div className="flex flex-col animate-fade-up" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
@@ -104,7 +107,12 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
       </div>
 
       <div className="border-t border-border bg-card/90 backdrop-blur-sm px-0 py-3">
-        <MessageComposer onSend={handleSend} placeholder="Message the couple…" />
+        <MessageComposer
+          onSend={handleSend}
+          participants={participantList}
+          currentEventUserId={currentEventUserId}
+          placeholder="Message the couple…"
+        />
       </div>
     </div>
   );

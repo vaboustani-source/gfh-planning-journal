@@ -84,7 +84,7 @@ export default function Messages() {
     if (!loading) scrollToBottom("instant");
   }, [loading]);
 
-  const handleSend = async (text: string) => {
+  const handleSend = async (text: string, mentionIds: string[]) => {
     if (!eventId || !user) return;
     let eventUserId = currentEventUserId;
     if (!eventUserId) {
@@ -95,11 +95,14 @@ export default function Messages() {
       sender_id: user.id,
       sender_event_user_id: eventUserId,
       body: text,
+      mentions: mentionIds,
     });
     supabase.functions.invoke("enqueue-message-notification", {
       body: { event_id: eventId, sender_id: user.id, message_body: text },
     }).catch(err => console.warn("Notification enqueue failed:", err));
   };
+
+  const participantList = Object.values(participants);
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen" style={{ backgroundColor: "#FAF8F4" }}>
@@ -129,7 +132,12 @@ export default function Messages() {
       {/* Input bar */}
       <div className="fixed bottom-0 left-0 right-0 lg:left-60 z-30 border-t border-border bg-card/90 backdrop-blur-sm px-4 py-3 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <MessageComposer onSend={handleSend} placeholder="Send a message…" />
+          <MessageComposer
+            onSend={handleSend}
+            participants={participantList}
+            currentEventUserId={currentEventUserId}
+            placeholder="Send a message…"
+          />
         </div>
       </div>
     </div>

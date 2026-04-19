@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-import { Loader2, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Message,
@@ -9,7 +7,10 @@ import {
   isGroupedWithPrev,
   hexToRgba,
   initialOf,
+  parseMessageBody,
 } from "@/lib/messageUtils";
+import { MentionChip } from "./MentionChip";
+export { MessageComposer } from "./MessageComposer";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -108,7 +109,16 @@ export function MessageThread({ messages, participantsById, currentEventUserId, 
                       className="font-body whitespace-pre-wrap"
                       style={{ fontSize: "15px", lineHeight: 1.5, color: "#1A1A1A" }}
                     >
-                      {msg.body}
+                      {parseMessageBody(msg.body).map((part, idx) =>
+                        part.type === "text" ? (
+                          <span key={idx}>{part.value}</span>
+                        ) : (
+                          <MentionChip
+                            key={idx}
+                            participant={participantsById[part.eventUserId] ?? null}
+                          />
+                        ),
+                      )}
                     </p>
                   </div>
                 </div>
@@ -121,64 +131,3 @@ export function MessageThread({ messages, participantsById, currentEventUserId, 
   );
 }
 
-interface MessageComposerProps {
-  onSend: (text: string) => Promise<void>;
-  placeholder?: string;
-  className?: string;
-}
-
-export function MessageComposer({ onSend, placeholder = "Send a message…", className = "" }: MessageComposerProps) {
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  const handleSend = async () => {
-    const t = text.trim();
-    if (!t || sending) return;
-    setSending(true);
-    setText("");
-    try {
-      await onSend(t);
-    } finally {
-      setSending(false);
-      inputRef.current?.focus();
-    }
-  };
-
-  return (
-    <div className={className}>
-      <div className="flex items-end gap-2.5">
-        <textarea
-          ref={inputRef}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder={placeholder}
-          rows={1}
-          className="flex-1 resize-none rounded-2xl border border-border bg-background px-4 py-2.5 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors max-h-32 overflow-y-auto leading-relaxed"
-          style={{ minHeight: "42px" }}
-          onInput={e => {
-            const el = e.currentTarget;
-            el.style.height = "auto";
-            el.style.height = Math.min(el.scrollHeight, 128) + "px";
-          }}
-        />
-        <button
-          onClick={handleSend}
-          disabled={!text.trim() || sending}
-          className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-        >
-          {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-        </button>
-      </div>
-      <p className="font-body text-[10px] text-muted-foreground mt-1.5 pl-1">
-        Enter to send · Shift+Enter for new line
-      </p>
-    </div>
-  );
-}
