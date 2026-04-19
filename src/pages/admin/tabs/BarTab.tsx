@@ -57,7 +57,7 @@ export default function BarTab({ eventId, onNavigateNext }: { eventId: string; o
     if (!bar) return;
     setBar(prev => prev ? { ...prev, [field]: value } : prev);
     autosave.debouncedSave(`bar-${field}`, async () => {
-      await supabase.from("bar_selections").update({ [field]: value, updated_at: new Date().toISOString() }).eq("id", bar.id);
+      await supabase.from("bar_selections").update({ [field]: value, updated_at: new Date().toISOString() } as any).eq("id", bar.id);
     });
   }, [bar, autosave]);
 

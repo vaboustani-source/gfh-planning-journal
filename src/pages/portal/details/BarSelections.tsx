@@ -93,7 +93,7 @@ export function BarSelections() {
     setBar(updated);
     setSaveStatus("saving");
     const timer = setTimeout(async () => {
-      await supabase.from("bar_selections").update({ [field]: value, updated_at: new Date().toISOString() }).eq("id", bar.id);
+      await supabase.from("bar_selections").update({ [field]: value, updated_at: new Date().toISOString() } as any).eq("id", bar.id);
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
     }, 800);

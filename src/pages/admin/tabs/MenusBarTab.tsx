@@ -40,7 +40,7 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
   const updateMeal = (id: string, field: string, value: any) => {
     setMeals(prev => prev.map(m => m.id !== id ? m : { ...m, [field]: value }));
     autosave.debouncedSave(`meal-${id}-${field}`, async () => {
-      await supabase.from("meal_events").update({ [field]: value }).eq("id", id);
+      await supabase.from("meal_events").update({ [field]: value } as any).eq("id", id);
     });
   };
 
@@ -121,7 +121,7 @@ function TastingSubTab({ eventId, tastingDate, tastingDateNote }: { eventId: str
 
   const save = async (field: string, value: any) => {
     autosave.debouncedSave(`tasting-${field}`, async () => {
-      await supabase.from("events").update({ [field]: value }).eq("id", eventId);
+      await supabase.from("events").update({ [field]: value } as any).eq("id", eventId);
     });
   };
 
