@@ -74,7 +74,24 @@ export default function SetPassword() {
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
       setSuccess(true);
-      setTimeout(() => navigate("/login", { replace: true }), 2500);
+
+      // Decide post-success destination: portal for couples, admin for admins,
+      // login as fallback if profile lookup fails.
+      let dest = "/login";
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("users")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
+          dest = profile?.role === "admin" ? "/admin" : "/portal";
+        }
+      } catch {
+        dest = "/login";
+      }
+      setTimeout(() => navigate(dest, { replace: true }), 1800);
     } catch (err: any) {
       setError(err.message ?? "Failed to update password.");
     } finally {
