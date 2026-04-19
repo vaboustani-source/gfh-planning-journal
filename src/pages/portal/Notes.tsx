@@ -46,7 +46,7 @@ export default function Notes() {
     setNotes(prev => prev.map(n => n.id === id ? { ...n, [field]: value } : n));
     if (debounceTimers.current[id]) clearTimeout(debounceTimers.current[id]);
     debounceTimers.current[id] = setTimeout(() => {
-      supabase.from("couple_notes").update({ [field]: value, updated_at: new Date().toISOString() }).eq("id", id).then(() => {});
+      supabase.from("couple_notes").update({ [field]: value, updated_at: new Date().toISOString() } as any).eq("id", id).then(() => {});
     }, 800);
   };
 

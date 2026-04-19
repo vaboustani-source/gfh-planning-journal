@@ -224,7 +224,7 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
     const col = TRACK_COLUMN[track];
     setFinancials(prev => ({ ...prev, [col]: value }));
     markSaving();
-    await supabase.from("financials").update({ [col]: value ?? 0 }).eq("event_id", eventId);
+    await supabase.from("financials").update({ [col]: value ?? 0 } as any).eq("event_id", eventId);
     markSaved();
   };
 
