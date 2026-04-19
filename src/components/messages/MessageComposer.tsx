@@ -144,13 +144,33 @@ export function MessageComposer({
     const sel = window.getSelection();
     if (!ed || !sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
-    if (!ed.contains(range.startContainer)) return;
-    if (range.startContainer.nodeType !== Node.TEXT_NODE) {
-      setMentionOpen(false);
-      return;
+    if (!ed.contains(range.startContainer) && range.startContainer !== ed) return;
+
+    let textNode: Text;
+    let offset: number;
+    if (range.startContainer.nodeType === Node.TEXT_NODE) {
+      textNode = range.startContainer as Text;
+      offset = range.startOffset;
+    } else {
+      // Caret is in an element node (e.g. the editor itself, or a wrapper div).
+      // Find the nearest text node at/before the caret position.
+      const container = range.startContainer as HTMLElement;
+      const childIdx = range.startOffset;
+      let candidate: Node | null =
+        container.childNodes[childIdx - 1] ?? container.childNodes[childIdx] ?? null;
+      // Descend into the last text node if candidate is an element
+      while (candidate && candidate.nodeType === Node.ELEMENT_NODE) {
+        const el = candidate as HTMLElement;
+        if (el.dataset?.mention) { candidate = null; break; }
+        candidate = el.lastChild;
+      }
+      if (!candidate || candidate.nodeType !== Node.TEXT_NODE) {
+        setMentionOpen(false);
+        return;
+      }
+      textNode = candidate as Text;
+      offset = textNode.length;
     }
-    const textNode = range.startContainer as Text;
-    const offset = range.startOffset;
     const text = textNode.textContent ?? "";
     // Walk back to find last @ that starts a token
     let i = offset - 1;
