@@ -19,34 +19,32 @@ interface RecoveryEmailProps {
   confirmationUrl: string
 }
 
-export const RecoveryEmail = ({ confirmationUrl }: RecoveryEmailProps) => (
+export const RecoveryEmail = ({
+  confirmationUrl,
+}: RecoveryEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Reset your Gilbertsville Farmhouse portal password</Preview>
+    <Preview>Reset your Gilbertsville Farmhouse Planning Journal password</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Section style={brandHeader}>
-          <Text style={brandMark}>Gilbertsville Farmhouse</Text>
-          <Text style={brandTagline}>Wedding Planning Portal</Text>
+        <Section style={header}>
+          <Text style={wordmark}>Gilbertsville Farmhouse</Text>
+          <Text style={tagline}>Planning Journal</Text>
         </Section>
-
         <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
-          We received a request to reset your password. Click the button below to
-          choose a new one.
+          We received a request to reset the password on your Planning Journal account.
+          Click below to choose a new one.
         </Text>
-
-        <Section style={buttonWrap}>
+        <Section style={{ textAlign: 'center' as const }}>
           <Button style={button} href={confirmationUrl}>
-            Reset Password
+            Reset password
           </Button>
         </Section>
-
         <Text style={footer}>
-          If you didn't request this, you can safely ignore this email — your
-          password won't change.
+          If you didn't request a password reset, you can safely ignore this email —
+          your password won't be changed.
         </Text>
-        <Text style={footerBrand}>Gilbertsville Farmhouse · Gilbertsville, NY</Text>
       </Container>
     </Body>
   </Html>
@@ -55,68 +53,20 @@ export const RecoveryEmail = ({ confirmationUrl }: RecoveryEmailProps) => (
 export default RecoveryEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Georgia, "Times New Roman", serif' }
-const container = { padding: '32px 28px', maxWidth: '560px', margin: '0 auto' }
-const brandHeader = {
-  borderBottom: '1px solid #e8e3d8',
-  paddingBottom: '20px',
-  marginBottom: '32px',
-  textAlign: 'center' as const,
-}
-const brandMark = {
-  fontFamily: '"Cormorant Garamond", Georgia, serif',
-  fontSize: '22px',
-  fontWeight: 400,
-  color: '#2d3a2e',
-  letterSpacing: '0.04em',
-  margin: '0 0 4px',
-}
-const brandTagline = {
-  fontFamily: 'Helvetica, Arial, sans-serif',
-  fontSize: '11px',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.18em',
-  color: '#8a8576',
-  margin: 0,
-}
-const h1 = {
-  fontFamily: '"Cormorant Garamond", Georgia, serif',
-  fontSize: '30px',
-  fontWeight: 300,
-  color: '#2d3a2e',
-  margin: '0 0 20px',
-}
-const text = {
-  fontFamily: 'Helvetica, Arial, sans-serif',
-  fontSize: '15px',
-  color: '#3a3a36',
-  lineHeight: '1.6',
-  margin: '0 0 18px',
-}
-const buttonWrap = { margin: '32px 0', textAlign: 'center' as const }
+const container = { padding: '32px 28px', maxWidth: '560px' }
+const header = { textAlign: 'center' as const, marginBottom: '32px', borderBottom: '1px solid #e8e6df', paddingBottom: '20px' }
+const wordmark = { fontSize: '22px', fontWeight: '300' as const, color: '#2d3a2e', letterSpacing: '0.05em', margin: '0' }
+const tagline = { fontSize: '14px', fontStyle: 'italic' as const, color: '#7a8478', margin: '4px 0 0' }
+const h1 = { fontSize: '26px', fontWeight: '300' as const, color: '#2d3a2e', margin: '0 0 18px', letterSpacing: '0.02em' }
+const text = { fontSize: '15px', color: '#55615a', lineHeight: '1.65', margin: '0 0 28px' }
 const button = {
-  backgroundColor: '#7a8b6f',
+  backgroundColor: '#5b6f56',
   color: '#ffffff',
-  fontFamily: 'Helvetica, Arial, sans-serif',
   fontSize: '14px',
-  fontWeight: 500,
   letterSpacing: '0.05em',
   borderRadius: '4px',
   padding: '14px 28px',
   textDecoration: 'none',
-  textTransform: 'uppercase' as const,
+  display: 'inline-block',
 }
-const footer = {
-  fontFamily: 'Helvetica, Arial, sans-serif',
-  fontSize: '12px',
-  color: '#8a8576',
-  margin: '32px 0 8px',
-  paddingTop: '20px',
-  borderTop: '1px solid #e8e3d8',
-}
-const footerBrand = {
-  fontFamily: '"Cormorant Garamond", Georgia, serif',
-  fontSize: '12px',
-  color: '#8a8576',
-  margin: 0,
-  fontStyle: 'italic' as const,
-}
+const footer = { fontSize: '12px', color: '#9aa097', margin: '36px 0 0', textAlign: 'center' as const }

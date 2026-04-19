@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Check, ChevronDown, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import AddParticipantModal from "./AddParticipantModal";
+import { getSetPasswordUrl } from "@/lib/authUrls";
 
 interface Participant {
   id: string;
@@ -156,7 +157,7 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
           email: p.user.email,
           role_in_event: p.role_in_event,
           access_tier: p.access_tier || 3,
-          redirect_to: `${window.location.origin}/set-password`,
+          redirect_to: getSetPasswordUrl(),
         },
       });
       if (error) throw error;

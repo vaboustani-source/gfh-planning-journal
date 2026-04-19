@@ -19,39 +19,64 @@ export default function SetPassword() {
   useEffect(() => {
     let cancelled = false;
 
+    // Safety: stop "Verifying your link…" from spinning forever.
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setError((prev) => prev || "This link could not be verified. It may have expired — please request a new one.");
+      }
+    }, 12000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
-        if (!cancelled) setSessionReady(true);
+        if (!cancelled) {
+          clearTimeout(timeoutId);
+          setSessionReady(true);
+        }
       }
     });
 
     (async () => {
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
-      const errDesc = url.searchParams.get("error_description");
+      const queryErrDesc = url.searchParams.get("error_description");
+
+      // Errors can also arrive in the hash fragment (#error_description=...)
+      const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+      const hashParams = new URLSearchParams(hash);
+      const hashErrDesc = hashParams.get("error_description");
+      const errDesc = queryErrDesc || hashErrDesc;
 
       if (errDesc) {
-        if (!cancelled) setError(decodeURIComponent(errDesc));
+        clearTimeout(timeoutId);
+        if (!cancelled) setError(decodeURIComponent(errDesc.replace(/\+/g, " ")));
         return;
       }
 
       if (code) {
         const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
         if (exErr) {
+          clearTimeout(timeoutId);
           if (!cancelled) setError(exErr.message || "This link is invalid or has expired.");
           return;
         }
         window.history.replaceState({}, "", url.pathname);
-        if (!cancelled) setSessionReady(true);
+        if (!cancelled) {
+          clearTimeout(timeoutId);
+          setSessionReady(true);
+        }
         return;
       }
 
       const { data: { session } } = await supabase.auth.getSession();
-      if (session && !cancelled) setSessionReady(true);
+      if (session && !cancelled) {
+        clearTimeout(timeoutId);
+        setSessionReady(true);
+      }
     })();
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
@@ -74,7 +99,24 @@ export default function SetPassword() {
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
       setSuccess(true);
-      setTimeout(() => navigate("/login", { replace: true }), 2500);
+
+      // Decide post-success destination: portal for couples, admin for admins,
+      // login as fallback if profile lookup fails.
+      let dest = "/login";
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("users")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
+          dest = profile?.role === "admin" ? "/admin" : "/portal";
+        }
+      } catch {
+        dest = "/login";
+      }
+      setTimeout(() => navigate(dest, { replace: true }), 1800);
     } catch (err: any) {
       setError(err.message ?? "Failed to update password.");
     } finally {
