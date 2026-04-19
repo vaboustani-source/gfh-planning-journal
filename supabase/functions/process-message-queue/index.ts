@@ -1,12 +1,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/send-email.ts'
+import { APP_BASE_URL } from '../_shared/appUrls.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const PORTAL_BASE = 'https://gilbertsvillefarmhouse.com'
+const PORTAL_BASE = APP_BASE_URL
 
 interface QueuedMessage {
   sender_name: string
