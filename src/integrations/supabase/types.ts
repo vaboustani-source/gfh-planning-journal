@@ -1310,6 +1310,10 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_event_member: {
+        Args: { _event_id: string; _user_id: string }
+        Returns: boolean
+      }
       seed_checklist: { Args: { p_event_id: string }; Returns: undefined }
       seed_milestones: {
         Args: { p_event_id: string; p_wedding_date: string }
