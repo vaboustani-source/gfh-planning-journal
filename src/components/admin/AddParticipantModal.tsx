@@ -56,6 +56,13 @@ export default function AddParticipantModal({ eventId, onClose, onAdded }: Props
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (data?.emailDelivery?.sent === false) {
+        throw new Error(
+          data.emailDelivery.rateLimited
+            ? "Email wasn't sent because Supabase hit its rate limit. Wait a few minutes, then try again."
+            : data.emailDelivery.reason || "Invite email was not sent."
+        );
+      }
 
       toast.success(
         data?.invited

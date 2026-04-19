@@ -161,6 +161,15 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      if (data?.emailDelivery?.sent === false) {
+        throw new Error(
+          data.emailDelivery.rateLimited
+            ? "Email wasn't sent because Supabase hit its rate limit. Wait a few minutes, then try again."
+            : data.emailDelivery.reason || "Invite email was not sent."
+        );
+      }
+
       toast.success(`Invite email re-sent to ${p.user.email}`);
     } catch (err: any) {
       toast.error(err.message || "Failed to resend invite");

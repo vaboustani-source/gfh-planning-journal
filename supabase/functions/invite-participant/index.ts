@@ -31,6 +31,15 @@ Deno.serve(async (req) => {
     const { data: list } = await supabase.auth.admin.listUsers()
     let authUser = list?.users?.find(u => u.email === email)
     let invited = false
+    let emailDelivery: {
+      attempted: boolean
+      sent: boolean
+      reason?: string
+      rateLimited?: boolean
+    } = {
+      attempted: false,
+      sent: false,
+    }
 
     if (!authUser) {
       // New user — send an invite email (this delivers a magic link to set password)
@@ -41,6 +50,7 @@ Deno.serve(async (req) => {
       if (invErr) throw invErr
       authUser = invData.user
       invited = true
+      emailDelivery = { attempted: true, sent: true }
     } else {
       // Existing user — actually SEND a password-recovery email (generateLink only creates a URL,
       // it does not deliver the message). resetPasswordForEmail goes through the auth email
@@ -49,8 +59,16 @@ Deno.serve(async (req) => {
         redirectTo: setPasswordRedirect,
       })
       if (resetErr) {
-        // Non-fatal: the user already exists and can sign in normally. Log and continue.
+        const rateLimited = /rate limit/i.test(resetErr.message || '')
         console.warn('resetPasswordForEmail failed for existing user:', resetErr.message)
+        emailDelivery = {
+          attempted: true,
+          sent: false,
+          reason: resetErr.message,
+          rateLimited,
+        }
+      } else {
+        emailDelivery = { attempted: true, sent: true }
       }
     }
 
@@ -88,7 +106,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, user_id: authUser.id, invited }),
+      JSON.stringify({ success: true, user_id: authUser.id, invited, emailDelivery }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err: any) {
