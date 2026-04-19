@@ -16,7 +16,6 @@ import MenusBarTab from "./tabs/MenusBarTab";
 import AdminNotesTab from "./tabs/AdminNotesTab";
 import AdminDocumentsTab from "./tabs/AdminDocumentsTab";
 import ActivityTab from "./tabs/ActivityTab";
-import PeopleTab from "./tabs/PeopleTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
