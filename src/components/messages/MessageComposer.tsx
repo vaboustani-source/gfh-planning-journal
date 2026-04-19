@@ -260,13 +260,22 @@ export function MessageComposer({
     ed.innerHTML = "";
     setIsEmpty(true);
     setMentionOpen(false);
+    const replyId = replyTarget?.messageId ?? null;
     try {
-      await onSend(body, mentionIds);
+      await onSend(body, mentionIds, replyId);
+      onCancelReply?.();
     } finally {
       setSending(false);
       ed.focus();
     }
   };
+
+  // Auto-focus when a reply target is set
+  useEffect(() => {
+    if (replyTarget && editorRef.current) {
+      focusEnd(editorRef.current);
+    }
+  }, [replyTarget?.messageId]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (mentionOpen && filtered.length > 0) {
@@ -290,6 +299,11 @@ export function MessageComposer({
         setMentionOpen(false);
         return;
       }
+    }
+    if (e.key === "Escape" && replyTarget) {
+      e.preventDefault();
+      onCancelReply?.();
+      return;
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
