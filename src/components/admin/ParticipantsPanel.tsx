@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Check, ChevronDown, Loader2 } from "lucide-react";
+import { Plus, Trash2, Check, ChevronDown, Loader2, Mail } from "lucide-react";
+import { toast } from "sonner";
 import AddParticipantModal from "./AddParticipantModal";
 
 interface Participant {
@@ -138,6 +139,36 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
     setParticipants(prev => prev.filter(p => p.id !== euId));
   };
 
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const handleResend = async (p: Participant) => {
+    if (!p.user?.email) {
+      toast.error("No email on file for this participant");
+      return;
+    }
+    setResendingId(p.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-participant", {
+        body: {
+          event_id: eventId,
+          first_name: p.user.first_name || "",
+          last_name: p.user.last_name || "",
+          email: p.user.email,
+          role_in_event: p.role_in_event,
+          access_tier: p.access_tier || 3,
+          redirect_to: `${window.location.origin}/set-password`,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Invite email re-sent to ${p.user.email}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to resend invite");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const isProtected = (role: string) => ["partner_1", "partner_2", "couple", "coordinator"].includes(role);
 
   return (
@@ -162,6 +193,16 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
                 </p>
               </div>
               <TierBadge tier={p.access_tier || 3} onChangeTier={t => handleChangeTier(p.id, t)} />
+              {p.user?.email && (
+                <button
+                  onClick={() => handleResend(p)}
+                  disabled={resendingId === p.id}
+                  title="Resend invite email"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1 disabled:opacity-100"
+                >
+                  {resendingId === p.id ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+                </button>
+              )}
               {!isProtected(p.role_in_event) && (
                 <button
                   onClick={() => handleRemove(p.id)}
