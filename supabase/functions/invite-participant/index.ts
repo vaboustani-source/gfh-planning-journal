@@ -42,16 +42,15 @@ Deno.serve(async (req) => {
       authUser = invData.user
       invited = true
     } else {
-      // Existing user — send them a fresh password-recovery link so they can (re)set their password
-      // and immediately access this event's portal.
-      const { error: linkErr } = await supabase.auth.admin.generateLink({
-        type: 'recovery',
-        email,
-        options: { redirectTo: setPasswordRedirect },
+      // Existing user — actually SEND a password-recovery email (generateLink only creates a URL,
+      // it does not deliver the message). resetPasswordForEmail goes through the auth email
+      // pipeline and triggers the branded recovery template.
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: setPasswordRedirect,
       })
-      if (linkErr) {
+      if (resetErr) {
         // Non-fatal: the user already exists and can sign in normally. Log and continue.
-        console.warn('generateLink (recovery) failed for existing user:', linkErr.message)
+        console.warn('resetPasswordForEmail failed for existing user:', resetErr.message)
       }
     }
 
