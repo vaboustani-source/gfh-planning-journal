@@ -14,18 +14,8 @@ interface QueuedMessage {
   sent_at: string
 }
 
-/** Derive partner names from an event title like "Jane & John" or "Jane and John Wedding". */
-function splitPartnerNames(title: string): { p1: string; p2: string } {
-  const cleaned = title.replace(/\s+wedding$/i, '').trim()
-  const parts = cleaned.split(/\s+(?:&|and|\+)\s+/i)
-  if (parts.length >= 2) {
-    return { p1: parts[0].trim(), p2: parts.slice(1).join(' & ').trim() }
-  }
-  return { p1: cleaned, p2: '' }
-}
-
-function formatPartnerLabel(p1: string, p2: string): string {
-  return p2 ? `${p1} & ${p2}` : p1
+function formatPartnerLabel(p1: string, p2: string | null): string {
+  return p2 && p2.trim() ? `${p1} & ${p2}` : p1
 }
 
 function formatEventDate(dateStr: string | null): string {
@@ -141,6 +131,28 @@ function buildCoupleHtml(opts: {
 </body></html>`
 }
 
+/**
+ * Determine if an error from Resend (or send pipeline) is permanent (don't retry)
+ * versus transient (retry with backoff).
+ */
+function isPermanentFailure(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase()
+  if (msg.includes('422')) return true
+  if (msg.includes('invalid')) return true
+  if (msg.includes('not a valid email')) return true
+  if (msg.includes('bounced')) return true
+  if (msg.includes('suppressed')) return true
+  return false
+}
+
+/** Backoff schedule in minutes, indexed by attempts count. */
+function backoffMinutes(attempts: number): number | null {
+  if (attempts === 1) return 5
+  if (attempts === 2) return 30
+  if (attempts === 3) return 120
+  return null // >=4 → permanent
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -152,11 +164,14 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    const nowIso = new Date().toISOString()
+
     const { data: pendingRows, error: fetchErr } = await supabase
       .from('message_notification_queue')
       .select('*')
-      .eq('sent', false)
-      .lte('scheduled_send_at', new Date().toISOString())
+      .in('status', ['pending', 'failed'])
+      .lte('scheduled_send_at', nowIso)
+      .or(`next_retry_at.is.null,next_retry_at.lte.${nowIso}`)
       .order('created_at', { ascending: true })
 
     if (fetchErr) throw fetchErr
@@ -169,29 +184,38 @@ Deno.serve(async (req) => {
 
     let processed = 0
     let failed = 0
+    let permanentlyFailed = 0
 
     for (const row of pendingRows) {
+      const newAttempts = (row.attempts ?? 0) + 1
+
       try {
-        // Fetch event metadata
+        // Increment attempts BEFORE attempting send
+        await supabase
+          .from('message_notification_queue')
+          .update({ attempts: newAttempts })
+          .eq('id', row.id)
+
+        // Fetch event metadata (partner names + wedding date)
         const { data: evt } = await supabase
           .from('events')
-          .select('title, wedding_date')
+          .select('title, wedding_date, partner1_name, partner2_name')
           .eq('id', row.event_id)
           .single()
 
-        const eventTitle = evt?.title || 'Wedding'
+        const p1 = (evt?.partner1_name?.trim()) || evt?.title || 'Wedding'
+        const p2 = evt?.partner2_name?.trim() || null
         const weddingDate: string | null = evt?.wedding_date ?? null
-        const { p1, p2 } = splitPartnerNames(eventTitle)
         const partnerLabel = formatPartnerLabel(p1, p2)
         const eventDateFormatted = formatEventDate(weddingDate)
         const daysOut = daysUntil(weddingDate)
 
         const messages = (row.messages_json as QueuedMessage[]) || []
         if (messages.length === 0) {
-          // Nothing to send; mark as sent so it doesn't loop forever
+          // Nothing to send; mark sent so it isn't retried
           await supabase
             .from('message_notification_queue')
-            .update({ sent: true })
+            .update({ status: 'sent', sent: true })
             .eq('id', row.id)
           continue
         }
@@ -226,33 +250,86 @@ Deno.serve(async (req) => {
 
         await supabase
           .from('message_notification_queue')
-          .update({ sent: true })
+          .update({ status: 'sent', sent: true, last_error: null, next_retry_at: null })
           .eq('id', row.id)
 
         processed++
       } catch (rowErr: any) {
-        failed++
-        console.error(
-          `[process-message-queue] Failed to send notification`,
-          {
+        const errMsg = rowErr?.message ?? String(rowErr)
+        const permanent = isPermanentFailure(rowErr)
+
+        try {
+          if (permanent) {
+            permanentlyFailed++
+            console.error('[process-message-queue] Permanent failure', {
+              queue_id: row.id,
+              event_id: row.event_id,
+              recipient: row.recipient_email,
+              error: errMsg,
+              attempts: newAttempts,
+            })
+            await supabase
+              .from('message_notification_queue')
+              .update({
+                status: 'permanent_failure',
+                sent: true,
+                last_error: errMsg,
+              })
+              .eq('id', row.id)
+          } else {
+            const backoff = backoffMinutes(newAttempts)
+            if (backoff === null) {
+              // Exceeded max retry attempts
+              permanentlyFailed++
+              const finalMsg = `Max retry attempts exceeded: ${errMsg}`
+              console.error('[process-message-queue] Max retries exceeded', {
+                queue_id: row.id,
+                event_id: row.event_id,
+                recipient: row.recipient_email,
+                error: finalMsg,
+                attempts: newAttempts,
+              })
+              await supabase
+                .from('message_notification_queue')
+                .update({
+                  status: 'permanent_failure',
+                  sent: true,
+                  last_error: finalMsg,
+                })
+                .eq('id', row.id)
+            } else {
+              failed++
+              const nextRetry = new Date(Date.now() + backoff * 60 * 1000).toISOString()
+              console.warn('[process-message-queue] Transient failure, will retry', {
+                queue_id: row.id,
+                event_id: row.event_id,
+                recipient: row.recipient_email,
+                error: errMsg,
+                attempts: newAttempts,
+                next_retry_at: nextRetry,
+              })
+              await supabase
+                .from('message_notification_queue')
+                .update({
+                  status: 'failed',
+                  last_error: errMsg,
+                  next_retry_at: nextRetry,
+                })
+                .eq('id', row.id)
+            }
+          }
+        } catch (updateErr) {
+          console.error('[process-message-queue] Failed to update row status', {
             queue_id: row.id,
-            event_id: row.event_id,
-            recipient: row.recipient_email,
-            error: rowErr?.message ?? String(rowErr),
-          },
-        )
-        // Mark as sent to prevent infinite retries on permanent failures
-        // (e.g. invalid email). Transient failures will need manual replay.
-        await supabase
-          .from('message_notification_queue')
-          .update({ sent: true })
-          .eq('id', row.id)
+            error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+          })
+        }
         continue
       }
     }
 
     return new Response(
-      JSON.stringify({ processed, failed }),
+      JSON.stringify({ processed, failed, permanentlyFailed }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err: any) {

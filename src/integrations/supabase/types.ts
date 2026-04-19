@@ -623,6 +623,8 @@ export type Database = {
           how_heard: string | null
           id: string
           package_tier: string | null
+          partner1_name: string | null
+          partner2_name: string | null
           rehearsal_dinner_location: string | null
           status: string
           tasting_date: string | null
@@ -647,6 +649,8 @@ export type Database = {
           how_heard?: string | null
           id?: string
           package_tier?: string | null
+          partner1_name?: string | null
+          partner2_name?: string | null
           rehearsal_dinner_location?: string | null
           status?: string
           tasting_date?: string | null
@@ -671,6 +675,8 @@ export type Database = {
           how_heard?: string | null
           id?: string
           package_tier?: string | null
+          partner1_name?: string | null
+          partner2_name?: string | null
           rehearsal_dinner_location?: string | null
           status?: string
           tasting_date?: string | null
@@ -863,34 +869,46 @@ export type Database = {
       }
       message_notification_queue: {
         Row: {
+          attempts: number | null
           created_at: string
           event_id: string
           id: string
+          last_error: string | null
           messages_json: Json
+          next_retry_at: string | null
           recipient_email: string
           recipient_role: string
           scheduled_send_at: string
           sent: boolean
+          status: Database["public"]["Enums"]["notification_status"] | null
         }
         Insert: {
+          attempts?: number | null
           created_at?: string
           event_id: string
           id?: string
+          last_error?: string | null
           messages_json?: Json
+          next_retry_at?: string | null
           recipient_email: string
           recipient_role: string
           scheduled_send_at: string
           sent?: boolean
+          status?: Database["public"]["Enums"]["notification_status"] | null
         }
         Update: {
+          attempts?: number | null
           created_at?: string
           event_id?: string
           id?: string
+          last_error?: string | null
           messages_json?: Json
+          next_retry_at?: string | null
           recipient_email?: string
           recipient_role?: string
           scheduled_send_at?: string
           sent?: boolean
+          status?: Database["public"]["Enums"]["notification_status"] | null
         }
         Relationships: []
       }
@@ -1243,7 +1261,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      notification_status: "pending" | "sent" | "failed" | "permanent_failure"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1370,6 +1388,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      notification_status: ["pending", "sent", "failed", "permanent_failure"],
+    },
   },
 } as const
