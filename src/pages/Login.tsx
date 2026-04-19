@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { getSetPasswordUrl } from "@/lib/authUrls";
 
 
 const LOGIN_TIMEOUT_MS = 10_000;
@@ -26,7 +27,7 @@ export default function Login() {
     setError("");
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/set-password`,
+        redirectTo: getSetPasswordUrl(),
       });
       if (resetError) throw resetError;
       setResetSent(true);

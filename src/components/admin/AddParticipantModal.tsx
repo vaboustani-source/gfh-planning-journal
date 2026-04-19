@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { getSetPasswordUrl } from "@/lib/authUrls";
 
 const ROLES = [
   { value: "catering_manager", label: "Catering Manager" },
@@ -50,7 +51,7 @@ export default function AddParticipantModal({ eventId, onClose, onAdded }: Props
           email: email.trim().toLowerCase(),
           role_in_event: role,
           access_tier: tier,
-          redirect_to: `${window.location.origin}/set-password`,
+          redirect_to: getSetPasswordUrl(),
         },
       });
 
