@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageThread, MessageComposer } from "@/components/messages/MessageThread";
-import { Message, EventParticipant } from "@/lib/messageUtils";
+import { MessageThread, MessageComposer, ReplyTarget } from "@/components/messages/MessageThread";
+import { Message, EventParticipant, bodyToPlainText, truncate } from "@/lib/messageUtils";
 
 export default function AdminMessages({ eventId, onUnreadChange }: { eventId: string; onUnreadChange: (n: number) => void }) {
   const { user } = useAuth();
@@ -10,12 +10,12 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
   const [participants, setParticipants] = useState<Record<string, EventParticipant>>({});
   const [currentEventUserId, setCurrentEventUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") =>
     bottomRef.current?.scrollIntoView({ behavior });
 
-  // Load participants for this event (for avatar/name lookup) + ensure admin event_users row
   const loadParticipants = async () => {
     const { data } = await supabase
       .from("event_users")
@@ -34,7 +34,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
   const fetchMessages = async () => {
     const { data } = await supabase
       .from("messages")
-      .select("id, body, sender_id, sender_event_user_id, created_at, read_at")
+      .select("id, body, sender_id, sender_event_user_id, created_at, read_at, reply_to_message_id")
       .eq("event_id", eventId)
       .order("created_at", { ascending: true });
     if (data) setMessages(data as Message[]);
@@ -74,7 +74,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
 
   useEffect(() => { if (!loading) scrollToBottom("instant"); }, [loading]);
 
-  const handleSend = async (text: string, mentionIds: string[]) => {
+  const handleSend = async (text: string, mentionIds: string[], replyToMessageId: string | null) => {
     if (!user) return;
     let eventUserId = currentEventUserId;
     if (!eventUserId) {
@@ -86,10 +86,21 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
       sender_event_user_id: eventUserId,
       body: text,
       mentions: mentionIds,
+      reply_to_message_id: replyToMessageId,
     });
     supabase.functions.invoke("enqueue-message-notification", {
       body: { event_id: eventId, sender_id: user.id, message_body: text },
     }).catch(err => console.warn("Notification enqueue failed:", err));
+  };
+
+  const handleReply = (msg: Message) => {
+    const sender = msg.sender_event_user_id ? participants[msg.sender_event_user_id] : null;
+    setReplyTarget({
+      messageId: msg.id,
+      senderName: sender?.display_name ?? "Unknown",
+      senderColor: sender?.color ?? "#6B6B6B",
+      preview: truncate(bodyToPlainText(msg.body, participants), 80),
+    });
   };
 
   const participantList = Object.values(participants);
@@ -102,6 +113,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
           participantsById={participants}
           currentEventUserId={currentEventUserId}
           loading={loading}
+          onReply={handleReply}
         />
         <div ref={bottomRef} />
       </div>
@@ -112,6 +124,8 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
           participants={participantList}
           currentEventUserId={currentEventUserId}
           placeholder="Message the couple…"
+          replyTarget={replyTarget}
+          onCancelReply={() => setReplyTarget(null)}
         />
       </div>
     </div>
