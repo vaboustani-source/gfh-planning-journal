@@ -109,6 +109,8 @@ export function MessageComposer({
   currentEventUserId,
   placeholder = "Send a message…",
   className = "",
+  replyTarget = null,
+  onCancelReply,
 }: MessageComposerProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
