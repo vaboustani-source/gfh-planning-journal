@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Send } from "lucide-react";
-import { EventParticipant, hexToRgba, darkenHex, initialOf } from "@/lib/messageUtils";
+import { Loader2, Send, X } from "lucide-react";
+import { EventParticipant, hexToRgba, darkenHex, initialOf, truncate } from "@/lib/messageUtils";
+
+export interface ReplyTarget {
+  messageId: string;
+  senderName: string;
+  senderColor: string;
+  preview: string;
+}
 
 interface MessageComposerProps {
-  onSend: (body: string, mentionIds: string[]) => Promise<void>;
+  onSend: (body: string, mentionIds: string[], replyToMessageId: string | null) => Promise<void>;
   participants: EventParticipant[];
   currentEventUserId: string | null;
   placeholder?: string;
   className?: string;
+  replyTarget?: ReplyTarget | null;
+  onCancelReply?: () => void;
 }
 
 interface Token {
@@ -100,6 +109,8 @@ export function MessageComposer({
   currentEventUserId,
   placeholder = "Send a message…",
   className = "",
+  replyTarget = null,
+  onCancelReply,
 }: MessageComposerProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
@@ -249,13 +260,22 @@ export function MessageComposer({
     ed.innerHTML = "";
     setIsEmpty(true);
     setMentionOpen(false);
+    const replyId = replyTarget?.messageId ?? null;
     try {
-      await onSend(body, mentionIds);
+      await onSend(body, mentionIds, replyId);
+      onCancelReply?.();
     } finally {
       setSending(false);
       ed.focus();
     }
   };
+
+  // Auto-focus when a reply target is set
+  useEffect(() => {
+    if (replyTarget && editorRef.current) {
+      focusEnd(editorRef.current);
+    }
+  }, [replyTarget?.messageId]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (mentionOpen && filtered.length > 0) {
@@ -279,6 +299,11 @@ export function MessageComposer({
         setMentionOpen(false);
         return;
       }
+    }
+    if (e.key === "Escape" && replyTarget) {
+      e.preventDefault();
+      onCancelReply?.();
+      return;
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -330,6 +355,41 @@ export function MessageComposer({
               )}
             </button>
           ))}
+        </div>
+      )}
+
+      {replyTarget && (
+        <div
+          className="mb-2 flex items-start gap-2 rounded-md"
+          style={{
+            backgroundColor: "#F5F2EC",
+            borderLeft: `3px solid ${replyTarget.senderColor}`,
+            padding: "12px",
+          }}
+        >
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-body uppercase"
+              style={{ fontSize: "11px", letterSpacing: "0.08em", color: "#2C3E2D" }}
+            >
+              Replying to {replyTarget.senderName}
+            </p>
+            <p
+              className="font-body truncate mt-0.5"
+              style={{ fontSize: "13px", color: "#6B6B6B" }}
+            >
+              {truncate(replyTarget.preview, 80)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onCancelReply?.()}
+            aria-label="Cancel reply"
+            className="shrink-0 p-1 rounded hover:bg-black/5 transition-colors"
+            style={{ color: "#6B6B6B" }}
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 
