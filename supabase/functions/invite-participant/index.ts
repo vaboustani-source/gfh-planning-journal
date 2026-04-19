@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getSetPasswordUrl } from '../_shared/appUrls.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
 
     // The page where the user lands to set their password after clicking the email link.
     // The frontend passes the current origin so this works in dev/preview/prod.
-    const setPasswordRedirect = redirect_to || 'https://plan.gilbertsvillefarmhouse.com/set-password'
+    const setPasswordRedirect = redirect_to || getSetPasswordUrl()
 
     // 1. Get or invite user in auth
     const { data: list } = await supabase.auth.admin.listUsers()
