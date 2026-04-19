@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Send } from "lucide-react";
-import { EventParticipant, hexToRgba, darkenHex, initialOf } from "@/lib/messageUtils";
+import { Loader2, Send, X } from "lucide-react";
+import { EventParticipant, hexToRgba, darkenHex, initialOf, truncate } from "@/lib/messageUtils";
+
+export interface ReplyTarget {
+  messageId: string;
+  senderName: string;
+  senderColor: string;
+  preview: string;
+}
 
 interface MessageComposerProps {
-  onSend: (body: string, mentionIds: string[]) => Promise<void>;
+  onSend: (body: string, mentionIds: string[], replyToMessageId: string | null) => Promise<void>;
   participants: EventParticipant[];
   currentEventUserId: string | null;
   placeholder?: string;
   className?: string;
+  replyTarget?: ReplyTarget | null;
+  onCancelReply?: () => void;
 }
 
 interface Token {
