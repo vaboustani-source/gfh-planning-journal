@@ -12,21 +12,48 @@ export default function SetPassword() {
   const [sessionReady, setSessionReady] = useState(false);
   const navigate = useNavigate();
 
-  // Supabase redirects with #access_token=...&type=recovery in the hash.
-  // The JS client picks it up automatically via onAuthStateChange.
+  // Supabase recovery links land here either as:
+  //   - PKCE flow: ?code=... in the query string (needs exchangeCodeForSession)
+  //   - Implicit flow: #access_token=...&type=recovery in the hash (auto-handled by client)
+  // Handle both, then mark the session ready so the form unlocks.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
-          setSessionReady(true);
-        }
+    let cancelled = false;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+        if (!cancelled) setSessionReady(true);
       }
-    );
-    // Also check if we already have a session (user may have navigated here while logged in)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setSessionReady(true);
     });
-    return () => subscription.unsubscribe();
+
+    (async () => {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      const errDesc = url.searchParams.get("error_description");
+
+      if (errDesc) {
+        if (!cancelled) setError(decodeURIComponent(errDesc));
+        return;
+      }
+
+      if (code) {
+        const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+        if (exErr) {
+          if (!cancelled) setError(exErr.message || "This link is invalid or has expired.");
+          return;
+        }
+        window.history.replaceState({}, "", url.pathname);
+        if (!cancelled) setSessionReady(true);
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !cancelled) setSessionReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
