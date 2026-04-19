@@ -15,6 +15,7 @@ import DietaryTab from "./tabs/DietaryTab";
 import MenusBarTab from "./tabs/MenusBarTab";
 import AdminNotesTab from "./tabs/AdminNotesTab";
 import AdminDocumentsTab from "./tabs/AdminDocumentsTab";
+import ActivityTab from "./tabs/ActivityTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -30,6 +31,7 @@ const TABS = [
   { id: "messages", label: "Messages" },
   { id: "notes", label: "Notes" },
   { id: "documents", label: "Documents" },
+  { id: "activity", label: "Activity" },
 ];
 
 const TAB_ORDER = TABS.map(t => t.id);
@@ -214,6 +216,7 @@ export default function EventDetail() {
         {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
         {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "documents" && <AdminDocumentsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "activity" && <ActivityTab eventId={event.id} />}
       </main>
     </div>
   );
