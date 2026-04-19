@@ -5,6 +5,29 @@ export interface Message {
   sender_event_user_id: string | null;
   created_at: string | null;
   read_at?: string | null;
+  reply_to_message_id?: string | null;
+}
+
+/** Render message body as plain text for quote previews — mentions become "@Name". */
+export function bodyToPlainText(
+  body: string,
+  participantsById: Record<string, EventParticipant>,
+): string {
+  return parseMessageBody(body)
+    .map(part => {
+      if (part.type === "text") return part.value;
+      const p = participantsById[part.eventUserId];
+      return `@${p?.display_name ?? "Unknown"}`;
+    })
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Truncate to N chars with ellipsis. */
+export function truncate(text: string, max = 80): string {
+  if (text.length <= max) return text;
+  return text.slice(0, max).trimEnd() + "…";
 }
 
 export interface EventParticipant {
