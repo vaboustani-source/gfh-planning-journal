@@ -19,7 +19,7 @@ import ActivityTab from "./tabs/ActivityTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
-  { id: "people", label: "People" },
+  
   { id: "milestones", label: "Milestones" },
   { id: "checklist", label: "Checklist" },
   { id: "vendors", label: "Vendors" },
