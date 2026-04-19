@@ -9,7 +9,6 @@ import {
   Head,
   Heading,
   Html,
-  Link,
   Preview,
   Section,
   Text,
@@ -24,7 +23,7 @@ interface InviteEmailProps {
 export const InviteEmail = ({ confirmationUrl }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to help plan a wedding at Gilbertsville Farmhouse</Preview>
+    <Preview>You're invited to your Gilbertsville Farmhouse planning portal</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={brandHeader}>
@@ -32,16 +31,10 @@ export const InviteEmail = ({ confirmationUrl }: InviteEmailProps) => (
           <Text style={brandTagline}>Wedding Planning Portal</Text>
         </Section>
 
-        <Heading style={h1}>You've been invited</Heading>
-
+        <Heading style={h1}>Welcome to your planning portal</Heading>
         <Text style={text}>
-          Welcome — you've been added as a participant on a wedding being planned
-          at Gilbertsville Farmhouse.
-        </Text>
-        <Text style={text}>
-          Click the button below to set your password and access the planning portal.
-          From there, you'll be able to view event details, send messages, and
-          (depending on your access level) help fill out the wedding's plans.
+          We're so glad you're here. Click the button below to set your password
+          and start planning your weekend with us.
         </Text>
 
         <Section style={buttonWrap}>
@@ -49,11 +42,6 @@ export const InviteEmail = ({ confirmationUrl }: InviteEmailProps) => (
             Set Your Password
           </Button>
         </Section>
-
-        <Text style={smallText}>Or copy and paste this link into your browser:</Text>
-        <Text style={linkText}>
-          <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
-        </Text>
 
         <Text style={footer}>
           If you weren't expecting this invitation, you can safely ignore this email.
@@ -117,19 +105,6 @@ const button = {
   textDecoration: 'none',
   textTransform: 'uppercase' as const,
 }
-const smallText = {
-  fontFamily: 'Helvetica, Arial, sans-serif',
-  fontSize: '12px',
-  color: '#8a8576',
-  margin: '24px 0 6px',
-}
-const linkText = {
-  fontFamily: 'Helvetica, Arial, sans-serif',
-  fontSize: '12px',
-  wordBreak: 'break-all' as const,
-  margin: '0 0 28px',
-}
-const link = { color: '#7a8b6f', textDecoration: 'underline' }
 const footer = {
   fontFamily: 'Helvetica, Arial, sans-serif',
   fontSize: '12px',
