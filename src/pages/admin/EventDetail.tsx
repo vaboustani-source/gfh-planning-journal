@@ -205,7 +205,7 @@ export default function EventDetail() {
       {/* Tab content */}
       <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8 pb-24">
         {activeTab === "overview" && <OverviewTab event={event} coupleNames={coupleNames} onUpdate={setEvent} onNavigateNext={navigateToNextTab} />}
-        {activeTab === "people" && <PeopleTab eventId={event.id} />}
+        
         {activeTab === "milestones" && <MilestonesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "checklist" && <ChecklistTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "vendors" && <VendorsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
