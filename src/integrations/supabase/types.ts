@@ -378,6 +378,45 @@ export type Database = {
           },
         ]
       }
+      decor_catalog: {
+        Row: {
+          available: boolean | null
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          photo_url: string | null
+          price_label: string | null
+          price_per_unit: number
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          available?: boolean | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          photo_url?: string | null
+          price_label?: string | null
+          price_per_unit?: number
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          available?: boolean | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          photo_url?: string | null
+          price_label?: string | null
+          price_per_unit?: number
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
       decor_items: {
         Row: {
           brandon_notes: string | null
@@ -427,6 +466,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "decor_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decor_selections: {
+        Row: {
+          added_by: string | null
+          catalog_item_id: string | null
+          created_at: string | null
+          event_id: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          total_price: number | null
+          unit_price: number
+        }
+        Insert: {
+          added_by?: string | null
+          catalog_item_id?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          total_price?: number | null
+          unit_price: number
+        }
+        Update: {
+          added_by?: string | null
+          catalog_item_id?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          total_price?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decor_selections_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "decor_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decor_selections_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
