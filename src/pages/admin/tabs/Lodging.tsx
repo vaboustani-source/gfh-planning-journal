@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import { LODGING_SECTIONS } from "@/lib/lodgingConfig";
+import { OffsiteAccommodationsSection } from "@/components/lodging/OffsiteAccommodationsSection";
 
 interface Room {
   id: string;
@@ -266,6 +267,8 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
           </Collapsible>
         );
       })}
+
+      <OffsiteAccommodationsSection eventId={eventId} variant="admin" />
 
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
