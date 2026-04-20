@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAllMessages from "./pages/admin/AdminAllMessages";
+import PreferredVendors from "./pages/admin/PreferredVendors";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -72,6 +73,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminAllMessages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/preferred-vendors"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <PreferredVendors />
                 </ProtectedRoute>
               }
             />
