@@ -60,12 +60,15 @@ interface VendorCardProps {
   onSaveEnd?: () => void;
   dragHandleProps?: Record<string, any>;
   showDragHandle?: boolean;
+  /** Admin-only: handler for "Browse Preferred" button (shown on empty slots) */
+  onBrowsePreferred?: (category: string) => void;
 }
 
 export function VendorCard({
   vendor, eventId, isAdmin, initialEditMode = false,
   onUpdate, onDelete, onSaveStart, onSaveEnd,
   dragHandleProps, showDragHandle = false,
+  onBrowsePreferred,
 }: VendorCardProps) {
   const isGF = isGilbertsvilleRow(vendor);
   const hasContent = !!vendor.business_name;
@@ -172,6 +175,13 @@ export function VendorCard({
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {/* Browse Preferred — admin only, on empty (non-GF) slots */}
+              {isAdmin && !isGF && !hasContent && onBrowsePreferred && (
+                <button onClick={() => onBrowsePreferred(vendor.category)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-body text-xs">
+                  Browse Preferred
+                </button>
+              )}
               {!isGF && (
                 <button onClick={() => setEditing(true)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors font-body text-xs">

@@ -1,9 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { VendorList } from "./people/VendorList";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
+import { VendorsWeLoveSection } from "@/components/portal/VendorsWeLoveSection";
+import { usePortalData } from "@/hooks/usePortalData";
 
 export default function Vendors() {
   const navigate = useNavigate();
+  const { eventId } = usePortalData();
 
   return (
     <>
@@ -14,6 +17,7 @@ export default function Vendors() {
         </p>
         <h1 className="font-display text-4xl font-light text-foreground mb-8">Vendors</h1>
         <VendorList />
+        {eventId && <VendorsWeLoveSection eventId={eventId} />}
       </div>
     </div>
     <PortalStickyFooter onContinue={() => navigate("/portal/ceremony")} nextOnly />

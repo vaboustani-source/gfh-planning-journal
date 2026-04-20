@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import { VendorCard, Vendor, VENDOR_GROUPS } from "@/components/vendor/VendorCard";
+import { BrowsePreferredDrawer } from "@/components/admin/BrowsePreferredDrawer";
+import { PreferredVendor } from "@/components/admin/PreferredVendorCard";
 import {
   DndContext,
   closestCenter,
@@ -22,7 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 function SortableVendorCard({
-  vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd,
+  vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd, onBrowsePreferred,
 }: {
   vendor: Vendor;
   eventId: string;
@@ -30,6 +32,7 @@ function SortableVendorCard({
   onDelete: (id: string) => Promise<void>;
   onSaveStart: () => void;
   onSaveEnd: () => void;
+  onBrowsePreferred: (vendorId: string, category: string) => void;
 }) {
   const isGF = ["venue", "caterer"].includes(vendor.category) && vendor.business_name === "Gilbertsville Farmhouse";
   const {
@@ -60,6 +63,7 @@ function SortableVendorCard({
         onSaveEnd={onSaveEnd}
         showDragHandle
         dragHandleProps={listeners}
+        onBrowsePreferred={(category) => onBrowsePreferred(vendor.id, category)}
       />
     </div>
   );
@@ -69,6 +73,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [browseFor, setBrowseFor] = useState<{ vendorId: string; category: string } | null>(null);
   const { status, markSaving, markSaved } = useAutosaveStatus();
   const seeded = useRef(false);
 
@@ -189,7 +194,8 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
                   {groupVendors.map(v => (
                     <SortableVendorCard key={v.id} vendor={v} eventId={eventId}
                       onUpdate={updateVendor} onDelete={deleteVendor}
-                      onSaveStart={markSaving} onSaveEnd={markSaved} />
+                      onSaveStart={markSaving} onSaveEnd={markSaved}
+                      onBrowsePreferred={(vendorId, category) => setBrowseFor({ vendorId, category })} />
                   ))}
                 </div>
               </SortableContext>
@@ -205,11 +211,31 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
             {vendors.filter(v => !VENDOR_GROUPS.some(g => g.categories.includes(v.category))).map(v => (
               <VendorCard key={v.id} vendor={v} eventId={eventId} isAdmin
                 onUpdate={updateVendor} onDelete={deleteVendor}
-                onSaveStart={markSaving} onSaveEnd={markSaved} />
+                onSaveStart={markSaving} onSaveEnd={markSaved}
+                onBrowsePreferred={(category) => setBrowseFor({ vendorId: v.id, category })} />
             ))}
           </div>
         </div>
       )}
+
+      <BrowsePreferredDrawer
+        open={!!browseFor}
+        onClose={() => setBrowseFor(null)}
+        eventCategory={browseFor?.category || ""}
+        onAdd={async (pv: PreferredVendor) => {
+          if (!browseFor) return;
+          markSaving();
+          await updateVendor(browseFor.vendorId, {
+            business_name: pv.name,
+            contact_name: pv.contact_name,
+            phone: pv.phone,
+            email: pv.email,
+            instagram: pv.instagram,
+            brandon_notes: pv.notes,
+          });
+          markSaved();
+        }}
+      />
 
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>

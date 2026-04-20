@@ -1193,6 +1193,7 @@ export type Database = {
           sort_order: number | null
           subcategory: string | null
           tier: string | null
+          updated_at: string
           website: string | null
         }
         Insert: {
@@ -1210,6 +1211,7 @@ export type Database = {
           sort_order?: number | null
           subcategory?: string | null
           tier?: string | null
+          updated_at?: string
           website?: string | null
         }
         Update: {
@@ -1227,6 +1229,7 @@ export type Database = {
           sort_order?: number | null
           subcategory?: string | null
           tier?: string | null
+          updated_at?: string
           website?: string | null
         }
         Relationships: []
