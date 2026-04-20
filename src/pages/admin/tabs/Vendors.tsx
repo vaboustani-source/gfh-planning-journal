@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import { VendorCard, Vendor, VENDOR_GROUPS } from "@/components/vendor/VendorCard";
+import { BrowsePreferredDrawer } from "@/components/admin/BrowsePreferredDrawer";
+import { PreferredVendor } from "@/components/admin/PreferredVendorCard";
 import {
   DndContext,
   closestCenter,
@@ -22,7 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 function SortableVendorCard({
-  vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd,
+  vendor, eventId, onUpdate, onDelete, onSaveStart, onSaveEnd, onBrowsePreferred,
 }: {
   vendor: Vendor;
   eventId: string;
@@ -30,6 +32,7 @@ function SortableVendorCard({
   onDelete: (id: string) => Promise<void>;
   onSaveStart: () => void;
   onSaveEnd: () => void;
+  onBrowsePreferred: (vendorId: string, category: string) => void;
 }) {
   const isGF = ["venue", "caterer"].includes(vendor.category) && vendor.business_name === "Gilbertsville Farmhouse";
   const {
@@ -60,6 +63,7 @@ function SortableVendorCard({
         onSaveEnd={onSaveEnd}
         showDragHandle
         dragHandleProps={listeners}
+        onBrowsePreferred={(category) => onBrowsePreferred(vendor.id, category)}
       />
     </div>
   );
