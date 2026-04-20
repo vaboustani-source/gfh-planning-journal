@@ -16,7 +16,7 @@ export default function OurPeople() {
           <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-2">
             Guests & lodging
           </p>
-          <h1 className="font-display text-4xl font-light text-foreground mb-8">Our People</h1>
+          <h1 className="font-display text-4xl font-light text-foreground mb-8">Guest Lodging</h1>
 
           <LodgingList />
         </div>
