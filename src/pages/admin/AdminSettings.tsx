@@ -336,7 +336,7 @@ function OffsiteHotelsSection() {
         ) : (
           <ul className="divide-y divide-border">
             {hotels.map(h => (
-              <li key={h.id} className={`p-5 flex items-start gap-4 hover:bg-muted/20 transition-colors ${h.is_primary ? "border-l-4 border-l-amber-400" : ""}`}>
+              <li key={h.id} className={`p-5 flex items-start gap-4 hover:bg-muted/20 transition-colors ${h.is_primary ? "border-l-4 border-l-primary" : ""}`}>
                 <div className="w-10 h-10 rounded-full bg-sage/15 border border-sage/25 flex items-center justify-center shrink-0">
                   <Hotel size={16} className="text-sage" />
                 </div>
@@ -344,8 +344,8 @@ function OffsiteHotelsSection() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-display text-lg font-light text-foreground">{h.name}</p>
                     {h.is_primary && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 font-body text-[10px] text-amber-700">
-                        <Star size={9} className="fill-amber-500 text-amber-500" /> Principal
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/25 px-2 py-0.5 font-body text-[10px] text-primary">
+                        <Star size={9} className="fill-primary text-primary" /> Principal
                       </span>
                     )}
                     {h.coming_soon && (
