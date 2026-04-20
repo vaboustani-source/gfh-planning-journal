@@ -1130,6 +1130,105 @@ export type Database = {
           },
         ]
       }
+      offsite_hotels: {
+        Row: {
+          active: boolean | null
+          address: string | null
+          amenities: string[] | null
+          city: string
+          coming_soon: boolean | null
+          created_at: string | null
+          distance_description: string | null
+          distance_minutes: number | null
+          id: string
+          is_primary: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          sort_order: number | null
+          website: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          address?: string | null
+          amenities?: string[] | null
+          city: string
+          coming_soon?: boolean | null
+          created_at?: string | null
+          distance_description?: string | null
+          distance_minutes?: number | null
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          sort_order?: number | null
+          website?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          address?: string | null
+          amenities?: string[] | null
+          city?: string
+          coming_soon?: boolean | null
+          created_at?: string | null
+          distance_description?: string | null
+          distance_minutes?: number | null
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          sort_order?: number | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      offsite_lodging: {
+        Row: {
+          block_code: string | null
+          event_id: string | null
+          guest_count: number | null
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          block_code?: string | null
+          event_id?: string | null
+          guest_count?: number | null
+          hotel_id?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          block_code?: string | null
+          event_id?: string | null
+          guest_count?: number | null
+          hotel_id?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offsite_lodging_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offsite_lodging_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "offsite_hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_schedule: {
         Row: {
           amount: number | null
