@@ -345,6 +345,9 @@ export default function AdminDashboard() {
             <button onClick={() => navigate("/admin/preferred-vendors")} title="Preferred Vendors" className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Users size={15} /><span className="hidden sm:inline">Preferred Vendors</span>
             </button>
+            <button onClick={() => navigate("/admin/decor-catalog")} title="Décor Rentals" className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <FileText size={15} /><span className="hidden sm:inline">Décor Rentals</span>
+            </button>
             <button onClick={() => navigate("/admin/settings")} title="Settings" className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Settings size={15} /><span className="hidden sm:inline">Settings</span>
             </button>

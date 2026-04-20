@@ -417,62 +417,6 @@ export type Database = {
         }
         Relationships: []
       }
-      decor_items: {
-        Row: {
-          brandon_notes: string | null
-          confirmed_by_brandon: boolean | null
-          couple_notes: string | null
-          created_at: string | null
-          event_id: string | null
-          event_section: string | null
-          id: string
-          item_name: string
-          ordered: boolean | null
-          provided_by: string | null
-          quantity: number | null
-          selection_notes: string | null
-          unit_price: number | null
-        }
-        Insert: {
-          brandon_notes?: string | null
-          confirmed_by_brandon?: boolean | null
-          couple_notes?: string | null
-          created_at?: string | null
-          event_id?: string | null
-          event_section?: string | null
-          id?: string
-          item_name: string
-          ordered?: boolean | null
-          provided_by?: string | null
-          quantity?: number | null
-          selection_notes?: string | null
-          unit_price?: number | null
-        }
-        Update: {
-          brandon_notes?: string | null
-          confirmed_by_brandon?: boolean | null
-          couple_notes?: string | null
-          created_at?: string | null
-          event_id?: string | null
-          event_section?: string | null
-          id?: string
-          item_name?: string
-          ordered?: boolean | null
-          provided_by?: string | null
-          quantity?: number | null
-          selection_notes?: string | null
-          unit_price?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "decor_items_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       decor_selections: {
         Row: {
           added_by: string | null
@@ -712,6 +656,7 @@ export type Database = {
           count_at_90_days: number | null
           created_at: string | null
           created_by: string | null
+          decor_notes: string | null
           departure_date: string | null
           departure_date_note: string | null
           estimated_guest_count: number | null
@@ -738,6 +683,7 @@ export type Database = {
           count_at_90_days?: number | null
           created_at?: string | null
           created_by?: string | null
+          decor_notes?: string | null
           departure_date?: string | null
           departure_date_note?: string | null
           estimated_guest_count?: number | null
@@ -764,6 +710,7 @@ export type Database = {
           count_at_90_days?: number | null
           created_at?: string | null
           created_by?: string | null
+          decor_notes?: string | null
           departure_date?: string | null
           departure_date_note?: string | null
           estimated_guest_count?: number | null
@@ -787,6 +734,59 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_line_items: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          label: string
+          quantity: number | null
+          section: string
+          sort_order: number | null
+          source_id: string | null
+          source_table: string | null
+          total: number | null
+          unit_price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          label: string
+          quantity?: number | null
+          section: string
+          sort_order?: number | null
+          source_id?: string | null
+          source_table?: string | null
+          total?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          label?: string
+          quantity?: number | null
+          section?: string
+          sort_order?: number | null
+          source_id?: string | null
+          source_table?: string | null
+          total?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_line_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
