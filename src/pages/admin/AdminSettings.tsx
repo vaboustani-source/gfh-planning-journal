@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Users, UserCog, Plus, X, Loader2, Mail, Shield } from "lucide-react";
+import { ArrowLeft, Users, UserCog, Plus, X, Loader2, Mail, Shield, Hotel, Pencil, Trash2, Star, MapPin, Phone, Globe } from "lucide-react";
 
 interface AdminUser {
   id: string;
