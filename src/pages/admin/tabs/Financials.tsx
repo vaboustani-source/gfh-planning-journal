@@ -199,21 +199,23 @@ function LineRow({ line, onDebouncedUpdate, onImmediateUpdate, onDelete }: {
 export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [lines, setLines] = useState<PaymentLine[]>([]);
   const [financials, setFinancials] = useState<FinancialsRow>({ site_fee_total: null, catering_estimate: null });
+  const [decorLines, setDecorLines] = useState<{ id: string; label: string; quantity: number; unit_price: number; total: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const { status, markSaving, markSaved } = useAutosaveStatus();
 
   useEffect(() => { fetchData(); }, [eventId]);
 
   const fetchData = async () => {
-    const [{ data: linesData }, { data: finData }] = await Promise.all([
+    const [{ data: linesData }, { data: finData }, { data: decorData }] = await Promise.all([
       supabase.from("payment_schedule").select("*").eq("event_id", eventId).order("due_date", { ascending: true }),
       supabase.from("financials").select("site_fee_total, catering_estimate").eq("event_id", eventId).maybeSingle(),
+      supabase.from("financial_line_items").select("id, label, quantity, unit_price, total").eq("event_id", eventId).eq("section", "Décor Rentals").order("created_at"),
     ]);
     if (linesData) setLines(linesData);
+    if (decorData) setDecorLines(decorData as any);
     if (finData) {
       setFinancials(finData);
     } else {
-      // Create a financials row if none exists
       await supabase.from("financials").upsert({ event_id: eventId, site_fee_total: 0, catering_estimate: 0 }, { onConflict: "event_id" });
       setFinancials({ site_fee_total: 0, catering_estimate: 0 });
     }
@@ -247,6 +249,8 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
 
   if (loading) return <div className="py-12 flex justify-center"><div className="w-6 h-6 rounded-full border-2 border-sage/30 border-t-sage animate-spin" /></div>;
 
+  const decorTotal = decorLines.reduce((s, l) => s + Number(l.total ?? 0), 0);
+
   return (
     <div className="space-y-6 pb-24 animate-fade-up relative">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -265,6 +269,33 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
           />
         ))}
       </div>
+
+      {/* Décor Rentals card */}
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-border bg-muted/20 flex items-center justify-between">
+          <p className="font-display text-lg font-light text-foreground">Décor Rentals</p>
+          <p className="font-body text-sm text-muted-foreground">Auto-synced from couple's selections</p>
+        </div>
+        {decorLines.length === 0 ? (
+          <p className="px-5 py-6 font-body text-sm text-muted-foreground text-center">No décor selections yet.</p>
+        ) : (
+          <div className="divide-y divide-border">
+            {decorLines.map(l => (
+              <div key={l.id} className="px-5 py-3 flex items-center justify-between">
+                <div>
+                  <p className="font-body text-sm text-foreground">{l.label}</p>
+                  <p className="font-body text-xs text-muted-foreground">Qty {l.quantity} × ${Number(l.unit_price).toFixed(0)}</p>
+                </div>
+                <p className="font-body text-sm tabular-nums text-foreground">${Number(l.total).toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="px-5 py-4 border-t border-border bg-muted/10 flex justify-between font-body text-sm font-medium text-foreground">
+          <span>Décor Total</span><span className="tabular-nums">{fmt(decorTotal)}</span>
+        </div>
+      </div>
+
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );

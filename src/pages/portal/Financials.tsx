@@ -33,6 +33,7 @@ export default function Financials() {
   const navigate = useNavigate();
   const [fin, setFin] = useState<Financial | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [decorTotal, setDecorTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,9 +41,11 @@ export default function Financials() {
     Promise.all([
       supabase.from("financials").select("site_fee_total, site_fee_paid, catering_estimate, catering_paid").eq("event_id", eventId).maybeSingle(),
       supabase.from("payment_schedule").select("*").eq("event_id", eventId).order("due_date", { ascending: true }),
-    ]).then(([{ data: fData }, { data: pData }]) => {
+      supabase.from("financial_line_items").select("total").eq("event_id", eventId).eq("section", "Décor Rentals"),
+    ]).then(([{ data: fData }, { data: pData }, { data: dData }]) => {
       if (fData) setFin(fData);
       if (pData) setPayments(pData);
+      if (dData) setDecorTotal((dData as any[]).reduce((s, x) => s + Number(x.total ?? 0), 0));
       setLoading(false);
     });
   }, [eventId]);
@@ -98,6 +101,17 @@ export default function Financials() {
                 <p className="font-display text-2xl font-light text-foreground">{currency(fin.site_fee_total)}</p>
               </div>
             </div>
+
+            {/* Décor Rentals */}
+            {decorTotal > 0 && (
+              <div className="rounded-xl bg-card border border-border p-4 shadow-soft mb-6 flex items-center justify-between">
+                <div>
+                  <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-1">Décor Rentals</p>
+                  <p className="font-body text-xs text-muted-foreground">From your selections on the Décor page</p>
+                </div>
+                <p className="font-display text-2xl font-light text-foreground tabular-nums">{currency(decorTotal)}</p>
+              </div>
+            )}
 
             {/* Overdue warning */}
             {overduePayments.length > 0 && (
