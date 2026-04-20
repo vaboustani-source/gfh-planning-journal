@@ -16,6 +16,7 @@ import MenusBarTab from "./tabs/MenusBarTab";
 import AdminNotesTab from "./tabs/AdminNotesTab";
 import AdminDocumentsTab from "./tabs/AdminDocumentsTab";
 import ActivityTab from "./tabs/ActivityTab";
+import DecorTab from "./tabs/DecorTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -24,6 +25,7 @@ const TABS = [
   { id: "checklist", label: "Checklist" },
   { id: "vendors", label: "Vendors" },
   { id: "ceremony", label: "Ceremony & Music" },
+  { id: "decor", label: "Décor" },
   { id: "timeline", label: "Timeline" },
   { id: "menus-bar", label: "Menus & Bar" },
   { id: "dietary", label: "Dietary & Kids" },
@@ -210,6 +212,7 @@ export default function EventDetail() {
         {activeTab === "checklist" && <ChecklistTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "vendors" && <VendorsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "decor" && <DecorTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "timeline" && <TimelineTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "menus-bar" && <MenusBarTab eventId={event.id} onNavigateNext={navigateToNextTab} tastingDate={event.tasting_date} tastingDateNote={event.tasting_date_note} />}
         {activeTab === "dietary" && <DietaryTab eventId={event.id} onNavigateNext={navigateToNextTab} />}

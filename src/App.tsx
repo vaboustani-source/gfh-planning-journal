@@ -12,6 +12,7 @@ import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAllMessages from "./pages/admin/AdminAllMessages";
 import PreferredVendors from "./pages/admin/PreferredVendors";
+import DecorCatalog from "./pages/admin/DecorCatalog";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -81,6 +82,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <PreferredVendors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/decor-catalog"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <DecorCatalog />
                 </ProtectedRoute>
               }
             />
