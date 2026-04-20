@@ -1177,6 +1177,60 @@ export type Database = {
           },
         ]
       }
+      preferred_vendors: {
+        Row: {
+          active: boolean | null
+          category: string
+          contact_name: string | null
+          created_at: string | null
+          email: string | null
+          family_favorite: boolean | null
+          id: string
+          instagram: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          sort_order: number | null
+          subcategory: string | null
+          tier: string | null
+          website: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          family_favorite?: boolean | null
+          id?: string
+          instagram?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          sort_order?: number | null
+          subcategory?: string | null
+          tier?: string | null
+          website?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          family_favorite?: boolean | null
+          id?: string
+          instagram?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          sort_order?: number | null
+          subcategory?: string | null
+          tier?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
