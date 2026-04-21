@@ -1969,6 +1969,8 @@ export type Database = {
           method: string | null
           paid: boolean | null
           paid_date: string | null
+          payment_number: number | null
+          status: string | null
           track: string
         }
         Insert: {
@@ -1981,6 +1983,8 @@ export type Database = {
           method?: string | null
           paid?: boolean | null
           paid_date?: string | null
+          payment_number?: number | null
+          status?: string | null
           track: string
         }
         Update: {
@@ -1993,6 +1997,8 @@ export type Database = {
           method?: string | null
           paid?: boolean | null
           paid_date?: string | null
+          payment_number?: number | null
+          status?: string | null
           track?: string
         }
         Relationships: [
