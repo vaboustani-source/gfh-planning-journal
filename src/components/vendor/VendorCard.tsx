@@ -276,8 +276,8 @@ export function VendorCard({
               className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-sage text-white hover:opacity-90 transition-opacity font-body text-xs">
               <Save size={12} /> Save
             </button>
-            {!isGF && onDelete && (
-              <button onClick={() => onDelete(vendor.id)} className="text-muted-foreground hover:text-destructive">
+            {!isGF && (
+              <button onClick={saveAndClose} title="Close" className="text-muted-foreground hover:text-foreground">
                 <X size={14} />
               </button>
             )}
