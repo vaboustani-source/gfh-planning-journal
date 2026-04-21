@@ -863,6 +863,7 @@ export type Database = {
           status: string
           tasting_date: string | null
           tasting_date_note: string | null
+          tasting_notes_internal: string | null
           title: string
           wedding_date: string | null
           wedding_date_note: string | null
@@ -890,6 +891,7 @@ export type Database = {
           status?: string
           tasting_date?: string | null
           tasting_date_note?: string | null
+          tasting_notes_internal?: string | null
           title: string
           wedding_date?: string | null
           wedding_date_note?: string | null
@@ -917,6 +919,7 @@ export type Database = {
           status?: string
           tasting_date?: string | null
           tasting_date_note?: string | null
+          tasting_notes_internal?: string | null
           title?: string
           wedding_date?: string | null
           wedding_date_note?: string | null
@@ -2145,6 +2148,7 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
+          is_gfh_internal: boolean
           last_name: string | null
           phone: string | null
           role: string
@@ -2154,6 +2158,7 @@ export type Database = {
           email: string
           first_name?: string | null
           id: string
+          is_gfh_internal?: boolean
           last_name?: string | null
           phone?: string | null
           role?: string
@@ -2163,6 +2168,7 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
+          is_gfh_internal?: boolean
           last_name?: string | null
           phone?: string | null
           role?: string

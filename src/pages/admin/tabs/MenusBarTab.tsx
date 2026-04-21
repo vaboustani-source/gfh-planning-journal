@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import BarTab from "./BarTab";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Lock, Plus, Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { formatMealType } from "@/lib/formatMealType";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
@@ -117,12 +118,39 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
 function TastingSubTab({ eventId, tastingDate, tastingDateNote }: { eventId: string; tastingDate: string | null; tastingDateNote: string | null }) {
   const [date, setDate] = useState(tastingDate ?? "");
   const [notes, setNotes] = useState(tastingDateNote ?? "");
+  const [internalNotes, setInternalNotes] = useState("");
+  const [isInternal, setIsInternal] = useState(false);
+  const { user } = useAuth();
   const autosave = useAutosaveStatus();
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("users")
+      .select("is_gfh_internal")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => setIsInternal(!!(data as any)?.is_gfh_internal));
+  }, [user]);
+
+  useEffect(() => {
+    if (!isInternal) return;
+    supabase
+      .from("events")
+      .select("tasting_notes_internal")
+      .eq("id", eventId)
+      .single()
+      .then(({ data }) => setInternalNotes(((data as any)?.tasting_notes_internal as string) ?? ""));
+  }, [eventId, isInternal]);
 
   const save = async (field: string, value: any) => {
     autosave.debouncedSave(`tasting-${field}`, async () => {
       await supabase.from("events").update({ [field]: value } as any).eq("id", eventId);
     });
+  };
+
+  const saveInternal = async () => {
+    await supabase.from("events").update({ tasting_notes_internal: internalNotes || null } as any).eq("id", eventId);
   };
 
   return (
@@ -149,6 +177,29 @@ function TastingSubTab({ eventId, tastingDate, tastingDateNote }: { eventId: str
           />
         </div>
       </div>
+
+      {isInternal && (
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 p-5 shadow-soft space-y-3">
+          <div className="flex items-center gap-2">
+            <Lock size={14} className="text-amber-700 dark:text-amber-400" />
+            <p className="font-body text-[11px] tracking-widest uppercase text-amber-800 dark:text-amber-300 font-semibold">
+              GFH Internal Only
+            </p>
+          </div>
+          <div>
+            <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Tasting Notes (Internal)</label>
+            <textarea
+              value={internalNotes}
+              onChange={e => setInternalNotes(e.target.value)}
+              onBlur={saveInternal}
+              rows={5}
+              placeholder="Internal-only notes — kitchen feedback, staffing observations, cost considerations..."
+              className="w-full rounded-lg border border-amber-300 dark:border-amber-800 bg-background px-3 py-2 font-body text-sm resize-none mt-1"
+            />
+            <p className="font-body text-[11px] text-muted-foreground mt-1.5">Visible only to GFH internal staff. Not shown to couples or external planners.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
