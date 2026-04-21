@@ -151,6 +151,77 @@ export type Database = {
           },
         ]
       }
+      basics_cards: {
+        Row: {
+          bullets: Json
+          card_type: string
+          created_at: string
+          group_label: string
+          id: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bullets?: Json
+          card_type?: string
+          created_at?: string
+          group_label: string
+          id?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bullets?: Json
+          card_type?: string
+          created_at?: string
+          group_label?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      builder_selections: {
+        Row: {
+          couple_id: string
+          created_at: string
+          id: string
+          selections: Json
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          couple_id: string
+          created_at?: string
+          id?: string
+          selections?: Json
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          couple_id?: string
+          created_at?: string
+          id?: string
+          selections?: Json
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "builder_selections_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: true
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ceremony_details: {
         Row: {
           cake_cutting_song: string | null
@@ -330,6 +401,38 @@ export type Database = {
           },
         ]
       }
+      couple_history: {
+        Row: {
+          action: string
+          couple_id: string
+          created_at: string
+          details: Json | null
+          id: string
+        }
+        Insert: {
+          action: string
+          couple_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          couple_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_history_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couple_notes: {
         Row: {
           body: string | null
@@ -377,6 +480,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      couple_selections: {
+        Row: {
+          couple_id: string
+          created_at: string
+          group_label: string | null
+          id: string
+          menu_item_id: string
+          notes: string | null
+          section_id: string
+        }
+        Insert: {
+          couple_id: string
+          created_at?: string
+          group_label?: string | null
+          id?: string
+          menu_item_id: string
+          notes?: string | null
+          section_id: string
+        }
+        Update: {
+          couple_id?: string
+          created_at?: string
+          group_label?: string | null
+          id?: string
+          menu_item_id?: string
+          notes?: string | null
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_selections_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      couples: {
+        Row: {
+          created_at: string
+          email: string
+          guest_count: number | null
+          id: string
+          partner1_name: string
+          partner2_name: string
+          status: string
+          updated_at: string
+          user_id: string
+          wedding_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          guest_count?: number | null
+          id?: string
+          partner1_name: string
+          partner2_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          wedding_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          guest_count?: number | null
+          id?: string
+          partner1_name?: string
+          partner2_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          wedding_date?: string | null
+        }
+        Relationships: []
       }
       decor_catalog: {
         Row: {
@@ -963,6 +1143,225 @@ export type Database = {
           },
         ]
       }
+      menu_accordions: {
+        Row: {
+          body: string
+          created_at: string
+          emoji: string | null
+          id: string
+          price: string | null
+          section_id: string
+          sort_order: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          price?: string | null
+          section_id: string
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          price?: string | null
+          section_id?: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_accordions_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "menu_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_guide: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          section_key: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          section_key: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          section_key?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          diet: string[] | null
+          group_label: string | null
+          id: string
+          name: string
+          note: string | null
+          price: string | null
+          season: string[] | null
+          section_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          diet?: string[] | null
+          group_label?: string | null
+          id?: string
+          name: string
+          note?: string | null
+          price?: string | null
+          season?: string[] | null
+          section_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          diet?: string[] | null
+          group_label?: string | null
+          id?: string
+          name?: string
+          note?: string | null
+          price?: string | null
+          season?: string[] | null
+          section_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "menu_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_packages: {
+        Row: {
+          created_at: string
+          description: string
+          dietary_tags: string[] | null
+          id: string
+          is_featured: boolean | null
+          price: string
+          season: string[] | null
+          section_id: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          dietary_tags?: string[] | null
+          id?: string
+          is_featured?: boolean | null
+          price: string
+          season?: string[] | null
+          section_id: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          dietary_tags?: string[] | null
+          id?: string
+          is_featured?: boolean | null
+          price?: string
+          season?: string[] | null
+          section_id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_packages_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "menu_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_sections: {
+        Row: {
+          base_price_pp: number | null
+          created_at: string
+          description: string | null
+          emoji: string | null
+          id: string
+          label: string
+          section_subtitle: string | null
+          section_title: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          base_price_pp?: number | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id: string
+          label: string
+          section_subtitle?: string | null
+          section_title: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          base_price_pp?: number | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          label?: string
+          section_subtitle?: string | null
+          section_title?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_notification_queue: {
         Row: {
           attempts: number | null
@@ -1422,6 +1821,86 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      pricing_config: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          included_count: number | null
+          is_active: boolean
+          item_key: string
+          item_label: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          included_count?: number | null
+          is_active?: boolean
+          item_key: string
+          item_label: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          included_count?: number | null
+          is_active?: boolean
+          item_key?: string
+          item_label?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      section_group_limits: {
+        Row: {
+          created_at: string
+          extra_price_note: string | null
+          extra_price_pp: number | null
+          group_label: string
+          id: string
+          included_count: number
+          section_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          extra_price_note?: string | null
+          extra_price_pp?: number | null
+          group_label: string
+          id?: string
+          included_count?: number
+          section_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          extra_price_note?: string | null
+          extra_price_pp?: number | null
+          group_label?: string
+          id?: string
+          included_count?: number
+          section_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "section_group_limits_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "menu_sections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
