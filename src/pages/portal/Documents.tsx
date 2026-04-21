@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload } from "lucide-react";
+import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, ExternalLink } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
+import { FRIENDLY_CATEGORY } from "@/components/vendor/VendorCard";
 import { toast } from "sonner";
 
 interface Doc {
@@ -12,17 +13,24 @@ interface Doc {
   file_name: string;
   file_url: string;
   document_type: string | null;
+  description: string | null;
   uploaded_at: string | null;
   uploaded_by: string | null;
+  vendor_id: string | null;
+  vendor_name?: string | null;
+  vendor_category?: string | null;
   signedUrl?: string;
 }
 
 const DOC_GROUPS: { key: string; label: string; types: string[] }[] = [
-  { key: "vendor", label: "Vendor Contracts", types: ["vendor_contract"] },
-  { key: "couple", label: "Your Uploads", types: ["couple_upload"] },
-  { key: "insurance", label: "Insurance", types: ["insurance", "coi"] },
-  { key: "menus", label: "Menus", types: ["menu"] },
-  { key: "timelines", label: "Timelines", types: ["timeline"] },
+  { key: "vendor_contract", label: "Contracts", types: ["vendor_contract"] },
+  { key: "coi", label: "COI", types: ["coi"] },
+  { key: "insurance", label: "Insurance", types: ["insurance"] },
+  { key: "invoice", label: "Invoices", types: ["invoice"] },
+  { key: "permit", label: "Permits", types: ["permit"] },
+  { key: "couple_upload", label: "Your Uploads", types: ["couple_upload"] },
+  { key: "menu", label: "Menus", types: ["menu"] },
+  { key: "timeline", label: "Timelines", types: ["timeline"] },
   { key: "other", label: "Other", types: ["other", ""] },
 ];
 
@@ -35,7 +43,13 @@ function getDocIcon(name: string) {
 
 function extractStoragePath(fileUrl: string): string | null {
   const match = fileUrl.match(/vendor-contracts\/(.+?)(?:\?|$)/);
-  return match ? match[1] : null;
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function sourceLabel(doc: Doc): string {
+  if (doc.vendor_id && doc.vendor_name) return `Vendor: ${doc.vendor_name}`;
+  if (doc.vendor_id && doc.vendor_category) return `Vendor: ${FRIENDLY_CATEGORY[doc.vendor_category] || doc.vendor_category}`;
+  return "Uploaded directly";
 }
 
 export default function Documents() {
@@ -47,37 +61,41 @@ export default function Documents() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+  const [descDraft, setDescDraft] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocs = useCallback(async () => {
     if (!eventId) return;
     const { data } = await supabase
       .from("documents")
-      .select("*")
+      .select("id, file_name, file_url, document_type, description, uploaded_at, uploaded_by, vendor_id, vendors(business_name, category)")
       .eq("event_id", eventId)
       .order("uploaded_at", { ascending: false });
     if (data) {
-      // Generate signed URLs for all docs
       const withUrls = await Promise.all(
-        data.map(async (doc) => {
+        data.map(async (doc: any) => {
           const path = extractStoragePath(doc.file_url);
+          const base = {
+            ...doc,
+            vendor_name: doc.vendors?.business_name || null,
+            vendor_category: doc.vendors?.category || null,
+          };
           if (path) {
             const { data: signed } = await supabase.storage
               .from("vendor-contracts")
               .createSignedUrl(path, 3600);
-            return { ...doc, signedUrl: signed?.signedUrl || doc.file_url };
+            return { ...base, signedUrl: signed?.signedUrl || doc.file_url };
           }
-          return { ...doc, signedUrl: doc.file_url };
+          return { ...base, signedUrl: doc.file_url };
         })
       );
       setDocs(withUrls);
+      setDescDraft(Object.fromEntries(withUrls.map((d: Doc) => [d.id, d.description || ""])));
     }
     setLoading(false);
   }, [eventId]);
 
-  useEffect(() => {
-    if (eventId) fetchDocs();
-  }, [eventId, fetchDocs]);
+  useEffect(() => { if (eventId) fetchDocs(); }, [eventId, fetchDocs]);
 
   const uploadFile = useCallback(async (file: globalThis.File) => {
     if (!file || !eventId) return;
@@ -100,7 +118,6 @@ export default function Documents() {
     }
 
     setUploadProgress(70);
-    // Store the base public URL for reference; we generate signed URLs on fetch
     const { data: urlData } = supabase.storage.from("vendor-contracts").getPublicUrl(filePath);
 
     await supabase.from("documents").insert({
@@ -139,6 +156,14 @@ export default function Documents() {
     await supabase.from("documents").delete().eq("id", doc.id);
     setDocs(prev => prev.filter(d => d.id !== doc.id));
     toast.success("Document deleted");
+  };
+
+  const saveDescription = async (id: string) => {
+    const value = descDraft[id] ?? "";
+    const current = docs.find(d => d.id === id);
+    if (current?.description === value || (current?.description == null && value === "")) return;
+    await supabase.from("documents").update({ description: value || null }).eq("id", id);
+    setDocs(prev => prev.map(d => d.id === id ? { ...d, description: value } : d));
   };
 
   const groupedDocs = DOC_GROUPS.map(group => ({
@@ -195,29 +220,61 @@ export default function Documents() {
         <section key={group.key}>
           <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-3">{group.label}</p>
           <div className="rounded-xl bg-card border border-border shadow-soft overflow-hidden">
-            {group.docs.map((doc, i) => (
-              <div key={doc.id} className={`flex items-center justify-between px-5 py-3 ${i < group.docs.length - 1 ? "border-b border-border" : ""}`}>
-                <div className="flex items-center gap-3 min-w-0">
-                  {getDocIcon(doc.file_name)}
-                  <div className="min-w-0">
-                    <p className="font-body text-sm text-foreground truncate">{doc.file_name}</p>
-                    <p className="font-body text-[10px] text-muted-foreground">
-                      {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}
-                    </p>
+            <div className="hidden md:grid grid-cols-[2fr_1.5fr_1.3fr_auto] gap-3 px-5 py-2.5 bg-muted/30 border-b border-border font-body text-[10px] uppercase tracking-wider text-muted-foreground">
+              <div>File</div>
+              <div>Description</div>
+              <div>Source</div>
+              <div></div>
+            </div>
+            {group.docs.map((doc, i) => {
+              const ownsDoc = doc.uploaded_by === user?.id;
+              return (
+                <div key={doc.id} className={`grid grid-cols-1 md:grid-cols-[2fr_1.5fr_1.3fr_auto] gap-3 items-center px-5 py-3 ${i < group.docs.length - 1 ? "border-b border-border" : ""}`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {getDocIcon(doc.file_name)}
+                    <div className="min-w-0">
+                      <a href={doc.signedUrl || doc.file_url} target="_blank" rel="noopener noreferrer"
+                         className="inline-flex items-center gap-1 font-body text-sm text-primary hover:underline truncate max-w-full">
+                        <span className="truncate">{doc.file_name}</span>
+                        <ExternalLink size={11} className="shrink-0" />
+                      </a>
+                      <p className="font-body text-[10px] text-muted-foreground">
+                        {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    {ownsDoc ? (
+                      <input type="text" value={descDraft[doc.id] ?? ""}
+                        onChange={e => setDescDraft(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                        onBlur={() => saveDescription(doc.id)}
+                        placeholder="What is this?"
+                        className="w-full border border-border rounded-md px-2 py-1 font-body text-xs bg-background focus:outline-none focus:border-primary/50" />
+                    ) : (
+                      <p className="font-body text-xs text-muted-foreground italic">{doc.description || "—"}</p>
+                    )}
+                  </div>
+
+                  <div className="font-body text-xs text-muted-foreground truncate" title={sourceLabel(doc)}>
+                    {sourceLabel(doc)}
+                  </div>
+
+                  <div className="flex items-center gap-1 justify-end">
+                    <a href={doc.signedUrl || doc.file_url} target="_blank" rel="noopener noreferrer" download
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                      <Download size={14} />
+                    </a>
+                    {ownsDoc && (
+                      <button onClick={() => deleteDoc(doc)}
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <a href={doc.signedUrl || doc.file_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-                    <Download size={14} />
-                  </a>
-                  {doc.uploaded_by === user?.id && (
-                    <button onClick={() => deleteDoc(doc)} className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}

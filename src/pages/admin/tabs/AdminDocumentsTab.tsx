@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, Archive } from "lucide-react";
+import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, Archive, ExternalLink } from "lucide-react";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import { VENDOR_DOC_CATEGORIES } from "@/components/admin/VendorFileUpload";
+import { FRIENDLY_CATEGORY } from "@/components/vendor/VendorCard";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
@@ -11,18 +13,32 @@ interface Doc {
   file_name: string;
   file_url: string;
   document_type: string | null;
+  description: string | null;
   uploaded_at: string | null;
   uploaded_by: string | null;
+  vendor_id: string | null;
+  vendor_name?: string | null;
+  vendor_category?: string | null;
   signedUrl?: string;
 }
 
 const DOC_GROUPS: { key: string; label: string; types: string[] }[] = [
-  { key: "vendor", label: "Vendor Contracts", types: ["vendor_contract"] },
-  { key: "couple", label: "Couple Uploads", types: ["couple_upload"] },
-  { key: "insurance", label: "Insurance", types: ["insurance", "coi"] },
-  { key: "menus", label: "Menus", types: ["menu"] },
-  { key: "timelines", label: "Timelines", types: ["timeline"] },
+  { key: "vendor_contract", label: "Contracts", types: ["vendor_contract"] },
+  { key: "coi", label: "COI", types: ["coi"] },
+  { key: "insurance", label: "Insurance", types: ["insurance"] },
+  { key: "invoice", label: "Invoices", types: ["invoice"] },
+  { key: "permit", label: "Permits", types: ["permit"] },
+  { key: "couple_upload", label: "Couple Uploads", types: ["couple_upload"] },
+  { key: "menu", label: "Menus", types: ["menu"] },
+  { key: "timeline", label: "Timelines", types: ["timeline"] },
   { key: "other", label: "Other", types: ["other", ""] },
+];
+
+const ALL_CATEGORIES = [
+  ...VENDOR_DOC_CATEGORIES,
+  { value: "couple_upload", label: "Couple Upload" },
+  { value: "menu", label: "Menu" },
+  { value: "timeline", label: "Timeline" },
 ];
 
 function getDocIcon(name: string) {
@@ -34,7 +50,13 @@ function getDocIcon(name: string) {
 
 function extractStoragePath(fileUrl: string): string | null {
   const match = fileUrl.match(/vendor-contracts\/(.+?)(?:\?|$)/);
-  return match ? match[1] : null;
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function sourceLabel(doc: Doc): string {
+  if (doc.vendor_id && doc.vendor_name) return `Vendor: ${doc.vendor_name}`;
+  if (doc.vendor_id && doc.vendor_category) return `Vendor: ${FRIENDLY_CATEGORY[doc.vendor_category] || doc.vendor_category}`;
+  return "Uploaded directly";
 }
 
 export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext: () => void }) {
@@ -46,35 +68,40 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
   const [dragOver, setDragOver] = useState(false);
   const [zipping, setZipping] = useState(false);
   const [zipProgress, setZipProgress] = useState(0);
+  const [descDraft, setDescDraft] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocs = useCallback(async () => {
     const { data } = await supabase
       .from("documents")
-      .select("*")
+      .select("id, file_name, file_url, document_type, description, uploaded_at, uploaded_by, vendor_id, vendors(business_name, category)")
       .eq("event_id", eventId)
       .order("uploaded_at", { ascending: false });
     if (data) {
       const withUrls = await Promise.all(
-        data.map(async (doc) => {
+        data.map(async (doc: any) => {
           const path = extractStoragePath(doc.file_url);
+          const base = {
+            ...doc,
+            vendor_name: doc.vendors?.business_name || null,
+            vendor_category: doc.vendors?.category || null,
+          };
           if (path) {
             const { data: signed } = await supabase.storage
               .from("vendor-contracts")
               .createSignedUrl(path, 3600);
-            return { ...doc, signedUrl: signed?.signedUrl || doc.file_url };
+            return { ...base, signedUrl: signed?.signedUrl || doc.file_url };
           }
-          return { ...doc, signedUrl: doc.file_url };
+          return { ...base, signedUrl: doc.file_url };
         })
       );
       setDocs(withUrls);
+      setDescDraft(Object.fromEntries(withUrls.map((d: Doc) => [d.id, d.description || ""])));
     }
     setLoading(false);
   }, [eventId]);
 
-  useEffect(() => {
-    fetchDocs();
-  }, [fetchDocs]);
+  useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
   const uploadFile = useCallback(async (file: globalThis.File) => {
     if (!file) return;
@@ -82,7 +109,6 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
       toast.error("File too large — 20MB max");
       return;
     }
-
     setUploading(true);
     setUploadProgress(10);
 
@@ -111,10 +137,7 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     setUploadProgress(100);
     toast.success("File uploaded");
     await fetchDocs();
-    setTimeout(() => {
-      setUploading(false);
-      setUploadProgress(0);
-    }, 400);
+    setTimeout(() => { setUploading(false); setUploadProgress(0); }, 400);
   }, [eventId, uploadType, fetchDocs]);
 
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,15 +153,8 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     if (file) await uploadFile(file);
   }, [uploadFile]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-  }, []);
+  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragOver(true); }, []);
+  const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragOver(false); }, []);
 
   const deleteDoc = async (doc: Doc) => {
     const path = extractStoragePath(doc.file_url);
@@ -146,6 +162,19 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
     await supabase.from("documents").delete().eq("id", doc.id);
     setDocs(prev => prev.filter(d => d.id !== doc.id));
     toast.success("Document deleted");
+  };
+
+  const saveDescription = async (id: string) => {
+    const value = descDraft[id] ?? "";
+    const current = docs.find(d => d.id === id);
+    if (current?.description === value || (current?.description == null && value === "")) return;
+    await supabase.from("documents").update({ description: value || null }).eq("id", id);
+    setDocs(prev => prev.map(d => d.id === id ? { ...d, description: value } : d));
+  };
+
+  const updateCategory = async (id: string, value: string) => {
+    await supabase.from("documents").update({ document_type: value }).eq("id", id);
+    setDocs(prev => prev.map(d => d.id === id ? { ...d, document_type: value } : d));
   };
 
   const downloadAllZip = async () => {
@@ -159,7 +188,7 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
         const res = await fetch(url);
         const blob = await res.blob();
         zip.file(docs[i].file_name, blob);
-      } catch { /* skip failed fetches */ }
+      } catch { /* skip */ }
       setZipProgress(Math.round(((i + 1) / docs.length) * 80));
     }
     setZipProgress(90);
@@ -191,34 +220,19 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
               disabled={zipping}
               className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-body text-xs font-medium text-foreground hover:bg-muted/50 transition-colors disabled:opacity-60"
             >
-              {zipping ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Zipping {zipProgress}%
-                </>
-              ) : (
-                <>
-                  <Archive size={14} />
-                  Download All (.zip)
-                </>
-              )}
+              {zipping ? (<><Loader2 size={14} className="animate-spin" />Zipping {zipProgress}%</>) : (<><Archive size={14} />Download All (.zip)</>)}
             </button>
           )}
         </div>
 
         <div className="mb-3">
-          <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground block mb-1">Type</label>
+          <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground block mb-1">Category</label>
           <select
             value={uploadType}
             onChange={e => setUploadType(e.target.value)}
             className="rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground"
           >
-            <option value="vendor_contract">Vendor Contract</option>
-            <option value="couple_upload">Couple Upload</option>
-            <option value="insurance">Insurance / COI</option>
-            <option value="menu">Menu</option>
-            <option value="timeline">Timeline</option>
-            <option value="other">Other</option>
+            {ALL_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
 
@@ -228,27 +242,16 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
           onDragLeave={handleDragLeave}
           onClick={() => !uploading && fileInputRef.current?.click()}
           className={`relative rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors ${
-            dragOver
-              ? "border-sage bg-sage/5"
-              : "border-border hover:border-muted-foreground/40 hover:bg-muted/20"
+            dragOver ? "border-sage bg-sage/5" : "border-border hover:border-muted-foreground/40 hover:bg-muted/20"
           }`}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={handleFileInput}
-            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-          />
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInput} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
           {uploading ? (
             <div className="space-y-3">
               <Loader2 size={28} className="animate-spin text-sage mx-auto" />
               <p className="font-body text-sm text-foreground">Uploading…</p>
               <div className="w-48 mx-auto h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-sage rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
+                <div className="h-full bg-sage rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
               </div>
             </div>
           ) : (
@@ -269,30 +272,55 @@ export default function AdminDocumentsTab({ eventId, onNavigateNext }: { eventId
             <p className="font-body text-sm text-muted-foreground italic">No documents in this category.</p>
           ) : (
             <div className="rounded-xl bg-card border border-border shadow-soft overflow-hidden">
+              <div className="hidden md:grid grid-cols-[2fr_1.5fr_1.3fr_1fr_auto] gap-3 px-5 py-2.5 bg-muted/30 border-b border-border font-body text-[10px] uppercase tracking-wider text-muted-foreground">
+                <div>File</div>
+                <div>Description</div>
+                <div>Source</div>
+                <div>Category</div>
+                <div></div>
+              </div>
               {group.docs.map((doc, i) => (
-                <div key={doc.id} className={`flex items-center justify-between px-5 py-3 ${i < group.docs.length - 1 ? "border-b border-border" : ""}`}>
-                  <div className="flex items-center gap-3 min-w-0">
+                <div key={doc.id} className={`grid grid-cols-1 md:grid-cols-[2fr_1.5fr_1.3fr_1fr_auto] gap-3 items-center px-5 py-3 ${i < group.docs.length - 1 ? "border-b border-border" : ""}`}>
+                  <div className="flex items-center gap-2 min-w-0">
                     {getDocIcon(doc.file_name)}
                     <div className="min-w-0">
-                      <p className="font-body text-sm text-foreground truncate">{doc.file_name}</p>
+                      <a href={doc.signedUrl || doc.file_url} target="_blank" rel="noopener noreferrer"
+                         className="inline-flex items-center gap-1 font-body text-sm text-primary hover:underline truncate max-w-full">
+                        <span className="truncate">{doc.file_name}</span>
+                        <ExternalLink size={11} className="shrink-0" />
+                      </a>
                       <p className="font-body text-[10px] text-muted-foreground">
                         {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={doc.signedUrl || doc.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                    >
+
+                  <div>
+                    <input type="text" value={descDraft[doc.id] ?? ""}
+                      onChange={e => setDescDraft(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                      onBlur={() => saveDescription(doc.id)}
+                      placeholder="What is this?"
+                      className="w-full border border-border rounded-md px-2 py-1 font-body text-xs bg-background focus:outline-none focus:border-primary/50" />
+                  </div>
+
+                  <div className="font-body text-xs text-muted-foreground truncate" title={sourceLabel(doc)}>
+                    {sourceLabel(doc)}
+                  </div>
+
+                  <div>
+                    <select value={doc.document_type || "other"} onChange={e => updateCategory(doc.id, e.target.value)}
+                      className="w-full border border-border rounded-md px-2 py-1 font-body text-xs bg-background focus:outline-none focus:border-primary/50">
+                      {ALL_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-1 justify-end">
+                    <a href={doc.signedUrl || doc.file_url} target="_blank" rel="noopener noreferrer" download
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
                       <Download size={14} />
                     </a>
-                    <button
-                      onClick={() => deleteDoc(doc)}
-                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    >
+                    <button onClick={() => deleteDoc(doc)}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                       <Trash2 size={14} />
                     </button>
                   </div>

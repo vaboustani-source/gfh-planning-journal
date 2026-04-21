@@ -709,6 +709,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          description: string | null
           document_type: string | null
           event_id: string | null
           file_name: string
@@ -716,8 +717,10 @@ export type Database = {
           id: string
           uploaded_at: string | null
           uploaded_by: string | null
+          vendor_id: string | null
         }
         Insert: {
+          description?: string | null
           document_type?: string | null
           event_id?: string | null
           file_name: string
@@ -725,8 +728,10 @@ export type Database = {
           id?: string
           uploaded_at?: string | null
           uploaded_by?: string | null
+          vendor_id?: string | null
         }
         Update: {
+          description?: string | null
           document_type?: string | null
           event_id?: string | null
           file_name?: string
@@ -734,6 +739,7 @@ export type Database = {
           id?: string
           uploaded_at?: string | null
           uploaded_by?: string | null
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -748,6 +754,13 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]

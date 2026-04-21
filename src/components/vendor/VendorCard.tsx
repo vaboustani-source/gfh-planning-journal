@@ -220,6 +220,7 @@ export function VendorCard({
             <VendorFileUpload
               eventId={eventId}
               vendorId={vendor.id}
+              isAdmin={isAdmin}
               canUpload={true}
               canDelete={true}
               onFileCountChange={setFileCount}
@@ -348,6 +349,7 @@ export function VendorCard({
           <VendorFileUpload
             eventId={eventId}
             vendorId={vendor.id}
+            isAdmin={isAdmin}
             canUpload={true}
             canDelete={true}
             onFileCountChange={(count) => {
