@@ -238,10 +238,13 @@ export default function AdminDashboard() {
         }
       });
 
-      // Payments due within 14 days
+      // Overdue payments + payments due within 14 days
       (paymentsRes.data ?? []).forEach(p => {
         if (!p.event_id || !p.due_date) return;
-        if (p.due_date >= todayStr && p.due_date <= in14Str) {
+        if (p.due_date < todayStr) {
+          const daysOver = Math.abs(differenceInDays(parseISO(p.due_date), today));
+          items.push({ event_id: p.event_id, event_title: eventMap[p.event_id] ?? "Event", tab: "financials", type: "payment", label: `Overdue ${daysOver}d: ${p.label}`, critical: true });
+        } else if (p.due_date >= todayStr && p.due_date <= in14Str) {
           items.push({ event_id: p.event_id, event_title: eventMap[p.event_id] ?? "Event", tab: "financials", type: "payment", label: `Payment due: ${p.label}`, critical: true });
         }
       });
