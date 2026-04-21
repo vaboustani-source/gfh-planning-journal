@@ -1025,6 +1025,230 @@ export type Database = {
           },
         ]
       }
+      lb_bookings: {
+        Row: {
+          addon_amount: number
+          addons_selected: Json
+          base_amount: number
+          booked_at: string
+          event_id: string
+          guest_email: string
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          nights_booked: number
+          payment_status: string
+          resort_fee: number
+          room_assignment: string | null
+          section_id: string
+          stripe_payment_id: string | null
+          tax_amount: number
+          total_amount: number
+        }
+        Insert: {
+          addon_amount?: number
+          addons_selected?: Json
+          base_amount?: number
+          booked_at?: string
+          event_id: string
+          guest_email: string
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          nights_booked?: number
+          payment_status?: string
+          resort_fee?: number
+          room_assignment?: string | null
+          section_id: string
+          stripe_payment_id?: string | null
+          tax_amount?: number
+          total_amount?: number
+        }
+        Update: {
+          addon_amount?: number
+          addons_selected?: Json
+          base_amount?: number
+          booked_at?: string
+          event_id?: string
+          guest_email?: string
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          nights_booked?: number
+          payment_status?: string
+          resort_fee?: number
+          room_assignment?: string | null
+          section_id?: string
+          stripe_payment_id?: string | null
+          tax_amount?: number
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lb_bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "lb_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lb_bookings_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "lb_room_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lb_events: {
+        Row: {
+          check_in_date: string | null
+          check_out_date: string | null
+          couple_names: string
+          created_at: string
+          id: string
+          nights: number
+          resort_fee_pct: number
+          status: string
+          tax_pct: number
+          updated_at: string
+          wedding_date: string | null
+          wedding_name: string
+        }
+        Insert: {
+          check_in_date?: string | null
+          check_out_date?: string | null
+          couple_names: string
+          created_at?: string
+          id?: string
+          nights?: number
+          resort_fee_pct?: number
+          status?: string
+          tax_pct?: number
+          updated_at?: string
+          wedding_date?: string | null
+          wedding_name: string
+        }
+        Update: {
+          check_in_date?: string | null
+          check_out_date?: string | null
+          couple_names?: string
+          created_at?: string
+          id?: string
+          nights?: number
+          resort_fee_pct?: number
+          status?: string
+          tax_pct?: number
+          updated_at?: string
+          wedding_date?: string | null
+          wedding_name?: string
+        }
+        Relationships: []
+      }
+      lb_room_sections: {
+        Row: {
+          booking_link_slug: string | null
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+          price_per_night: number
+          section_name: string
+          sort_order: number
+          total_rooms: number
+          updated_at: string
+        }
+        Insert: {
+          booking_link_slug?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          price_per_night?: number
+          section_name: string
+          sort_order?: number
+          total_rooms?: number
+          updated_at?: string
+        }
+        Update: {
+          booking_link_slug?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          price_per_night?: number
+          section_name?: string
+          sort_order?: number
+          total_rooms?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lb_room_sections_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "lb_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lb_section_addons: {
+        Row: {
+          addon_name: string
+          addon_price: number
+          addon_type: string
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          section_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          addon_name: string
+          addon_price?: number
+          addon_type?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          section_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          addon_name?: string
+          addon_price?: number
+          addon_type?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          section_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lb_section_addons_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "lb_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lb_section_addons_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "lb_room_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lodging_assignments: {
         Row: {
           assigned_guest_email: string | null
