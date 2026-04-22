@@ -25,6 +25,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import GanttPreview from "@/components/admin/GanttPreview";
+import { resolveBlocks, buildAxis, formatTime } from "@/lib/ganttTimeline";
+import { renderToStaticMarkup } from "react-dom/server";
 
 /* ── Types ─────────────────────────────────────── */
 
@@ -40,6 +43,7 @@ interface TimeBlock {
   boh: string;
   internal: string;
   custom: Record<string, string>;
+  duration_minutes?: number | null;
 }
 
 interface TimelineDay {
@@ -102,6 +106,7 @@ function migrateToV2(raw: any): TimelineDataV2 {
         boh: b.boh_notes ?? "",
         internal: b.internal_notes ?? "",
         custom: {},
+        duration_minutes: null,
       })),
     }));
   return { days: days.length > 0 ? days : [] };
@@ -159,7 +164,18 @@ function SortableRow({
 
       {/* Grid of cells */}
       <div className="flex-1 grid gap-1.5" style={{ gridTemplateColumns: gridTemplate }}>
-        <Input value={block.time} onChange={e => onChange("time", e.target.value)} className="font-body text-sm h-auto min-h-[36px]" placeholder="Time" />
+        <div className="flex flex-col gap-1">
+          <Input value={block.time} onChange={e => onChange("time", e.target.value)} className="font-body text-sm h-auto min-h-[36px]" placeholder="Time" />
+          <Input
+            type="number"
+            min={0}
+            value={block.duration_minutes ?? ""}
+            onChange={e => onChange("duration_minutes", e.target.value)}
+            className="font-body text-[11px] h-7 px-2 bg-muted/40"
+            placeholder="dur (min)"
+            title="Optional duration in minutes — overrides auto gap"
+          />
+        </div>
         <Textarea value={block.foh} onChange={e => onChange("foh", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-card" placeholder="Couple sees…" rows={1} />
         <Textarea value={block.boh} onChange={e => onChange("boh", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-blue-50/60" placeholder="Vendor notes…" rows={1} />
         <Textarea value={block.internal} onChange={e => onChange("internal", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-amber-50/60" placeholder="Internal…" rows={1} />
@@ -193,6 +209,9 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
   const [exportBoh, setExportBoh] = useState(true);
   const [exportInternal, setExportInternal] = useState(false);
   const [exportAudience, setExportAudience] = useState("");
+  const [exportFormat, setExportFormat] = useState<"list" | "gantt">("list");
+  const [coupleNames, setCoupleNames] = useState<string>("");
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [renamingDay, setRenamingDay] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const { status: saveStatus, markSaving, markSaved } = useAutosaveStatus();
@@ -202,7 +221,21 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  useEffect(() => { loadTimeline(); }, [eventId]);
+  useEffect(() => { loadTimeline(); loadEventMeta(); }, [eventId]);
+
+  const loadEventMeta = async () => {
+    const { data: ev } = await supabase.from("events").select("wedding_date").eq("id", eventId).maybeSingle();
+    if (ev?.wedding_date) setWeddingDate(ev.wedding_date);
+    const { data: eu } = await supabase.from("event_users").select("user_id").eq("event_id", eventId).in("role_in_event", ["partner_1", "partner_2", "couple"]);
+    if (eu && eu.length > 0) {
+      const ids = eu.map(r => r.user_id).filter(Boolean) as string[];
+      const { data: us } = await supabase.from("users").select("first_name, last_name").in("id", ids);
+      if (us) {
+        const names = us.map(u => `${u.first_name || ""} ${u.last_name || ""}`.trim()).filter(Boolean).join(" & ");
+        setCoupleNames(names);
+      }
+    }
+  };
 
   const loadTimeline = async () => {
     const { data } = await supabase.from("working_timeline").select("*").eq("event_id", eventId).maybeSingle();
@@ -321,6 +354,9 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
         if (field.startsWith("custom.")) {
           const colId = field.replace("custom.", "");
           blocks[blockIdx] = { ...blocks[blockIdx], custom: { ...blocks[blockIdx].custom, [colId]: value } };
+        } else if (field === "duration_minutes") {
+          const n = value.trim() === "" ? null : Math.max(0, parseInt(value, 10));
+          blocks[blockIdx] = { ...blocks[blockIdx], duration_minutes: Number.isNaN(n as number) ? null : n };
         } else {
           blocks[blockIdx] = { ...blocks[blockIdx], [field]: value };
         }
@@ -348,7 +384,7 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
     if (!timeline) return;
     const updated = {
       days: timeline.days.map(d => d.id === dayId
-        ? { ...d, blocks: [...d.blocks, { time: "", highlight: null, foh: "", boh: "", internal: "", custom: {} }] }
+        ? { ...d, blocks: [...d.blocks, { time: "", highlight: null, foh: "", boh: "", internal: "", custom: {}, duration_minutes: null }] }
         : d
       ),
     };
@@ -457,6 +493,73 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
 
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500); }
+    setExportOpen(false);
+  };
+
+  /** Build a heading like "Wedding Day — Saturday, May 8, 2027" using day index offset from wedding date. */
+  const buildDayHeading = (dayLabel: string, dayIndex: number): string => {
+    if (!weddingDate) return dayLabel;
+    // Heuristic: assume Wedding Day is the day matching wedding_date.
+    // Try to detect "Wedding" in label; otherwise offset from index 0 = arrival day before wedding.
+    const weddingDayIdx = timeline?.days.findIndex(d => /wedding/i.test(d.label)) ?? -1;
+    let date: Date;
+    const wd = new Date(weddingDate + "T12:00:00");
+    if (weddingDayIdx >= 0) {
+      const offset = dayIndex - weddingDayIdx;
+      date = new Date(wd);
+      date.setDate(date.getDate() + offset);
+    } else {
+      // Fallback: assume first day = arrival = wedding-1
+      date = new Date(wd);
+      date.setDate(date.getDate() + (dayIndex - 1));
+    }
+    const fmt = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    return `${dayLabel} — ${fmt}`;
+  };
+
+  const handleExportGantt = () => {
+    if (!timeline) return;
+    let title = "Weekend Timeline";
+    if (exportFoh && !exportBoh && !exportInternal) title = "Your Weekend Itinerary";
+    if (exportFoh && exportBoh && !exportInternal) title = "Vendor Day-of Sheet";
+    if (exportFoh && exportBoh && exportInternal) title = "Coordinator Timeline — Confidential";
+
+    const dayMarkup = timeline.days.map((day, idx) => {
+      const heading = buildDayHeading(day.label, idx);
+      return renderToStaticMarkup(
+        <GanttPreview
+          day={day}
+          showFoh={exportFoh}
+          showBoh={exportBoh}
+          showInternal={exportInternal}
+          audience={exportAudience || undefined}
+          coupleNames={coupleNames || undefined}
+          dayHeading={heading}
+        />
+      );
+    }).join('<div style="height:18px"></div>');
+
+    const html = `<!DOCTYPE html><html><head><title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 28px; color: #2d2d2d; background: #fff; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 30px; font-weight: 300; color: #2C3E2D; margin: 0 0 4px; }
+  .doc-sub { font-size: 12px; color: #888; margin-bottom: 24px; letter-spacing: 0.5px; }
+  .confidential { text-align: center; color: #c0392b; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; }
+  @media print {
+    body { padding: 14px; }
+    @page { size: landscape; margin: 0.4in; }
+  }
+</style></head><body>
+<h1>${title}</h1>
+<div class="doc-sub">${exportAudience ? `Prepared for: ${exportAudience} · ` : ""}${coupleNames ? coupleNames + " · " : ""}Gilbertsville Farmhouse</div>
+${dayMarkup}
+${exportInternal ? '<div class="confidential">Confidential — Coordinator Use Only</div>' : ""}
+</body></html>`;
+
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
     setExportOpen(false);
   };
 
@@ -591,11 +694,34 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
 
       {/* Export Modal */}
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={exportFormat === "gantt" ? "sm:max-w-4xl max-h-[90vh] overflow-y-auto" : "sm:max-w-md"}>
           <DialogHeader>
             <DialogTitle className="font-display text-xl font-light">Export Timeline</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-5 py-2">
+            {/* Format toggle */}
+            <div>
+              <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-2">Format</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExportFormat("list")}
+                  className={`text-left rounded-lg border px-3 py-2.5 transition-colors ${exportFormat === "list" ? "border-sage bg-sage/5" : "border-border hover:border-sage/50"}`}
+                >
+                  <div className="font-body text-sm font-medium text-foreground">PDF (text list)</div>
+                  <div className="font-body text-[11px] text-muted-foreground mt-0.5">Classic itinerary tables.</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExportFormat("gantt")}
+                  className={`text-left rounded-lg border px-3 py-2.5 transition-colors ${exportFormat === "gantt" ? "border-sage bg-sage/5" : "border-border hover:border-sage/50"}`}
+                >
+                  <div className="font-body text-sm font-medium text-foreground">Gantt Chart</div>
+                  <div className="font-body text-[11px] text-muted-foreground mt-0.5">Visual time-axis layout.</div>
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-3">
               <p className="font-body text-sm text-muted-foreground">Select which layers to include:</p>
               <div className="flex items-center gap-2">
@@ -613,12 +739,36 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
             </div>
             <div>
               <Label className="font-body text-xs text-muted-foreground">Audience label (optional)</Label>
-              <Input value={exportAudience} onChange={(e) => setExportAudience(e.target.value)} placeholder="e.g. For: Photography Team" className="mt-1" />
+              <Input value={exportAudience} onChange={(e) => setExportAudience(e.target.value)} placeholder="e.g. Photography Team" className="mt-1" />
             </div>
+
+            {/* Inline Gantt preview */}
+            {exportFormat === "gantt" && timeline && (
+              <div className="space-y-3">
+                <p className="font-body text-xs tracking-widest uppercase text-muted-foreground">Preview</p>
+                <div className="space-y-3 max-h-[420px] overflow-y-auto rounded-lg bg-muted/30 p-3">
+                  {timeline.days.map((day, idx) => (
+                    <GanttPreview
+                      key={day.id}
+                      day={day}
+                      showFoh={exportFoh}
+                      showBoh={exportBoh}
+                      showInternal={exportInternal}
+                      audience={exportAudience || undefined}
+                      coupleNames={coupleNames || undefined}
+                      dayHeading={buildDayHeading(day.label, idx)}
+                      compact
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setExportOpen(false)}>Cancel</Button>
-            <Button onClick={handleExportPdf} className="gap-2"><Download size={14} /> Export PDF</Button>
+            <Button onClick={exportFormat === "gantt" ? handleExportGantt : handleExportPdf} className="gap-2">
+              <Download size={14} /> {exportFormat === "gantt" ? "Export Gantt" : "Export PDF"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
