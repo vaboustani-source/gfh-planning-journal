@@ -295,7 +295,7 @@ export function MessageComposer({
     setSending(true);
     ed.innerHTML = "";
     setIsEmpty(true);
-    setMentionOpen(false);
+    setTriggerOpen(false);
     const replyId = replyTarget?.messageId ?? null;
     try {
       await onSend(body, mentionIds, replyId);
@@ -314,25 +314,30 @@ export function MessageComposer({
   }, [replyTarget?.messageId]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (mentionOpen && filtered.length > 0) {
+    if (triggerOpen && filteredCount > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setMentionIndex(i => (i + 1) % filtered.length);
+        setTriggerIndex(i => (i + 1) % filteredCount);
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setMentionIndex(i => (i - 1 + filtered.length) % filtered.length);
+        setTriggerIndex(i => (i - 1 + filteredCount) % filteredCount);
         return;
       }
       if (e.key === "Enter" || e.key === "Tab") {
         e.preventDefault();
-        insertMention(filtered[mentionIndex]);
+        if (triggerKind === "mention") {
+          insertMention(filteredMentions[triggerIndex]);
+        } else {
+          const s = filteredSections[triggerIndex];
+          insertSection(s.key, s.label);
+        }
         return;
       }
       if (e.key === "Escape") {
         e.preventDefault();
-        setMentionOpen(false);
+        setTriggerOpen(false);
         return;
       }
     }
@@ -356,41 +361,66 @@ export function MessageComposer({
 
   return (
     <div className={`relative ${className}`}>
-      {mentionOpen && filtered.length > 0 && (
+      {triggerOpen && filteredCount > 0 && (
         <div
           className="absolute left-0 right-12 bottom-full mb-2 z-50 rounded-xl border bg-card shadow-lg overflow-hidden max-h-64 overflow-y-auto"
           style={{ borderColor: "#E8E2D9", backgroundColor: "#FFFFFF" }}
         >
-          {filtered.map((p, idx) => (
-            <button
-              key={p.id}
-              type="button"
-              onMouseDown={e => { e.preventDefault(); insertMention(p); }}
-              onMouseEnter={() => setMentionIndex(idx)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
-              style={{ backgroundColor: idx === mentionIndex ? "#FAF8F4" : "transparent" }}
-            >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                style={{ backgroundColor: p.color ?? "#648857" }}
-              >
-                <span className="font-display font-bold text-xs leading-none" style={{ color: "#FAF8F4" }}>
-                  {initialOf(p.display_name)}
-                </span>
-              </div>
-              <span className="font-body text-foreground" style={{ fontSize: "14px" }}>
-                {p.display_name}
-              </span>
-              {p.role_in_event && (
-                <span
-                  className="font-body uppercase ml-auto"
-                  style={{ fontSize: "10px", letterSpacing: "0.08em", color: "#6B6B6B" }}
+          {triggerKind === "mention"
+            ? filteredMentions.map((p, idx) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); insertMention(p); }}
+                  onMouseEnter={() => setTriggerIndex(idx)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                  style={{ backgroundColor: idx === triggerIndex ? "#FAF8F4" : "transparent" }}
                 >
-                  {p.role_in_event}
-                </span>
-              )}
-            </button>
-          ))}
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: p.color ?? "#648857" }}
+                  >
+                    <span className="font-display font-bold text-xs leading-none" style={{ color: "#FAF8F4" }}>
+                      {initialOf(p.display_name)}
+                    </span>
+                  </div>
+                  <span className="font-body text-foreground" style={{ fontSize: "14px" }}>
+                    {p.display_name}
+                  </span>
+                  {p.role_in_event && (
+                    <span
+                      className="font-body uppercase ml-auto"
+                      style={{ fontSize: "10px", letterSpacing: "0.08em", color: "#6B6B6B" }}
+                    >
+                      {p.role_in_event}
+                    </span>
+                  )}
+                </button>
+              ))
+            : filteredSections.map((s, idx) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); insertSection(s.key, s.label); }}
+                  onMouseEnter={() => setTriggerIndex(idx)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                  style={{ backgroundColor: idx === triggerIndex ? "#FAF8F4" : "transparent" }}
+                >
+                  <span
+                    className="inline-flex items-center rounded-full font-body"
+                    style={{
+                      fontSize: "12px",
+                      padding: "2px 8px",
+                      backgroundColor: "rgba(196,154,64,0.15)",
+                      borderLeft: "2px solid #C49A40",
+                      color: "#8A6A1F",
+                    }}
+                  >
+                    #{s.key}
+                  </span>
+                  <span className="font-body text-foreground" style={{ fontSize: "14px" }}>{s.label}</span>
+                </button>
+              ))}
         </div>
       )}
 
@@ -437,12 +467,12 @@ export function MessageComposer({
             suppressContentEditableWarning
             role="textbox"
             aria-multiline="true"
-            onInput={() => { updateEmptyState(); checkMentionTrigger(); }}
-            onKeyUp={checkMentionTrigger}
-            onClick={checkMentionTrigger}
+            onInput={() => { updateEmptyState(); checkTrigger(); }}
+            onKeyUp={checkTrigger}
+            onClick={checkTrigger}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            onBlur={() => setTimeout(() => setMentionOpen(false), 150)}
+            onBlur={() => setTimeout(() => setTriggerOpen(false), 150)}
             className="resize-none rounded-2xl border border-border bg-background px-4 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors max-h-32 overflow-y-auto leading-relaxed"
             style={{ minHeight: "42px", whiteSpace: "pre-wrap", wordBreak: "break-word" }}
           />
