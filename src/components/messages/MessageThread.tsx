@@ -95,13 +95,23 @@ export function MessageThread({
     );
   }
 
+  if (visibleMessages.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="font-display text-xl italic text-[#6B6B6B] text-center max-w-sm">
+          No messages match "{searchQuery}".
+        </p>
+      </div>
+    );
+  }
+
   const messageById: Record<string, Message> = {};
   messages.forEach(m => { messageById[m.id] = m; });
 
   return (
     <div className="py-2">
-      {messages.map((msg, i) => {
-        const prev = messages[i - 1];
+      {visibleMessages.map((msg, i) => {
+        const prev = visibleMessages[i - 1];
         const showHeader = shouldShowTimestampHeader(prev, msg);
         const grouped = isGroupedWithPrev(prev, msg, showHeader);
         const isMe = msg.sender_event_user_id === currentEventUserId && currentEventUserId !== null;
@@ -232,16 +242,26 @@ export function MessageThread({
                         className="font-body whitespace-pre-wrap"
                         style={{ fontSize: "15px", lineHeight: 1.5, color: "#1A1A1A" }}
                       >
-                        {parseMessageBody(msg.body).map((part, idx) =>
-                          part.type === "text" ? (
-                            <span key={idx}>{part.value}</span>
-                          ) : (
-                            <MentionChip
+                        {parseMessageBody(msg.body).map((part, idx) => {
+                          if (part.type === "text") {
+                            return <span key={idx}>{highlightText(part.value, searchQuery)}</span>;
+                          }
+                          if (part.type === "mention") {
+                            return (
+                              <MentionChip
+                                key={idx}
+                                participant={participantsById[part.eventUserId] ?? null}
+                              />
+                            );
+                          }
+                          return (
+                            <SectionChip
                               key={idx}
-                              participant={participantsById[part.eventUserId] ?? null}
+                              section={part.section}
+                              onClick={onSectionClick ? () => onSectionClick(part.section) : undefined}
                             />
-                          ),
-                        )}
+                          );
+                        })}
                       </p>
                     </div>
                     {showActions && (
