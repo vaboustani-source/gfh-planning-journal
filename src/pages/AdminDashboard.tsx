@@ -96,25 +96,27 @@ export default function AdminDashboard() {
 
   /* ─── Real-time unread badge ─── */
   useEffect(() => {
+    if (!currentUserId) return;
     const channel = supabase
       .channel("admin-dashboard-messages")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-        const msg = payload.new as { event_id: string | null; read_at: string | null };
+        const msg = payload.new as { event_id: string | null; read_at: string | null; sender_id: string | null };
         if (!msg.event_id || msg.read_at !== null) return;
+        if (msg.sender_id === currentUserId) return;
         setEvents(prev => prev.map(e => e.id === msg.event_id ? { ...e, unread_count: e.unread_count + 1 } : e));
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
         const msg = payload.new as { event_id: string | null; read_at: string | null };
-        if (!msg.event_id || msg.read_at === null) return;
+        if (!msg.event_id) return;
         supabase.from("messages").select("id", { count: "exact", head: true })
-          .eq("event_id", msg.event_id).is("read_at", null)
+          .eq("event_id", msg.event_id).is("read_at", null).neq("sender_id", currentUserId)
           .then(({ count }) => {
             setEvents(prev => prev.map(e => e.id === msg.event_id ? { ...e, unread_count: count ?? 0 } : e));
           });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [currentUserId]);
 
   const fetchAll = async () => {
     try {
