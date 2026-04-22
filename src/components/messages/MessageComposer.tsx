@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Send, X } from "lucide-react";
-import { EventParticipant, hexToRgba, darkenHex, initialOf, truncate } from "@/lib/messageUtils";
+import { EventParticipant, hexToRgba, darkenHex, initialOf, truncate, PORTAL_SECTIONS } from "@/lib/messageUtils";
 
 export interface ReplyTarget {
   messageId: string;
@@ -20,13 +20,17 @@ interface MessageComposerProps {
 }
 
 interface Token {
-  type: "text" | "mention";
-  value: string; // text content or event_user_id
+  type: "text" | "mention" | "section";
+  value: string; // text content, event_user_id, or section key
 }
 
-/** Build [[@id]] body string from tokens. */
+/** Build [[@id]] / [[#section]] body string from tokens. */
 function tokensToBody(tokens: Token[]): string {
-  return tokens.map(t => (t.type === "text" ? t.value : `[[@${t.value}]]`)).join("");
+  return tokens.map(t => {
+    if (t.type === "text") return t.value;
+    if (t.type === "mention") return `[[@${t.value}]]`;
+    return `[[#${t.value}]]`;
+  }).join("");
 }
 
 /** Render tokens to DOM nodes inside the editor. */
