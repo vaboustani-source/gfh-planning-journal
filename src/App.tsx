@@ -14,6 +14,7 @@ import AdminAllMessages from "./pages/admin/AdminAllMessages";
 import PreferredVendors from "./pages/admin/PreferredVendors";
 import DecorCatalog from "./pages/admin/DecorCatalog";
 import Resources from "./pages/admin/Resources";
+import AdminForms from "./pages/admin/Forms";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -28,6 +29,7 @@ import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
 import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
+import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
 import NotFound from "./pages/NotFound";
 
