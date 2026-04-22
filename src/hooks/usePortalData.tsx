@@ -65,6 +65,7 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
   const [eventId, setEventId] = useState<string | null>(previewEventIdFromRoute);
   const [accessTier, setAccessTier] = useState<number>(3);
   const [roleInEvent, setRoleInEvent] = useState<string | null>(null);
+  const [tabAccess, setTabAccess] = useState<TabAccess>(DEFAULT_TAB_ACCESS);
   const [checklistProgress, setChecklistProgress] = useState<ChecklistProgress>(EMPTY_CHECKLIST_PROGRESS);
   const [nextTask, setNextTask] = useState<NextTask | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,10 +115,15 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
       if (activeEventId) {
         setAccessTier(3);
         setRoleInEvent("preview");
+        setTabAccess({
+          overview: true, vendors: true, ceremony: true, timeline: true,
+          menus: true, lodging: true, financials: true, messages: true,
+          notes: true, documents: true,
+        });
       } else if (user) {
         const { data: eu } = await supabase
           .from("event_users")
-          .select("event_id, access_tier, role_in_event")
+          .select("event_id, access_tier, role_in_event, tab_access")
           .eq("user_id", user.id)
           .maybeSingle();
 
@@ -130,8 +136,19 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
         }
 
         activeEventId = eu.event_id;
-        setAccessTier(eu.access_tier ?? 3);
+        const tier = eu.access_tier ?? 3;
+        setAccessTier(tier);
         setRoleInEvent(eu.role_in_event);
+        // Couples / partners / coordinator / tier 4 → all tabs on
+        if (hasFullAccess(eu.role_in_event, tier)) {
+          setTabAccess({
+            overview: true, vendors: true, ceremony: true, timeline: true,
+            menus: true, lodging: true, financials: tier !== 4, messages: true,
+            notes: true, documents: true,
+          });
+        } else {
+          setTabAccess(normalizeTabAccess(eu.tab_access));
+        }
       }
 
       if (!activeEventId) {
@@ -179,6 +196,8 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
       eventId,
       accessTier,
       roleInEvent,
+      tabAccess,
+      hasTabAccess: (tab) => tabAccess[tab],
       checklistProgress,
       nextTask,
       daysUntilArrival,
