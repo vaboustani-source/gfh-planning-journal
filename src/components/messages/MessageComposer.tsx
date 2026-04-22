@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Send, X } from "lucide-react";
-import { EventParticipant, hexToRgba, darkenHex, initialOf, truncate } from "@/lib/messageUtils";
+import { EventParticipant, hexToRgba, darkenHex, initialOf, truncate, PORTAL_SECTIONS } from "@/lib/messageUtils";
 
 export interface ReplyTarget {
   messageId: string;
@@ -20,13 +20,17 @@ interface MessageComposerProps {
 }
 
 interface Token {
-  type: "text" | "mention";
-  value: string; // text content or event_user_id
+  type: "text" | "mention" | "section";
+  value: string; // text content, event_user_id, or section key
 }
 
-/** Build [[@id]] body string from tokens. */
+/** Build [[@id]] / [[#section]] body string from tokens. */
 function tokensToBody(tokens: Token[]): string {
-  return tokens.map(t => (t.type === "text" ? t.value : `[[@${t.value}]]`)).join("");
+  return tokens.map(t => {
+    if (t.type === "text") return t.value;
+    if (t.type === "mention") return `[[@${t.value}]]`;
+    return `[[#${t.value}]]`;
+  }).join("");
 }
 
 /** Render tokens to DOM nodes inside the editor. */
@@ -77,6 +81,9 @@ function editorToTokens(editor: HTMLElement): Token[] {
         } else if (el.dataset.mention) {
           flush();
           tokens.push({ type: "mention", value: el.dataset.mention });
+        } else if (el.dataset.section) {
+          flush();
+          tokens.push({ type: "section", value: el.dataset.section });
         } else if (el.tagName === "DIV" || el.tagName === "P") {
           // Some browsers wrap new lines in <div>
           if (buf.length > 0 || tokens.length > 0) buf += "\n";
@@ -116,10 +123,12 @@ export function MessageComposer({
   const [sending, setSending] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
 
-  // Mention state
-  const [mentionOpen, setMentionOpen] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
-  const [mentionIndex, setMentionIndex] = useState(0);
+  // Mention/section trigger state
+  type TriggerKind = "mention" | "section";
+  const [triggerOpen, setTriggerOpen] = useState(false);
+  const [triggerKind, setTriggerKind] = useState<TriggerKind>("mention");
+  const [triggerQuery, setTriggerQuery] = useState("");
+  const [triggerIndex, setTriggerIndex] = useState(0);
   const triggerRangeRef = useRef<{ start: Node; startOffset: number } | null>(null);
 
   const participantsById = useMemo(() => {
@@ -133,24 +142,37 @@ export function MessageComposer({
     [participants, currentEventUserId],
   );
 
-  const filtered = useMemo(() => {
-    const q = mentionQuery.toLowerCase();
+  const filteredMentions = useMemo(() => {
+    const q = triggerQuery.toLowerCase();
     if (!q) return mentionable.slice(0, 8);
     return mentionable
       .filter(p => (p.display_name ?? "").toLowerCase().includes(q))
       .slice(0, 8);
-  }, [mentionable, mentionQuery]);
+  }, [mentionable, triggerQuery]);
 
-  useEffect(() => { setMentionIndex(0); }, [mentionQuery, mentionOpen]);
+  const filteredSections = useMemo(() => {
+    const q = triggerQuery.toLowerCase();
+    if (!q) return PORTAL_SECTIONS.slice(0, 8);
+    return PORTAL_SECTIONS.filter(s =>
+      s.key.toLowerCase().includes(q) || s.label.toLowerCase().includes(q)
+    ).slice(0, 8);
+  }, [triggerQuery]);
+
+  const filteredCount = triggerKind === "mention" ? filteredMentions.length : filteredSections.length;
+
+  useEffect(() => { setTriggerIndex(0); }, [triggerQuery, triggerOpen, triggerKind]);
 
   const updateEmptyState = () => {
     const ed = editorRef.current;
     if (!ed) return;
-    setIsEmpty(ed.textContent?.trim().length === 0 && ed.querySelectorAll("[data-mention]").length === 0);
+    setIsEmpty(
+      ed.textContent?.trim().length === 0 &&
+      ed.querySelectorAll("[data-mention],[data-section]").length === 0
+    );
   };
 
-  /** Check selection for an active @ trigger and open/close accordingly */
-  const checkMentionTrigger = () => {
+  /** Check selection for an active @ or # trigger and open/close accordingly */
+  const checkTrigger = () => {
     const ed = editorRef.current;
     const sel = window.getSelection();
     if (!ed || !sel || sel.rangeCount === 0) return;
@@ -163,46 +185,44 @@ export function MessageComposer({
       textNode = range.startContainer as Text;
       offset = range.startOffset;
     } else {
-      // Caret is in an element node (e.g. the editor itself, or a wrapper div).
-      // Find the nearest text node at/before the caret position.
       const container = range.startContainer as HTMLElement;
       const childIdx = range.startOffset;
       let candidate: Node | null =
         container.childNodes[childIdx - 1] ?? container.childNodes[childIdx] ?? null;
-      // Descend into the last text node if candidate is an element
       while (candidate && candidate.nodeType === Node.ELEMENT_NODE) {
         const el = candidate as HTMLElement;
-        if (el.dataset?.mention) { candidate = null; break; }
+        if (el.dataset?.mention || el.dataset?.section) { candidate = null; break; }
         candidate = el.lastChild;
       }
       if (!candidate || candidate.nodeType !== Node.TEXT_NODE) {
-        setMentionOpen(false);
+        setTriggerOpen(false);
         return;
       }
       textNode = candidate as Text;
       offset = textNode.length;
     }
     const text = textNode.textContent ?? "";
-    // Walk back to find last @ that starts a token
+    // Walk back to find last @ or # that starts a token
     let i = offset - 1;
+    let kind: TriggerKind | null = null;
     while (i >= 0) {
       const ch = text[i];
-      if (ch === "@") break;
-      if (/\s/.test(ch)) { setMentionOpen(false); return; }
+      if (ch === "@") { kind = "mention"; break; }
+      if (ch === "#") { kind = "section"; break; }
+      if (/\s/.test(ch)) { setTriggerOpen(false); return; }
       i--;
     }
-    if (i < 0) { setMentionOpen(false); return; }
-    // Verify char before @ is whitespace or start
-    if (i > 0 && !/\s/.test(text[i - 1])) { setMentionOpen(false); return; }
+    if (i < 0 || !kind) { setTriggerOpen(false); return; }
+    if (i > 0 && !/\s/.test(text[i - 1])) { setTriggerOpen(false); return; }
     const query = text.slice(i + 1, offset);
-    // If query has whitespace, exit
-    if (/\s/.test(query)) { setMentionOpen(false); return; }
+    if (/\s/.test(query)) { setTriggerOpen(false); return; }
     triggerRangeRef.current = { start: textNode, startOffset: i };
-    setMentionQuery(query);
-    setMentionOpen(true);
+    setTriggerKind(kind);
+    setTriggerQuery(query);
+    setTriggerOpen(true);
   };
 
-  const insertMention = (p: EventParticipant) => {
+  const insertChipFromTrigger = (kind: TriggerKind, payload: { id: string; label: string; color: string }) => {
     const ed = editorRef.current;
     const trigger = triggerRangeRef.current;
     if (!ed || !trigger) return;
@@ -216,30 +236,46 @@ export function MessageComposer({
 
     const chip = document.createElement("span");
     chip.contentEditable = "false";
-    chip.dataset.mention = p.id;
+    if (kind === "mention") chip.dataset.mention = payload.id;
+    else chip.dataset.section = payload.id;
     chip.className = "inline-flex items-center rounded-full font-body align-baseline select-none";
     chip.style.fontSize = "13px";
     chip.style.padding = "2px 6px";
-    chip.style.backgroundColor = hexToRgba(p.color ?? "#648857", 0.15);
-    chip.style.borderLeft = `2px solid ${p.color ?? "#648857"}`;
-    chip.style.color = darkenHex(p.color ?? "#648857", 0.35);
+    chip.style.backgroundColor = hexToRgba(payload.color, 0.15);
+    chip.style.borderLeft = `2px solid ${payload.color}`;
+    chip.style.color = darkenHex(payload.color, 0.35);
     chip.style.margin = "0 1px";
-    chip.textContent = `@${p.display_name ?? "Unknown"}`;
+    chip.textContent = kind === "mention" ? `@${payload.label}` : `#${payload.label}`;
 
     const space = document.createTextNode("\u00A0");
     range.insertNode(space);
     range.insertNode(chip);
 
-    // Move caret after the space
     const newRange = document.createRange();
     newRange.setStartAfter(space);
     newRange.collapse(true);
     sel.removeAllRanges();
     sel.addRange(newRange);
 
-    setMentionOpen(false);
+    setTriggerOpen(false);
     triggerRangeRef.current = null;
     updateEmptyState();
+  };
+
+  const insertMention = (p: EventParticipant) => {
+    insertChipFromTrigger("mention", {
+      id: p.id,
+      label: p.display_name ?? "Unknown",
+      color: p.color ?? "#648857",
+    });
+  };
+
+  const insertSection = (key: string, label: string) => {
+    insertChipFromTrigger("section", {
+      id: key,
+      label: label.toLowerCase(),
+      color: "#C49A40",
+    });
   };
 
   const handleSend = async () => {
@@ -259,7 +295,7 @@ export function MessageComposer({
     setSending(true);
     ed.innerHTML = "";
     setIsEmpty(true);
-    setMentionOpen(false);
+    setTriggerOpen(false);
     const replyId = replyTarget?.messageId ?? null;
     try {
       await onSend(body, mentionIds, replyId);
@@ -278,25 +314,30 @@ export function MessageComposer({
   }, [replyTarget?.messageId]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (mentionOpen && filtered.length > 0) {
+    if (triggerOpen && filteredCount > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setMentionIndex(i => (i + 1) % filtered.length);
+        setTriggerIndex(i => (i + 1) % filteredCount);
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setMentionIndex(i => (i - 1 + filtered.length) % filtered.length);
+        setTriggerIndex(i => (i - 1 + filteredCount) % filteredCount);
         return;
       }
       if (e.key === "Enter" || e.key === "Tab") {
         e.preventDefault();
-        insertMention(filtered[mentionIndex]);
+        if (triggerKind === "mention") {
+          insertMention(filteredMentions[triggerIndex]);
+        } else {
+          const s = filteredSections[triggerIndex];
+          insertSection(s.key, s.label);
+        }
         return;
       }
       if (e.key === "Escape") {
         e.preventDefault();
-        setMentionOpen(false);
+        setTriggerOpen(false);
         return;
       }
     }
@@ -320,41 +361,66 @@ export function MessageComposer({
 
   return (
     <div className={`relative ${className}`}>
-      {mentionOpen && filtered.length > 0 && (
+      {triggerOpen && filteredCount > 0 && (
         <div
           className="absolute left-0 right-12 bottom-full mb-2 z-50 rounded-xl border bg-card shadow-lg overflow-hidden max-h-64 overflow-y-auto"
           style={{ borderColor: "#E8E2D9", backgroundColor: "#FFFFFF" }}
         >
-          {filtered.map((p, idx) => (
-            <button
-              key={p.id}
-              type="button"
-              onMouseDown={e => { e.preventDefault(); insertMention(p); }}
-              onMouseEnter={() => setMentionIndex(idx)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
-              style={{ backgroundColor: idx === mentionIndex ? "#FAF8F4" : "transparent" }}
-            >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                style={{ backgroundColor: p.color ?? "#648857" }}
-              >
-                <span className="font-display font-bold text-xs leading-none" style={{ color: "#FAF8F4" }}>
-                  {initialOf(p.display_name)}
-                </span>
-              </div>
-              <span className="font-body text-foreground" style={{ fontSize: "14px" }}>
-                {p.display_name}
-              </span>
-              {p.role_in_event && (
-                <span
-                  className="font-body uppercase ml-auto"
-                  style={{ fontSize: "10px", letterSpacing: "0.08em", color: "#6B6B6B" }}
+          {triggerKind === "mention"
+            ? filteredMentions.map((p, idx) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); insertMention(p); }}
+                  onMouseEnter={() => setTriggerIndex(idx)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                  style={{ backgroundColor: idx === triggerIndex ? "#FAF8F4" : "transparent" }}
                 >
-                  {p.role_in_event}
-                </span>
-              )}
-            </button>
-          ))}
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: p.color ?? "#648857" }}
+                  >
+                    <span className="font-display font-bold text-xs leading-none" style={{ color: "#FAF8F4" }}>
+                      {initialOf(p.display_name)}
+                    </span>
+                  </div>
+                  <span className="font-body text-foreground" style={{ fontSize: "14px" }}>
+                    {p.display_name}
+                  </span>
+                  {p.role_in_event && (
+                    <span
+                      className="font-body uppercase ml-auto"
+                      style={{ fontSize: "10px", letterSpacing: "0.08em", color: "#6B6B6B" }}
+                    >
+                      {p.role_in_event}
+                    </span>
+                  )}
+                </button>
+              ))
+            : filteredSections.map((s, idx) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); insertSection(s.key, s.label); }}
+                  onMouseEnter={() => setTriggerIndex(idx)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                  style={{ backgroundColor: idx === triggerIndex ? "#FAF8F4" : "transparent" }}
+                >
+                  <span
+                    className="inline-flex items-center rounded-full font-body"
+                    style={{
+                      fontSize: "12px",
+                      padding: "2px 8px",
+                      backgroundColor: "rgba(196,154,64,0.15)",
+                      borderLeft: "2px solid #C49A40",
+                      color: "#8A6A1F",
+                    }}
+                  >
+                    #{s.key}
+                  </span>
+                  <span className="font-body text-foreground" style={{ fontSize: "14px" }}>{s.label}</span>
+                </button>
+              ))}
         </div>
       )}
 
@@ -401,12 +467,12 @@ export function MessageComposer({
             suppressContentEditableWarning
             role="textbox"
             aria-multiline="true"
-            onInput={() => { updateEmptyState(); checkMentionTrigger(); }}
-            onKeyUp={checkMentionTrigger}
-            onClick={checkMentionTrigger}
+            onInput={() => { updateEmptyState(); checkTrigger(); }}
+            onKeyUp={checkTrigger}
+            onClick={checkTrigger}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            onBlur={() => setTimeout(() => setMentionOpen(false), 150)}
+            onBlur={() => setTimeout(() => setTriggerOpen(false), 150)}
             className="resize-none rounded-2xl border border-border bg-background px-4 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors max-h-32 overflow-y-auto leading-relaxed"
             style={{ minHeight: "42px", whiteSpace: "pre-wrap", wordBreak: "break-word" }}
           />

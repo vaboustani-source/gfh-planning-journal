@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Reply } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -14,6 +14,8 @@ import {
   truncate,
 } from "@/lib/messageUtils";
 import { MentionChip } from "./MentionChip";
+import { SectionChip } from "./SectionChip";
+import { highlightText } from "./MessageSearchBar";
 export { MessageComposer } from "./MessageComposer";
 export type { ReplyTarget } from "./MessageComposer";
 
@@ -23,6 +25,8 @@ interface MessageThreadProps {
   currentEventUserId: string | null;
   loading: boolean;
   onReply?: (msg: Message) => void;
+  onSectionClick?: (sectionKey: string) => void;
+  searchQuery?: string;
 }
 
 export function MessageThread({
@@ -31,7 +35,16 @@ export function MessageThread({
   currentEventUserId,
   loading,
   onReply,
+  onSectionClick,
+  searchQuery = "",
 }: MessageThreadProps) {
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const visibleMessages = useMemo(() => {
+    if (!trimmedQuery) return messages;
+    return messages.filter(m =>
+      bodyToPlainText(m.body, participantsById).toLowerCase().includes(trimmedQuery)
+    );
+  }, [messages, participantsById, trimmedQuery]);
   const [longPressedId, setLongPressedId] = useState<string | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -82,13 +95,23 @@ export function MessageThread({
     );
   }
 
+  if (visibleMessages.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="font-display text-xl italic text-[#6B6B6B] text-center max-w-sm">
+          No messages match "{searchQuery}".
+        </p>
+      </div>
+    );
+  }
+
   const messageById: Record<string, Message> = {};
   messages.forEach(m => { messageById[m.id] = m; });
 
   return (
     <div className="py-2">
-      {messages.map((msg, i) => {
-        const prev = messages[i - 1];
+      {visibleMessages.map((msg, i) => {
+        const prev = visibleMessages[i - 1];
         const showHeader = shouldShowTimestampHeader(prev, msg);
         const grouped = isGroupedWithPrev(prev, msg, showHeader);
         const isMe = msg.sender_event_user_id === currentEventUserId && currentEventUserId !== null;
@@ -219,16 +242,26 @@ export function MessageThread({
                         className="font-body whitespace-pre-wrap"
                         style={{ fontSize: "15px", lineHeight: 1.5, color: "#1A1A1A" }}
                       >
-                        {parseMessageBody(msg.body).map((part, idx) =>
-                          part.type === "text" ? (
-                            <span key={idx}>{part.value}</span>
-                          ) : (
-                            <MentionChip
+                        {parseMessageBody(msg.body).map((part, idx) => {
+                          if (part.type === "text") {
+                            return <span key={idx}>{highlightText(part.value, searchQuery)}</span>;
+                          }
+                          if (part.type === "mention") {
+                            return (
+                              <MentionChip
+                                key={idx}
+                                participant={participantsById[part.eventUserId] ?? null}
+                              />
+                            );
+                          }
+                          return (
+                            <SectionChip
                               key={idx}
-                              participant={participantsById[part.eventUserId] ?? null}
+                              section={part.section}
+                              onClick={onSectionClick ? () => onSectionClick(part.section) : undefined}
                             />
-                          ),
-                        )}
+                          );
+                        })}
                       </p>
                     </div>
                     {showActions && (
