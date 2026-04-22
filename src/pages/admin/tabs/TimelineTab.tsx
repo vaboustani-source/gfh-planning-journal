@@ -364,7 +364,7 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
     if (!timeline) return;
     const updated = {
       days: timeline.days.map(d => d.id === dayId
-        ? { ...d, blocks: [...d.blocks, { time: "", highlight: null, foh: "", boh: "", internal: "", custom: {} }] }
+        ? { ...d, blocks: [...d.blocks, { time: "", highlight: null, foh: "", boh: "", internal: "", custom: {}, duration_minutes: null }] }
         : d
       ),
     };
