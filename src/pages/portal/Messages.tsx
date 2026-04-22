@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageThread, MessageComposer, ReplyTarget } from "@/components/messages/MessageThread";
-import { Message, EventParticipant, bodyToPlainText, truncate } from "@/lib/messageUtils";
+import { MessageSearchBar } from "@/components/messages/MessageSearchBar";
+import { Message, EventParticipant, bodyToPlainText, truncate, getSectionByKey } from "@/lib/messageUtils";
 
 export default function Messages() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { eventId } = usePortalData();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSectionClick = (key: string) => {
+    const s = getSectionByKey(key);
+    if (s) navigate(s.path);
+  };
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Record<string, EventParticipant>>({});
   const [currentEventUserId, setCurrentEventUserId] = useState<string | null>(null);
