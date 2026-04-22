@@ -209,6 +209,9 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
   const [exportBoh, setExportBoh] = useState(true);
   const [exportInternal, setExportInternal] = useState(false);
   const [exportAudience, setExportAudience] = useState("");
+  const [exportFormat, setExportFormat] = useState<"list" | "gantt">("list");
+  const [coupleNames, setCoupleNames] = useState<string>("");
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [renamingDay, setRenamingDay] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const { status: saveStatus, markSaving, markSaved } = useAutosaveStatus();
