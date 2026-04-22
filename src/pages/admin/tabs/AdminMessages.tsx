@@ -1,14 +1,35 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageThread, MessageComposer, ReplyTarget } from "@/components/messages/MessageThread";
+import { MessageSearchBar } from "@/components/messages/MessageSearchBar";
 import { Message, EventParticipant, bodyToPlainText, truncate } from "@/lib/messageUtils";
+
+// Map portal section keys -> admin tab ids
+const SECTION_TO_ADMIN_TAB: Record<string, string> = {
+  vendors: "vendors",
+  lodging: "lodging",
+  ceremony: "ceremony",
+  menus: "menus-bar",
+  timeline: "timeline",
+  financials: "financials",
+  decor: "decor",
+  planning: "checklist",
+};
 
 export default function AdminMessages({ eventId, onUnreadChange }: { eventId: string; onUnreadChange: (n: number) => void }) {
   const { user } = useAuth();
+  const [, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Record<string, EventParticipant>>({});
   const [currentEventUserId, setCurrentEventUserId] = useState<string | null>(null);
+
+  const handleSectionClick = (key: string) => {
+    const tab = SECTION_TO_ADMIN_TAB[key];
+    if (tab) setSearchParams({ tab }, { replace: false });
+  };
   const [loading, setLoading] = useState(true);
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -107,6 +128,9 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
 
   return (
     <div className="flex flex-col animate-fade-up" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
+      <div className="shrink-0 pb-3">
+        <MessageSearchBar value={searchQuery} onChange={setSearchQuery} />
+      </div>
       <div className="flex-1 overflow-y-auto py-4">
         <MessageThread
           messages={messages}
@@ -114,6 +138,8 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
           currentEventUserId={currentEventUserId}
           loading={loading}
           onReply={handleReply}
+          onSectionClick={handleSectionClick}
+          searchQuery={searchQuery}
         />
         <div ref={bottomRef} />
       </div>
