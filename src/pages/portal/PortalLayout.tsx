@@ -76,15 +76,29 @@ export default function PortalLayout() {
 
 function PortalLayoutInner() {
   const { profile, signOut } = useAuth();
-  const { accessTier } = usePortalData();
+  const { accessTier, tabAccess, isPreviewMode } = usePortalData();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Tier 2 = messages only; others filter by tier array
+  // Tier 2 = messages only; others filter by tier array AND tab_access
   const navItems = useMemo(() => {
     if (accessTier === 2) return allNavItems.filter(i => i.to === "/portal/messages");
-    return allNavItems.filter(i => i.tiers.includes(accessTier));
-  }, [accessTier]);
+    const byTier = allNavItems.filter(i => i.tiers.includes(accessTier));
+    if (isPreviewMode) return byTier;
+    return byTier.filter(i => tabAccess[i.tab]);
+  }, [accessTier, tabAccess, isPreviewMode]);
+
+  // Guard: redirect away from blocked tabs
+  useEffect(() => {
+    if (isPreviewMode) return;
+    if (location.pathname === "/portal" || location.pathname === "/portal/today") return;
+    const tab = tabKeyForPath(location.pathname);
+    if (tab && !tabAccess[tab]) {
+      toast.error("You don't have access to this section");
+      navigate("/portal/today", { replace: true });
+    }
+  }, [location.pathname, tabAccess, isPreviewMode, navigate]);
 
   return (
       <div className="min-h-screen bg-background flex">
