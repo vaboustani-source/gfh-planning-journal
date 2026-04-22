@@ -496,6 +496,73 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
     setExportOpen(false);
   };
 
+  /** Build a heading like "Wedding Day — Saturday, May 8, 2027" using day index offset from wedding date. */
+  const buildDayHeading = (dayLabel: string, dayIndex: number): string => {
+    if (!weddingDate) return dayLabel;
+    // Heuristic: assume Wedding Day is the day matching wedding_date.
+    // Try to detect "Wedding" in label; otherwise offset from index 0 = arrival day before wedding.
+    const weddingDayIdx = timeline?.days.findIndex(d => /wedding/i.test(d.label)) ?? -1;
+    let date: Date;
+    const wd = new Date(weddingDate + "T12:00:00");
+    if (weddingDayIdx >= 0) {
+      const offset = dayIndex - weddingDayIdx;
+      date = new Date(wd);
+      date.setDate(date.getDate() + offset);
+    } else {
+      // Fallback: assume first day = arrival = wedding-1
+      date = new Date(wd);
+      date.setDate(date.getDate() + (dayIndex - 1));
+    }
+    const fmt = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    return `${dayLabel} — ${fmt}`;
+  };
+
+  const handleExportGantt = () => {
+    if (!timeline) return;
+    let title = "Weekend Timeline";
+    if (exportFoh && !exportBoh && !exportInternal) title = "Your Weekend Itinerary";
+    if (exportFoh && exportBoh && !exportInternal) title = "Vendor Day-of Sheet";
+    if (exportFoh && exportBoh && exportInternal) title = "Coordinator Timeline — Confidential";
+
+    const dayMarkup = timeline.days.map((day, idx) => {
+      const heading = buildDayHeading(day.label, idx);
+      return renderToStaticMarkup(
+        <GanttPreview
+          day={day}
+          showFoh={exportFoh}
+          showBoh={exportBoh}
+          showInternal={exportInternal}
+          audience={exportAudience || undefined}
+          coupleNames={coupleNames || undefined}
+          dayHeading={heading}
+        />
+      );
+    }).join('<div style="height:18px"></div>');
+
+    const html = `<!DOCTYPE html><html><head><title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 28px; color: #2d2d2d; background: #fff; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 30px; font-weight: 300; color: #2C3E2D; margin: 0 0 4px; }
+  .doc-sub { font-size: 12px; color: #888; margin-bottom: 24px; letter-spacing: 0.5px; }
+  .confidential { text-align: center; color: #c0392b; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; }
+  @media print {
+    body { padding: 14px; }
+    @page { size: landscape; margin: 0.4in; }
+  }
+</style></head><body>
+<h1>${title}</h1>
+<div class="doc-sub">${exportAudience ? `Prepared for: ${exportAudience} · ` : ""}${coupleNames ? coupleNames + " · " : ""}Gilbertsville Farmhouse</div>
+${dayMarkup}
+${exportInternal ? '<div class="confidential">Confidential — Coordinator Use Only</div>' : ""}
+</body></html>`;
+
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
+    setExportOpen(false);
+  };
+
   /* ── Render ── */
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   if (!timeline) return <p className="font-body text-muted-foreground py-10">Could not load timeline.</p>;
