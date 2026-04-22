@@ -40,6 +40,7 @@ interface TimeBlock {
   boh: string;
   internal: string;
   custom: Record<string, string>;
+  duration_minutes?: number | null;
 }
 
 interface TimelineDay {
