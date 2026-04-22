@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { useLocation, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { TabAccess, normalizeTabAccess, DEFAULT_TAB_ACCESS, hasFullAccess } from "@/lib/tabAccess";
 
 interface PortalEvent {
   id: string;
@@ -35,6 +36,8 @@ interface PortalDataContextType {
   eventId: string | null;
   accessTier: number;
   roleInEvent: string | null;
+  tabAccess: TabAccess;
+  hasTabAccess: (tab: keyof TabAccess) => boolean;
   checklistProgress: ChecklistProgress;
   nextTask: NextTask | null;
   daysUntilArrival: number | null;
