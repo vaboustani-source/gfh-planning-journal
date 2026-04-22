@@ -479,7 +479,7 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
   const addItem = async (category: string) => {
     markSaving();
     const { data, error } = await supabase.from("financial_line_items").insert({
-      event_id: eventId, section: category, label: "New line item", quantity: 1, unit_price: 0, total: 0, source_table: "manual",
+      event_id: eventId, section: category, label: "New line item", quantity: 1, unit_price: 0, source_table: "manual",
     } as any).select().single();
     if (error) {
       console.error("addItem error:", error);
