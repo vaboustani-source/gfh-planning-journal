@@ -25,6 +25,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import GanttPreview from "@/components/admin/GanttPreview";
+import { resolveBlocks, buildAxis, formatTime } from "@/lib/ganttTimeline";
+import { renderToStaticMarkup } from "react-dom/server";
 
 /* ── Types ─────────────────────────────────────── */
 
