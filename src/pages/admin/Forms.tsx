@@ -51,7 +51,7 @@ export default function AdminForms() {
       supabase.from("events").select("id, title, partner1_name, partner2_name").order("created_at", { ascending: false }),
       supabase.from("form_assignments").select("id, form_id, event_id, status, submitted_at, events(title)"),
     ]);
-    if (f) setForms(f.map(r => ({ ...r, fields: (r.fields as FormField[]) ?? [] })));
+    if (f) setForms(f.map(r => ({ ...r, fields: ((r.fields as unknown) as FormField[]) ?? [] })));
     if (ev) setEvents(ev.map(e => ({
       id: e.id,
       title: e.title,
