@@ -6,7 +6,7 @@ import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -28,6 +28,7 @@ const allNavItems: NavItemDef[] = [
   { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4],     tab: "financials" },
   { to: "/portal/messages",        label: "Messages",          icon: MessageCircle,     tiers: [1, 2, 3, 4],  tab: "messages" },
   { to: "/portal/notes",           label: "Notes",             icon: StickyNote,        tiers: [1, 3, 4],     tab: "notes" },
+  { to: "/portal/forms",           label: "Forms",             icon: ClipboardList,     tiers: [1, 3, 4],     tab: "forms" },
   { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4],     tab: "documents" },
 ];
 
