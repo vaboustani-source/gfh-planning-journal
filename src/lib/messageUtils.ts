@@ -125,20 +125,27 @@ export function darkenHex(hex: string | null | undefined, amount = 0.35): string
 
 export type MessageBodyPart =
   | { type: "text"; value: string }
-  | { type: "mention"; eventUserId: string };
+  | { type: "mention"; eventUserId: string }
+  | { type: "section"; section: string };
 
-/** Parse stored body markup `[[@event_user_id]]` into ordered parts. */
+/** Parse stored body markup `[[@event_user_id]]` and `[[#section]]` into ordered parts. */
 export function parseMessageBody(body: string): MessageBodyPart[] {
   if (!body) return [];
   const parts: MessageBodyPart[] = [];
-  const regex = /\[\[@([0-9a-fA-F-]{8,})\]\]/g;
+  // Match either [[@uuid]] or [[#section-key]]
+  const regex = /\[\[(@[0-9a-fA-F-]{8,}|#[a-z0-9_-]+)\]\]/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(body)) !== null) {
     if (match.index > lastIndex) {
       parts.push({ type: "text", value: body.slice(lastIndex, match.index) });
     }
-    parts.push({ type: "mention", eventUserId: match[1] });
+    const token = match[1];
+    if (token.startsWith("@")) {
+      parts.push({ type: "mention", eventUserId: token.slice(1) });
+    } else {
+      parts.push({ type: "section", section: token.slice(1) });
+    }
     lastIndex = regex.lastIndex;
   }
   if (lastIndex < body.length) parts.push({ type: "text", value: body.slice(lastIndex) });
@@ -156,3 +163,20 @@ export function extractMentionIds(body: string): string[] {
   }
   return ids;
 }
+
+/** Portal sections that can be tagged via #section. */
+export const PORTAL_SECTIONS: { key: string; label: string; path: string }[] = [
+  { key: "vendors",    label: "Vendors",    path: "/portal/vendors" },
+  { key: "lodging",    label: "Lodging",    path: "/portal/our-people" },
+  { key: "ceremony",   label: "Ceremony",   path: "/portal/ceremony" },
+  { key: "menus",      label: "Menus",      path: "/portal/menus-meals" },
+  { key: "timeline",   label: "Timeline",   path: "/portal/timeline" },
+  { key: "financials", label: "Financials", path: "/portal/financials" },
+  { key: "decor",      label: "Decor",      path: "/portal/decor" },
+  { key: "planning",   label: "Planning",   path: "/portal/planning" },
+];
+
+export function getSectionByKey(key: string) {
+  return PORTAL_SECTIONS.find(s => s.key === key.toLowerCase());
+}
+
