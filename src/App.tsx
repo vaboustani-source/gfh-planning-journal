@@ -104,6 +104,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/forms"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminForms />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin Preview of Couple Portal */}
             <Route
@@ -127,6 +135,7 @@ const App = () => (
               <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
             </Route>
 
