@@ -8,7 +8,7 @@ export interface Message {
   reply_to_message_id?: string | null;
 }
 
-/** Render message body as plain text for quote previews — mentions become "@Name". */
+/** Render message body as plain text for quote previews — mentions become "@Name", sections become "#section". */
 export function bodyToPlainText(
   body: string,
   participantsById: Record<string, EventParticipant>,
@@ -16,8 +16,11 @@ export function bodyToPlainText(
   return parseMessageBody(body)
     .map(part => {
       if (part.type === "text") return part.value;
-      const p = participantsById[part.eventUserId];
-      return `@${p?.display_name ?? "Unknown"}`;
+      if (part.type === "mention") {
+        const p = participantsById[part.eventUserId];
+        return `@${p?.display_name ?? "Unknown"}`;
+      }
+      return `#${part.section}`;
     })
     .join("")
     .replace(/\s+/g, " ")
