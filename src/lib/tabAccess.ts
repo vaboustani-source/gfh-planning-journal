@@ -9,6 +9,7 @@ export type TabKey =
   | "financials"
   | "messages"
   | "notes"
+  | "forms"
   | "documents";
 
 export const TAB_LABELS: Record<TabKey, string> = {
@@ -21,12 +22,13 @@ export const TAB_LABELS: Record<TabKey, string> = {
   financials: "Financials",
   messages: "Messages",
   notes: "Notes",
+  forms: "Forms",
   documents: "Documents",
 };
 
 export const TAB_ORDER: TabKey[] = [
   "overview", "vendors", "ceremony", "timeline", "menus",
-  "lodging", "financials", "messages", "notes", "documents",
+  "lodging", "financials", "messages", "notes", "forms", "documents",
 ];
 
 export type TabAccess = Record<TabKey, boolean>;
@@ -34,7 +36,7 @@ export type TabAccess = Record<TabKey, boolean>;
 export const DEFAULT_TAB_ACCESS: TabAccess = {
   overview: true, vendors: true, ceremony: true, timeline: false,
   menus: false, lodging: false, financials: false, messages: true,
-  notes: false, documents: true,
+  notes: false, forms: true, documents: true,
 };
 
 /** Map portal route paths -> tab keys for access checks. */
@@ -49,6 +51,7 @@ export const PATH_TO_TAB: Record<string, TabKey> = {
   "/portal/financials": "financials",
   "/portal/messages": "messages",
   "/portal/notes": "notes",
+  "/portal/forms": "forms",
   "/portal/documents": "documents",
   "/portal/decor": "ceremony",
   "/portal/planning": "overview",
