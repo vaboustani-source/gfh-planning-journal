@@ -255,6 +255,23 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
           onAdded={fetchParticipants}
         />
       )}
+
+      {accessFor && (
+        <TabAccessDrawer
+          participantId={accessFor.id}
+          participantName={
+            accessFor.user
+              ? `${accessFor.user.first_name || ""} ${accessFor.user.last_name || ""}`.trim() || accessFor.user.email
+              : "Participant"
+          }
+          role={accessFor.role_in_event}
+          initial={accessFor.tab_access}
+          onClose={() => setAccessFor(null)}
+          onSaved={(next) => {
+            setParticipants(prev => prev.map(x => x.id === accessFor.id ? { ...x, tab_access: next } : x));
+          }}
+        />
+      )}
     </div>
   );
 }
