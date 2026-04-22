@@ -41,6 +41,15 @@ function getDocIcon(name: string) {
   return <File size={16} className="text-muted-foreground" />;
 }
 
+interface GfhResource {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  file_url: string | null;
+  file_name: string | null;
+}
+
 function extractStoragePath(fileUrl: string): string | null {
   const match = fileUrl.match(/vendor-contracts\/(.+?)(?:\?|$)/);
   return match ? decodeURIComponent(match[1]) : null;
