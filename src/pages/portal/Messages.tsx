@@ -129,11 +129,14 @@ export default function Messages() {
     <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen" style={{ backgroundColor: "#FAF8F4" }}>
       {/* Header */}
       <div className="shrink-0 px-5 py-4 lg:px-8 border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto">
-          <p className="font-display text-2xl font-light text-foreground">Messages</p>
-          <p className="font-body text-[12px] text-muted-foreground mt-0.5">
-            Your event's group conversation.
-          </p>
+        <div className="max-w-5xl mx-auto space-y-3">
+          <div>
+            <p className="font-display text-2xl font-light text-foreground">Messages</p>
+            <p className="font-body text-[12px] text-muted-foreground mt-0.5">
+              Your event's group conversation.
+            </p>
+          </div>
+          <MessageSearchBar value={searchQuery} onChange={setSearchQuery} />
         </div>
       </div>
 
@@ -146,6 +149,8 @@ export default function Messages() {
             currentEventUserId={currentEventUserId}
             loading={loading}
             onReply={handleReply}
+            onSectionClick={handleSectionClick}
+            searchQuery={searchQuery}
           />
           <div ref={bottomRef} />
         </div>
