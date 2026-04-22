@@ -59,7 +59,7 @@ export default function AdminAllMessages() {
         const coupleNames = coupleIds.map(uid => usersMap[uid]).filter(Boolean).join(" & ") || event.title;
         const eventMsgs = (msgsRes.data ?? []).filter(m => m.event_id === event.id);
         const latest = eventMsgs[0];
-        const unread = eventMsgs.filter(m => !m.read_at).length;
+        const unread = eventMsgs.filter(m => !m.read_at && m.sender_id !== currentUserId).length;
 
         return {
           event_id: event.id,
