@@ -16,13 +16,14 @@ interface ThreadSummary {
 }
 
 export default function AdminAllMessages() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const currentUserId = user?.id ?? null;
   const navigate = useNavigate();
   const [threads, setThreads] = useState<ThreadSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
-  useEffect(() => { fetchThreads(); }, []);
+  useEffect(() => { if (currentUserId) fetchThreads(); }, [currentUserId]);
 
   const fetchThreads = async () => {
     try {
