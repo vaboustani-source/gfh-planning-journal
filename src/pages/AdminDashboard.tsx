@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       const [euRes, milestonesRes, unreadRes, timelineRes, paymentsRes, lastMsgRes] = await Promise.all([
         supabase.from("event_users").select("event_id, user_id").in("event_id", eventIds).eq("role_in_event", "couple"),
         supabase.from("milestones").select("event_id, title, target_date, status, sort_order").in("event_id", eventIds).order("sort_order", { ascending: true }),
-        supabase.from("messages").select("event_id, read_at, sender_id").in("event_id", eventIds).is("read_at", null),
+        supabase.from("messages").select("event_id, read_at, sender_id").in("event_id", eventIds).is("read_at", null).neq("sender_id", currentUserId),
         supabase.from("working_timeline").select("event_id, published").in("event_id", eventIds),
         supabase.from("payment_schedule").select("event_id, label, due_date, paid").in("event_id", eventIds).eq("paid", false),
         supabase.from("messages").select("event_id, created_at").in("event_id", eventIds).order("created_at", { ascending: false }),
