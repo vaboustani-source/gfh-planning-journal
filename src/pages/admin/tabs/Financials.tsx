@@ -462,7 +462,7 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
       const exists = itemsList.some(i => i.section === section);
       if (!exists && amount > 0) {
         const { data } = await supabase.from("financial_line_items").insert({
-          event_id: eventId, section, label, quantity: 1, unit_price: amount, total: amount, source_table: "manual",
+          event_id: eventId, section, label, quantity: 1, unit_price: amount, source_table: "manual",
         } as any).select().single();
         if (data) itemsList = [...itemsList, data as any];
       }
@@ -478,9 +478,12 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
   // ---- line item CRUD ----
   const addItem = async (category: string) => {
     markSaving();
-    const { data } = await supabase.from("financial_line_items").insert({
-      event_id: eventId, section: category, label: "New line item", quantity: 1, unit_price: 0, total: 0, source_table: "manual",
+    const { data, error } = await supabase.from("financial_line_items").insert({
+      event_id: eventId, section: category, label: "New line item", quantity: 1, unit_price: 0, source_table: "manual",
     } as any).select().single();
+    if (error) {
+      console.error("addItem error:", error);
+    }
     if (data) setItems(prev => [...prev, data as any]);
     markSaved();
   };
@@ -488,8 +491,8 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
   const updateItem = async (id: string, fields: Partial<LineItem>) => {
     markSaving();
     const payload: any = { ...fields };
-    if ("unit_price" in fields) payload.total = fields.unit_price;
-    setItems(prev => prev.map(i => i.id === id ? { ...i, ...payload } : i));
+    delete payload.total; // generated column
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...payload, total: payload.unit_price ?? i.total } : i));
     await supabase.from("financial_line_items").update(payload).eq("id", id);
     markSaved();
   };
