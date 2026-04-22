@@ -128,6 +128,9 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
 
   return (
     <div className="flex flex-col animate-fade-up" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
+      <div className="shrink-0 pb-3">
+        <MessageSearchBar value={searchQuery} onChange={setSearchQuery} />
+      </div>
       <div className="flex-1 overflow-y-auto py-4">
         <MessageThread
           messages={messages}
@@ -135,6 +138,8 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
           currentEventUserId={currentEventUserId}
           loading={loading}
           onReply={handleReply}
+          onSectionClick={handleSectionClick}
+          searchQuery={searchQuery}
         />
         <div ref={bottomRef} />
       </div>
