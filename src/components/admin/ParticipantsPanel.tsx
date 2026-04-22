@@ -85,12 +85,13 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [accessFor, setAccessFor] = useState<Participant | null>(null);
   const [partnerNames, setPartnerNames] = useState<{ p1: string; p2: string }>({ p1: "", p2: "" });
 
   const fetchParticipants = async () => {
     const { data: euData } = await supabase
       .from("event_users")
-      .select("id, user_id, role_in_event, access_tier")
+      .select("id, user_id, role_in_event, access_tier, tab_access")
       .eq("event_id", eventId);
 
     if (!euData || euData.length === 0) {
