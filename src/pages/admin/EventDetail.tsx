@@ -17,6 +17,7 @@ import AdminNotesTab from "./tabs/AdminNotesTab";
 import AdminDocumentsTab from "./tabs/AdminDocumentsTab";
 import ActivityTab from "./tabs/ActivityTab";
 import DecorTab from "./tabs/DecorTab";
+import EventForms from "./tabs/EventForms";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -33,6 +34,7 @@ const TABS = [
   { id: "financials", label: "Financials" },
   { id: "messages", label: "Messages" },
   { id: "notes", label: "Notes" },
+  { id: "forms", label: "Forms" },
   { id: "documents", label: "Documents" },
   { id: "activity", label: "Activity" },
 ];
@@ -220,6 +222,7 @@ export default function EventDetail() {
         {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
         {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "forms" && <EventForms eventId={event.id} />}
         {activeTab === "documents" && <AdminDocumentsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "activity" && <ActivityTab eventId={event.id} />}
       </main>
