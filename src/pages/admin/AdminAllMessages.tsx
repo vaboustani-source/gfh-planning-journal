@@ -16,13 +16,14 @@ interface ThreadSummary {
 }
 
 export default function AdminAllMessages() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const currentUserId = user?.id ?? null;
   const navigate = useNavigate();
   const [threads, setThreads] = useState<ThreadSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
-  useEffect(() => { fetchThreads(); }, []);
+  useEffect(() => { if (currentUserId) fetchThreads(); }, [currentUserId]);
 
   const fetchThreads = async () => {
     try {
@@ -58,7 +59,7 @@ export default function AdminAllMessages() {
         const coupleNames = coupleIds.map(uid => usersMap[uid]).filter(Boolean).join(" & ") || event.title;
         const eventMsgs = (msgsRes.data ?? []).filter(m => m.event_id === event.id);
         const latest = eventMsgs[0];
-        const unread = eventMsgs.filter(m => !m.read_at).length;
+        const unread = eventMsgs.filter(m => !m.read_at && m.sender_id !== currentUserId).length;
 
         return {
           event_id: event.id,
