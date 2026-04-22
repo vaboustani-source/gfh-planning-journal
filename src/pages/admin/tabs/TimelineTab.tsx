@@ -103,6 +103,7 @@ function migrateToV2(raw: any): TimelineDataV2 {
         boh: b.boh_notes ?? "",
         internal: b.internal_notes ?? "",
         custom: {},
+        duration_minutes: null,
       })),
     }));
   return { days: days.length > 0 ? days : [] };
