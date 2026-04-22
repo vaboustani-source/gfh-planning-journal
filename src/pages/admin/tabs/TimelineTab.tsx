@@ -334,6 +334,9 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
         if (field.startsWith("custom.")) {
           const colId = field.replace("custom.", "");
           blocks[blockIdx] = { ...blocks[blockIdx], custom: { ...blocks[blockIdx].custom, [colId]: value } };
+        } else if (field === "duration_minutes") {
+          const n = value.trim() === "" ? null : Math.max(0, parseInt(value, 10));
+          blocks[blockIdx] = { ...blocks[blockIdx], duration_minutes: Number.isNaN(n as number) ? null : n };
         } else {
           blocks[blockIdx] = { ...blocks[blockIdx], [field]: value };
         }
