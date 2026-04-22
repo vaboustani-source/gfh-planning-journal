@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Check, ChevronDown, Loader2, Mail } from "lucide-react";
+import { Plus, Trash2, Check, ChevronDown, Loader2, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import AddParticipantModal from "./AddParticipantModal";
+import TabAccessDrawer from "./TabAccessDrawer";
 import { getSetPasswordUrl } from "@/lib/authUrls";
+import { TabAccess, FULL_ACCESS_ROLES } from "@/lib/tabAccess";
 
 interface Participant {
   id: string;
   user_id: string | null;
   role_in_event: string;
   access_tier: number | null;
+  tab_access: TabAccess | null;
   user?: { first_name: string | null; last_name: string | null; email: string };
 }
 
