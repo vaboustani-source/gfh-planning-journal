@@ -694,11 +694,34 @@ ${exportInternal ? '<div class="confidential">Confidential — Coordinator Use O
 
       {/* Export Modal */}
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={exportFormat === "gantt" ? "sm:max-w-4xl max-h-[90vh] overflow-y-auto" : "sm:max-w-md"}>
           <DialogHeader>
             <DialogTitle className="font-display text-xl font-light">Export Timeline</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-5 py-2">
+            {/* Format toggle */}
+            <div>
+              <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-2">Format</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExportFormat("list")}
+                  className={`text-left rounded-lg border px-3 py-2.5 transition-colors ${exportFormat === "list" ? "border-sage bg-sage/5" : "border-border hover:border-sage/50"}`}
+                >
+                  <div className="font-body text-sm font-medium text-foreground">PDF (text list)</div>
+                  <div className="font-body text-[11px] text-muted-foreground mt-0.5">Classic itinerary tables.</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExportFormat("gantt")}
+                  className={`text-left rounded-lg border px-3 py-2.5 transition-colors ${exportFormat === "gantt" ? "border-sage bg-sage/5" : "border-border hover:border-sage/50"}`}
+                >
+                  <div className="font-body text-sm font-medium text-foreground">Gantt Chart</div>
+                  <div className="font-body text-[11px] text-muted-foreground mt-0.5">Visual time-axis layout.</div>
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-3">
               <p className="font-body text-sm text-muted-foreground">Select which layers to include:</p>
               <div className="flex items-center gap-2">
@@ -716,12 +739,36 @@ ${exportInternal ? '<div class="confidential">Confidential — Coordinator Use O
             </div>
             <div>
               <Label className="font-body text-xs text-muted-foreground">Audience label (optional)</Label>
-              <Input value={exportAudience} onChange={(e) => setExportAudience(e.target.value)} placeholder="e.g. For: Photography Team" className="mt-1" />
+              <Input value={exportAudience} onChange={(e) => setExportAudience(e.target.value)} placeholder="e.g. Photography Team" className="mt-1" />
             </div>
+
+            {/* Inline Gantt preview */}
+            {exportFormat === "gantt" && timeline && (
+              <div className="space-y-3">
+                <p className="font-body text-xs tracking-widest uppercase text-muted-foreground">Preview</p>
+                <div className="space-y-3 max-h-[420px] overflow-y-auto rounded-lg bg-muted/30 p-3">
+                  {timeline.days.map((day, idx) => (
+                    <GanttPreview
+                      key={day.id}
+                      day={day}
+                      showFoh={exportFoh}
+                      showBoh={exportBoh}
+                      showInternal={exportInternal}
+                      audience={exportAudience || undefined}
+                      coupleNames={coupleNames || undefined}
+                      dayHeading={buildDayHeading(day.label, idx)}
+                      compact
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setExportOpen(false)}>Cancel</Button>
-            <Button onClick={handleExportPdf} className="gap-2"><Download size={14} /> Export PDF</Button>
+            <Button onClick={exportFormat === "gantt" ? handleExportGantt : handleExportPdf} className="gap-2">
+              <Download size={14} /> {exportFormat === "gantt" ? "Export Gantt" : "Export PDF"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
