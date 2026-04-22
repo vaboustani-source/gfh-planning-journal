@@ -20,9 +20,16 @@ const SECTION_TO_ADMIN_TAB: Record<string, string> = {
 
 export default function AdminMessages({ eventId, onUnreadChange }: { eventId: string; onUnreadChange: (n: number) => void }) {
   const { user } = useAuth();
+  const [, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Record<string, EventParticipant>>({});
   const [currentEventUserId, setCurrentEventUserId] = useState<string | null>(null);
+
+  const handleSectionClick = (key: string) => {
+    const tab = SECTION_TO_ADMIN_TAB[key];
+    if (tab) setSearchParams({ tab }, { replace: false });
+  };
   const [loading, setLoading] = useState(true);
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
