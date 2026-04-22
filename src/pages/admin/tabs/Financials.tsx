@@ -462,7 +462,7 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
       const exists = itemsList.some(i => i.section === section);
       if (!exists && amount > 0) {
         const { data } = await supabase.from("financial_line_items").insert({
-          event_id: eventId, section, label, quantity: 1, unit_price: amount, total: amount, source_table: "manual",
+          event_id: eventId, section, label, quantity: 1, unit_price: amount, source_table: "manual",
         } as any).select().single();
         if (data) itemsList = [...itemsList, data as any];
       }
