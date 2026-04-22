@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Reply } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -14,6 +14,8 @@ import {
   truncate,
 } from "@/lib/messageUtils";
 import { MentionChip } from "./MentionChip";
+import { SectionChip } from "./SectionChip";
+import { highlightText } from "./MessageSearchBar";
 export { MessageComposer } from "./MessageComposer";
 export type { ReplyTarget } from "./MessageComposer";
 
@@ -23,6 +25,8 @@ interface MessageThreadProps {
   currentEventUserId: string | null;
   loading: boolean;
   onReply?: (msg: Message) => void;
+  onSectionClick?: (sectionKey: string) => void;
+  searchQuery?: string;
 }
 
 export function MessageThread({
@@ -31,7 +35,16 @@ export function MessageThread({
   currentEventUserId,
   loading,
   onReply,
+  onSectionClick,
+  searchQuery = "",
 }: MessageThreadProps) {
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const visibleMessages = useMemo(() => {
+    if (!trimmedQuery) return messages;
+    return messages.filter(m =>
+      bodyToPlainText(m.body, participantsById).toLowerCase().includes(trimmedQuery)
+    );
+  }, [messages, participantsById, trimmedQuery]);
   const [longPressedId, setLongPressedId] = useState<string | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
