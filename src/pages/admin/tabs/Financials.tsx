@@ -491,8 +491,8 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
   const updateItem = async (id: string, fields: Partial<LineItem>) => {
     markSaving();
     const payload: any = { ...fields };
-    if ("unit_price" in fields) payload.total = fields.unit_price;
-    setItems(prev => prev.map(i => i.id === id ? { ...i, ...payload } : i));
+    delete payload.total; // generated column
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...payload, total: payload.unit_price ?? i.total } : i));
     await supabase.from("financial_line_items").update(payload).eq("id", id);
     markSaved();
   };
