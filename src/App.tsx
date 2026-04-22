@@ -15,6 +15,8 @@ import PreferredVendors from "./pages/admin/PreferredVendors";
 import DecorCatalog from "./pages/admin/DecorCatalog";
 import Resources from "./pages/admin/Resources";
 import AdminForms from "./pages/admin/Forms";
+import SettingsLayout from "./pages/admin/SettingsLayout";
+import SettingsJournal from "./pages/admin/settings/SettingsJournal";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -66,6 +68,21 @@ const App = () => (
             />
             <Route
               path="/admin/settings"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <SettingsLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/admin/settings/journal" replace />} />
+              <Route path="journal" element={<SettingsJournal />} />
+              <Route path="preferred-vendors" element={<PreferredVendors />} />
+              <Route path="decor-rentals" element={<DecorCatalog />} />
+              <Route path="resources" element={<Resources />} />
+              <Route path="forms" element={<AdminForms />} />
+            </Route>
+            <Route
+              path="/admin/account"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminSettings />
