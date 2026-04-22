@@ -221,7 +221,21 @@ export default function TimelineTab({ eventId, onNavigateNext }: { eventId: stri
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  useEffect(() => { loadTimeline(); }, [eventId]);
+  useEffect(() => { loadTimeline(); loadEventMeta(); }, [eventId]);
+
+  const loadEventMeta = async () => {
+    const { data: ev } = await supabase.from("events").select("wedding_date").eq("id", eventId).maybeSingle();
+    if (ev?.wedding_date) setWeddingDate(ev.wedding_date);
+    const { data: eu } = await supabase.from("event_users").select("user_id").eq("event_id", eventId).in("role_in_event", ["partner_1", "partner_2", "couple"]);
+    if (eu && eu.length > 0) {
+      const ids = eu.map(r => r.user_id).filter(Boolean) as string[];
+      const { data: us } = await supabase.from("users").select("first_name, last_name").in("id", ids);
+      if (us) {
+        const names = us.map(u => `${u.first_name || ""} ${u.last_name || ""}`.trim()).filter(Boolean).join(" & ");
+        setCoupleNames(names);
+      }
+    }
+  };
 
   const loadTimeline = async () => {
     const { data } = await supabase.from("working_timeline").select("*").eq("event_id", eventId).maybeSingle();
