@@ -204,6 +204,46 @@ export default function Documents() {
         <p className="font-body text-sm text-muted-foreground mt-1">View shared documents and upload your own files.</p>
       </div>
 
+      {/* From Gilbertsville Farmhouse — global resources */}
+      {resources.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-full bg-sage/15 flex items-center justify-center">
+              <span className="font-display text-sm text-sage">G</span>
+            </div>
+            <div>
+              <p className="font-display text-lg font-light text-foreground leading-tight">From Gilbertsville Farmhouse</p>
+              <p className="font-body text-[11px] text-muted-foreground">Helpful guides and references shared with all couples</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {resources.map(r => (
+              <a
+                key={r.id}
+                href={r.file_url || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group rounded-xl bg-card border border-border shadow-soft p-4 hover:border-sage/40 hover:shadow-md transition-all flex items-start gap-3"
+              >
+                <div className="w-9 h-9 rounded-lg bg-sage/10 flex items-center justify-center shrink-0 group-hover:bg-sage/20 transition-colors">
+                  <FileText size={16} className="text-sage" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-body text-sm font-medium text-foreground truncate">{r.title}</p>
+                    {r.category && (
+                      <span className="text-[9px] tracking-wider uppercase px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{r.category}</span>
+                    )}
+                  </div>
+                  {r.description && <p className="font-body text-xs text-muted-foreground mt-1 line-clamp-2">{r.description}</p>}
+                </div>
+                <Download size={14} className="text-muted-foreground group-hover:text-sage transition-colors shrink-0 mt-1" />
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Upload zone */}
       <div className="rounded-xl bg-card border border-border p-5 shadow-soft">
         <p className="font-display text-lg font-light text-foreground mb-3">Upload a File</p>
