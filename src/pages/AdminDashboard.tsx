@@ -91,8 +91,8 @@ export default function AdminDashboard() {
   useEffect(() => { eventsRef.current = events; }, [events]);
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    if (currentUserId) fetchAll();
+  }, [currentUserId]);
 
   /* ─── Real-time unread badge ─── */
   useEffect(() => {
