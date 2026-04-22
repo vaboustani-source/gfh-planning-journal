@@ -12,7 +12,7 @@ interface Participant {
   user_id: string | null;
   role_in_event: string;
   access_tier: number | null;
-  tab_access: TabAccess | null;
+  tab_access: any;
   user?: { first_name: string | null; last_name: string | null; email: string };
 }
 
@@ -207,6 +207,16 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
                 </p>
               </div>
               <TierBadge tier={p.access_tier || 3} onChangeTier={t => handleChangeTier(p.id, t)} />
+              {!FULL_ACCESS_ROLES.has(p.role_in_event) && (
+                <button
+                  onClick={() => setAccessFor(p)}
+                  title="Tab access"
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                >
+                  <Lock size={10} />
+                  Access
+                </button>
+              )}
               {p.user?.email && (
                 <button
                   onClick={() => handleResend(p)}
