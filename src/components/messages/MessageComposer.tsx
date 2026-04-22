@@ -81,6 +81,9 @@ function editorToTokens(editor: HTMLElement): Token[] {
         } else if (el.dataset.mention) {
           flush();
           tokens.push({ type: "mention", value: el.dataset.mention });
+        } else if (el.dataset.section) {
+          flush();
+          tokens.push({ type: "section", value: el.dataset.section });
         } else if (el.tagName === "DIV" || el.tagName === "P") {
           // Some browsers wrap new lines in <div>
           if (buf.length > 0 || tokens.length > 0) buf += "\n";
