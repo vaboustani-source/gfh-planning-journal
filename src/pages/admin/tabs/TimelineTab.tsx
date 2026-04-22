@@ -161,7 +161,18 @@ function SortableRow({
 
       {/* Grid of cells */}
       <div className="flex-1 grid gap-1.5" style={{ gridTemplateColumns: gridTemplate }}>
-        <Input value={block.time} onChange={e => onChange("time", e.target.value)} className="font-body text-sm h-auto min-h-[36px]" placeholder="Time" />
+        <div className="flex flex-col gap-1">
+          <Input value={block.time} onChange={e => onChange("time", e.target.value)} className="font-body text-sm h-auto min-h-[36px]" placeholder="Time" />
+          <Input
+            type="number"
+            min={0}
+            value={block.duration_minutes ?? ""}
+            onChange={e => onChange("duration_minutes", e.target.value)}
+            className="font-body text-[11px] h-7 px-2 bg-muted/40"
+            placeholder="dur (min)"
+            title="Optional duration in minutes — overrides auto gap"
+          />
+        </div>
         <Textarea value={block.foh} onChange={e => onChange("foh", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-card" placeholder="Couple sees…" rows={1} />
         <Textarea value={block.boh} onChange={e => onChange("boh", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-blue-50/60" placeholder="Vendor notes…" rows={1} />
         <Textarea value={block.internal} onChange={e => onChange("internal", e.target.value)} className="font-body text-sm min-h-[36px] resize-none bg-amber-50/60" placeholder="Internal…" rows={1} />
