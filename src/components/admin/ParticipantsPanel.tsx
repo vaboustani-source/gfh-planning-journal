@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Check, ChevronDown, Loader2, Mail } from "lucide-react";
+import { Plus, Trash2, Check, ChevronDown, Loader2, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import AddParticipantModal from "./AddParticipantModal";
+import TabAccessDrawer from "./TabAccessDrawer";
 import { getSetPasswordUrl } from "@/lib/authUrls";
+import { TabAccess, FULL_ACCESS_ROLES } from "@/lib/tabAccess";
 
 interface Participant {
   id: string;
   user_id: string | null;
   role_in_event: string;
   access_tier: number | null;
+  tab_access: any;
   user?: { first_name: string | null; last_name: string | null; email: string };
 }
 
@@ -82,12 +85,13 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [accessFor, setAccessFor] = useState<Participant | null>(null);
   const [partnerNames, setPartnerNames] = useState<{ p1: string; p2: string }>({ p1: "", p2: "" });
 
   const fetchParticipants = async () => {
     const { data: euData } = await supabase
       .from("event_users")
-      .select("id, user_id, role_in_event, access_tier")
+      .select("id, user_id, role_in_event, access_tier, tab_access")
       .eq("event_id", eventId);
 
     if (!euData || euData.length === 0) {
@@ -203,6 +207,16 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
                 </p>
               </div>
               <TierBadge tier={p.access_tier || 3} onChangeTier={t => handleChangeTier(p.id, t)} />
+              {!FULL_ACCESS_ROLES.has(p.role_in_event) && (
+                <button
+                  onClick={() => setAccessFor(p)}
+                  title="Tab access"
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                >
+                  <Lock size={10} />
+                  Access
+                </button>
+              )}
               {p.user?.email && (
                 <button
                   onClick={() => handleResend(p)}
@@ -239,6 +253,23 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
           eventId={eventId}
           onClose={() => setModalOpen(false)}
           onAdded={fetchParticipants}
+        />
+      )}
+
+      {accessFor && (
+        <TabAccessDrawer
+          participantId={accessFor.id}
+          participantName={
+            accessFor.user
+              ? `${accessFor.user.first_name || ""} ${accessFor.user.last_name || ""}`.trim() || accessFor.user.email
+              : "Participant"
+          }
+          role={accessFor.role_in_event}
+          initial={accessFor.tab_access}
+          onClose={() => setAccessFor(null)}
+          onSaved={(next) => {
+            setParticipants(prev => prev.map(x => x.id === accessFor.id ? { ...x, tab_access: next } : x));
+          }}
         />
       )}
     </div>

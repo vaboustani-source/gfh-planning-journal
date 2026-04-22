@@ -1,27 +1,34 @@
-import { useMemo, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
+import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
   MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const allNavItems = [
-  { to: "/portal/today",           label: "Home",              icon: Home,              tiers: [1, 2, 3, 4] },
-  { to: "/portal/our-wedding",     label: "Our Wedding",       icon: CalendarHeart,     tiers: [1, 3, 4] },
-  { to: "/portal/timeline",        label: "Timeline",          icon: Clock,             tiers: [1, 3, 4] },
-  { to: "/portal/planning",        label: "Planning",          icon: CheckSquare,       tiers: [1, 3, 4] },
-  { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4] },
-  { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4] },
-  { to: "/portal/decor",           label: "Decor",             icon: Sparkles,          tiers: [1, 3, 4] },
-  { to: "/portal/menus-meals",     label: "Menus & Meals",     icon: UtensilsCrossed,   tiers: [1, 3, 4] },
-  { to: "/portal/our-people",      label: "Our People",        icon: Users,             tiers: [1, 3, 4] },
-  { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4] },
-  { to: "/portal/messages",        label: "Messages",          icon: MessageCircle,     tiers: [1, 2, 3, 4] },
-  { to: "/portal/notes",           label: "Notes",             icon: StickyNote,        tiers: [1, 3, 4] },
-  { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4] },
+type NavItemDef = {
+  to: string; label: string; icon: React.ElementType;
+  tiers: number[]; tab: TabKey;
+};
+
+const allNavItems: NavItemDef[] = [
+  { to: "/portal/today",           label: "Home",              icon: Home,              tiers: [1, 2, 3, 4], tab: "overview" },
+  { to: "/portal/our-wedding",     label: "Our Wedding",       icon: CalendarHeart,     tiers: [1, 3, 4],     tab: "overview" },
+  { to: "/portal/timeline",        label: "Timeline",          icon: Clock,             tiers: [1, 3, 4],     tab: "timeline" },
+  { to: "/portal/planning",        label: "Planning",          icon: CheckSquare,       tiers: [1, 3, 4],     tab: "overview" },
+  { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4],     tab: "vendors" },
+  { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4],     tab: "ceremony" },
+  { to: "/portal/decor",           label: "Decor",             icon: Sparkles,          tiers: [1, 3, 4],     tab: "ceremony" },
+  { to: "/portal/menus-meals",     label: "Menus & Meals",     icon: UtensilsCrossed,   tiers: [1, 3, 4],     tab: "menus" },
+  { to: "/portal/our-people",      label: "Our People",        icon: Users,             tiers: [1, 3, 4],     tab: "lodging" },
+  { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4],     tab: "financials" },
+  { to: "/portal/messages",        label: "Messages",          icon: MessageCircle,     tiers: [1, 2, 3, 4],  tab: "messages" },
+  { to: "/portal/notes",           label: "Notes",             icon: StickyNote,        tiers: [1, 3, 4],     tab: "notes" },
+  { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4],     tab: "documents" },
 ];
 
 function NavItem({ to, label, icon: Icon, onClick }: { to: string; label: string; icon: React.ElementType; onClick?: () => void }) {
@@ -69,15 +76,29 @@ export default function PortalLayout() {
 
 function PortalLayoutInner() {
   const { profile, signOut } = useAuth();
-  const { accessTier } = usePortalData();
+  const { accessTier, tabAccess, isPreviewMode } = usePortalData();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Tier 2 = messages only; others filter by tier array
+  // Tier 2 = messages only; others filter by tier array AND tab_access
   const navItems = useMemo(() => {
     if (accessTier === 2) return allNavItems.filter(i => i.to === "/portal/messages");
-    return allNavItems.filter(i => i.tiers.includes(accessTier));
-  }, [accessTier]);
+    const byTier = allNavItems.filter(i => i.tiers.includes(accessTier));
+    if (isPreviewMode) return byTier;
+    return byTier.filter(i => tabAccess[i.tab]);
+  }, [accessTier, tabAccess, isPreviewMode]);
+
+  // Guard: redirect away from blocked tabs
+  useEffect(() => {
+    if (isPreviewMode) return;
+    if (location.pathname === "/portal" || location.pathname === "/portal/today") return;
+    const tab = tabKeyForPath(location.pathname);
+    if (tab && !tabAccess[tab]) {
+      toast.error("You don't have access to this section");
+      navigate("/portal/today", { replace: true });
+    }
+  }, [location.pathname, tabAccess, isPreviewMode, navigate]);
 
   return (
       <div className="min-h-screen bg-background flex">

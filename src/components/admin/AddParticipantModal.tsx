@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { X, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { getSetPasswordUrl } from "@/lib/authUrls";
+import { defaultsForRole } from "@/lib/tabAccess";
 
 const ROLES = [
   { value: "catering_manager", label: "Catering Manager" },
@@ -63,6 +64,17 @@ export default function AddParticipantModal({ eventId, onClose, onAdded }: Props
             ? "Email wasn't sent because Supabase hit its rate limit. Wait a few minutes, then try again."
             : data.emailDelivery.reason || "Invite email was not sent."
         );
+      }
+
+      // Apply role-based default tab access (best-effort, won't block success)
+      try {
+        await supabase
+          .from("event_users")
+          .update({ tab_access: defaultsForRole(role) })
+          .eq("event_id", eventId)
+          .eq("user_id", data?.user_id ?? data?.userId ?? null);
+      } catch (e) {
+        console.warn("Failed to set default tab_access", e);
       }
 
       toast.success(
