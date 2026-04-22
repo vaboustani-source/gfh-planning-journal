@@ -66,12 +66,23 @@ export default function Documents() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [docs, setDocs] = useState<Doc[]>([]);
+  const [resources, setResources] = useState<GfhResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [descDraft, setDescDraft] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase
+      .from("gfh_resources")
+      .select("id, title, description, category, file_url, file_name")
+      .eq("visible", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setResources(data as GfhResource[]); });
+  }, []);
 
   const fetchDocs = useCallback(async () => {
     if (!eventId) return;
