@@ -14,6 +14,7 @@ import AdminAllMessages from "./pages/admin/AdminAllMessages";
 import PreferredVendors from "./pages/admin/PreferredVendors";
 import DecorCatalog from "./pages/admin/DecorCatalog";
 import Resources from "./pages/admin/Resources";
+import AdminForms from "./pages/admin/Forms";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -28,6 +29,7 @@ import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
 import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
+import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
 import NotFound from "./pages/NotFound";
 
@@ -102,6 +104,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/forms"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminForms />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin Preview of Couple Portal */}
             <Route
@@ -125,6 +135,7 @@ const App = () => (
               <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
             </Route>
 
@@ -150,6 +161,7 @@ const App = () => (
               <Route path="financials" element={<Financials />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
             </Route>
 
