@@ -1,8 +1,22 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageThread, MessageComposer, ReplyTarget } from "@/components/messages/MessageThread";
+import { MessageSearchBar } from "@/components/messages/MessageSearchBar";
 import { Message, EventParticipant, bodyToPlainText, truncate } from "@/lib/messageUtils";
+
+// Map portal section keys -> admin tab ids
+const SECTION_TO_ADMIN_TAB: Record<string, string> = {
+  vendors: "vendors",
+  lodging: "lodging",
+  ceremony: "ceremony",
+  menus: "menus-bar",
+  timeline: "timeline",
+  financials: "financials",
+  decor: "decor",
+  planning: "checklist",
+};
 
 export default function AdminMessages({ eventId, onUnreadChange }: { eventId: string; onUnreadChange: (n: number) => void }) {
   const { user } = useAuth();
