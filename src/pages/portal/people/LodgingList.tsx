@@ -100,11 +100,9 @@ export function LodgingList() {
   }, []);
 
   const applyAssignments = useCallback((updater: (prev: Assignment[]) => Assignment[]) => {
-    setAssignments(prev => {
-      const next = updater(prev);
-      assignmentsRef.current = next;
-      return next;
-    });
+    const next = updater(assignmentsRef.current);
+    assignmentsRef.current = next;
+    setAssignments(next);
   }, []);
 
   const persistRow = useCallback(async (roomId: string, revertOnFail?: () => void) => {
@@ -128,7 +126,7 @@ export function LodgingList() {
           .insert({ ...payload, room_id: roomId, event_id: eventId })
           .select().single();
         if (error) throw error;
-        if (data) setAssignments(prev => prev.map(x => x.room_id === roomId ? { ...x, id: data.id } : x));
+        if (data) applyAssignments(prev => prev.map(x => x.room_id === roomId ? { ...x, id: data.id } : x));
       }
     } catch (e) {
       revertOnFail?.();
@@ -137,7 +135,7 @@ export function LodgingList() {
       pendingCount.current = Math.max(0, pendingCount.current - 1);
       if (pendingCount.current === 0) flashSaved();
     }
-  }, [eventId, flashSaved]);
+  }, [applyAssignments, eventId, flashSaved]);
 
   const scheduleSave = useCallback((roomId: string, delay = 500) => {
     setSaveStatus("saving");
