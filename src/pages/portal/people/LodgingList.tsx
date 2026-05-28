@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
-import { Save, Check, Loader2, ChevronDown, Lock } from "lucide-react";
+import { Check, Loader2, ChevronDown, Lock } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { LODGING_SECTIONS, type LodgingSection, type SectionPaymentMode } from "@/lib/lodgingConfig";
+import { LODGING_SECTIONS, type SectionPaymentMode } from "@/lib/lodgingConfig";
+import { toast } from "sonner";
 
 interface Room {
   id: string;
@@ -21,13 +22,14 @@ interface Assignment {
   host_pays: boolean;
 }
 
+type SaveStatus = "idle" | "saving" | "saved";
+
 export function LodgingList() {
   const { eventId } = usePortalData();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     hearth_village: true, farmhouse: true, grove: true, victoria: true,
   });
@@ -35,35 +37,38 @@ export function LodgingList() {
     hearth_village: "mixed", farmhouse: "mixed", grove: "mixed", victoria: "mixed",
   });
 
+  // Refs to avoid stale closures and prevent refetch during edits
+  const assignmentsRef = useRef<Assignment[]>([]);
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const pendingCount = useRef(0);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { assignmentsRef.current = assignments; }, [assignments]);
+
   useEffect(() => {
     if (!eventId) return;
+    let cancelled = false;
     (async () => {
       const [{ data: rData }, { data: aData }] = await Promise.all([
         supabase.from("lodging_rooms").select("id, room_name, room_type, nightly_rate, sort_order").order("sort_order", { ascending: true }),
         supabase.from("lodging_assignments").select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays").eq("event_id", eventId),
       ]);
+      if (cancelled) return;
       const allRooms = rData || [];
       let allAssignments = aData || [];
       setRooms(allRooms);
 
-      // Auto-create placeholder rows for any rooms missing an assignment
       const assignedRoomIds = new Set(allAssignments.map(a => a.room_id));
       const missingRooms = allRooms.filter(r => !assignedRoomIds.has(r.id));
       if (missingRooms.length > 0) {
         const placeholders = missingRooms.map(r => ({
-          event_id: eventId,
-          room_id: r.id,
-          assigned_guest_name: null,
-          assigned_guest_email: null,
-          host_pays: false,
+          event_id: eventId, room_id: r.id,
+          assigned_guest_name: null, assigned_guest_email: null, host_pays: false,
         }));
         const { data: inserted } = await supabase
-          .from("lodging_assignments")
-          .insert(placeholders)
+          .from("lodging_assignments").insert(placeholders)
           .select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays");
-        if (inserted) {
-          allAssignments = [...allAssignments, ...inserted];
-        }
+        if (inserted) allAssignments = [...allAssignments, ...inserted];
       }
 
       setAssignments(allAssignments.map(a => ({
@@ -74,7 +79,6 @@ export function LodgingList() {
         host_pays: a.host_pays ?? false,
       })));
 
-      // Derive section modes from existing data
       const modes: Record<string, SectionPaymentMode> = {};
       for (const sec of LODGING_SECTIONS) {
         const secRoomIds = allRooms.filter(r => r.room_type === sec.roomType).map(r => r.id);
@@ -86,75 +90,89 @@ export function LodgingList() {
       setSectionModes(modes);
       setLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [eventId]);
 
-  const getAssignment = (roomId: string) => assignments.find(a => a.room_id === roomId);
-
-  const updateField = useCallback((roomId: string, field: keyof Assignment, value: string | boolean) => {
-    setAssignments(prev => {
-      const existing = prev.find(a => a.room_id === roomId);
-      if (existing) {
-        return prev.map(a => a.room_id === roomId ? { ...a, [field]: value } : a);
-      }
-      return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: false, [field]: value }];
-    });
-    setSaved(false);
+  const flashSaved = useCallback(() => {
+    setSaveStatus("saved");
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaveStatus("idle"), 1500);
   }, []);
 
-  const handleSectionModeChange = (sectionKey: string, mode: SectionPaymentMode, sectionRoomIds: string[]) => {
-    setSectionModes(prev => ({ ...prev, [sectionKey]: mode }));
-    if (mode === "host" || mode === "guest") {
-      const hostPays = mode === "host";
-      setAssignments(prev => {
-        const updated = [...prev];
-        for (const rid of sectionRoomIds) {
-          const idx = updated.findIndex(a => a.room_id === rid);
-          if (idx >= 0) updated[idx] = { ...updated[idx], host_pays: hostPays };
-        }
-        return updated;
-      });
-    }
-    setSaved(false);
-  };
-
-  const handleSave = async () => {
+  const persistRow = useCallback(async (roomId: string, revertOnFail?: () => void) => {
     if (!eventId) return;
-    setSaving(true);
-    const toSave = assignments.filter(a => a.room_id);
-    await Promise.all(toSave.map(a => {
-      const payload = {
-        assigned_guest_name: a.assigned_guest_name || null,
-        assigned_guest_email: a.assigned_guest_email || null,
-        host_pays: a.host_pays,
-      };
-      if (a.id) {
-        return supabase.from("lodging_assignments").update(payload).eq("id", a.id);
-      }
-      return supabase.from("lodging_assignments").insert({ ...payload, room_id: a.room_id, event_id: eventId });
-    }));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  };
-
-  const handleBlurSave = async (roomId: string) => {
-    if (!eventId) return;
-    const a = assignments.find(x => x.room_id === roomId);
+    const a = assignmentsRef.current.find(x => x.room_id === roomId);
     if (!a) return;
     const payload = {
       assigned_guest_name: a.assigned_guest_name || null,
       assigned_guest_email: a.assigned_guest_email || null,
       host_pays: a.host_pays,
     };
-    if (a.id) {
-      await supabase.from("lodging_assignments").update(payload).eq("id", a.id);
-    } else {
-      const { data } = await supabase.from("lodging_assignments").insert({ ...payload, room_id: roomId, event_id: eventId }).select().single();
-      if (data) {
-        setAssignments(prev => prev.map(x => x.room_id === roomId ? { ...x, id: data.id } : x));
+    pendingCount.current += 1;
+    setSaveStatus("saving");
+    try {
+      if (a.id) {
+        const { error } = await supabase.from("lodging_assignments").update(payload).eq("id", a.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("lodging_assignments")
+          .insert({ ...payload, room_id: roomId, event_id: eventId })
+          .select().single();
+        if (error) throw error;
+        if (data) setAssignments(prev => prev.map(x => x.room_id === roomId ? { ...x, id: data.id } : x));
       }
+    } catch (e) {
+      revertOnFail?.();
+      toast.error("Couldn't save — please try again");
+    } finally {
+      pendingCount.current = Math.max(0, pendingCount.current - 1);
+      if (pendingCount.current === 0) flashSaved();
     }
-  };
+  }, [eventId, flashSaved]);
+
+  const scheduleSave = useCallback((roomId: string, delay = 500) => {
+    setSaveStatus("saving");
+    if (saveTimers.current[roomId]) clearTimeout(saveTimers.current[roomId]);
+    saveTimers.current[roomId] = setTimeout(() => {
+      delete saveTimers.current[roomId];
+      persistRow(roomId);
+    }, delay);
+  }, [persistRow]);
+
+  const updateText = useCallback((roomId: string, field: "assigned_guest_name" | "assigned_guest_email", value: string) => {
+    setAssignments(prev => {
+      const exists = prev.find(a => a.room_id === roomId);
+      if (exists) return prev.map(a => a.room_id === roomId ? { ...a, [field]: value } : a);
+      return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: false, [field]: value }];
+    });
+    scheduleSave(roomId, 500);
+  }, [scheduleSave]);
+
+  const setHostPays = useCallback((roomId: string, hostPays: boolean) => {
+    const prevVal = assignmentsRef.current.find(a => a.room_id === roomId)?.host_pays ?? false;
+    if (prevVal === hostPays) return;
+    setAssignments(prev => {
+      const exists = prev.find(a => a.room_id === roomId);
+      if (exists) return prev.map(a => a.room_id === roomId ? { ...a, host_pays: hostPays } : a);
+      return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: hostPays }];
+    });
+    // Cancel any pending debounced save for this row, save immediately
+    if (saveTimers.current[roomId]) { clearTimeout(saveTimers.current[roomId]); delete saveTimers.current[roomId]; }
+    persistRow(roomId, () => {
+      setAssignments(prev => prev.map(a => a.room_id === roomId ? { ...a, host_pays: prevVal } : a));
+    });
+  }, [persistRow]);
+
+  const handleSectionModeChange = useCallback((sectionKey: string, mode: SectionPaymentMode, sectionRoomIds: string[]) => {
+    setSectionModes(prev => ({ ...prev, [sectionKey]: mode }));
+    if (mode === "host" || mode === "guest") {
+      const hostPays = mode === "host";
+      for (const rid of sectionRoomIds) setHostPays(rid, hostPays);
+    }
+  }, [setHostPays]);
+
+  const getAssignment = (roomId: string) => assignments.find(a => a.room_id === roomId);
 
   const totalAssigned = assignments.filter(a => a.assigned_guest_name?.trim()).length;
   const totalGuestRooms = rooms.filter(r => !LODGING_SECTIONS.find(s => s.coupleRoomName && rooms.find(rm => rm.room_type === s.roomType && rm.room_name === s.coupleRoomName)?.id === r.id)).length;
@@ -165,21 +183,22 @@ export function LodgingList() {
 
   return (
     <div className="space-y-6 pb-32">
-      {/* Info box */}
       <div className="rounded-xl bg-sage/8 border border-sage/20 px-5 py-4">
         <p className="font-body text-sm text-foreground leading-relaxed">
           You're welcome to assign specific rooms to your guests, or simply let us know how many guests will be staying in each area and we'll handle the room assignments. Either way works perfectly.
         </p>
       </div>
 
-      {/* Global summary */}
-      <div className="rounded-xl bg-card border border-border px-5 py-4">
+      <div className="rounded-xl bg-card border border-border px-5 py-4 flex items-center justify-between">
         <p className="font-body text-sm text-foreground font-medium">
           {totalAssigned} of {totalGuestRooms} guest rooms assigned
         </p>
+        <div className="font-body text-xs text-muted-foreground h-4 min-w-[70px] text-right" aria-live="polite">
+          {saveStatus === "saving" && (<span className="inline-flex items-center gap-1.5"><Loader2 size={11} className="animate-spin" /> Saving…</span>)}
+          {saveStatus === "saved" && (<span className="inline-flex items-center gap-1.5 text-sage-dark"><Check size={11} /> Saved</span>)}
+        </div>
       </div>
 
-      {/* Sections */}
       {LODGING_SECTIONS.map(section => {
         const sectionRooms = rooms.filter(r => r.room_type === section.roomType);
         const coupleRoom = section.coupleRoomName ? sectionRooms.find(r => r.room_name === section.coupleRoomName) : null;
@@ -210,7 +229,6 @@ export function LodgingList() {
 
               <CollapsibleContent>
                 <div className="border-t border-border">
-                  {/* Section payment mode */}
                   <div className="px-5 py-3 bg-muted/20 border-b border-border">
                     <p className="font-body text-xs text-muted-foreground uppercase tracking-widest mb-2">Payment for this section</p>
                     <div className="flex flex-wrap gap-2">
@@ -221,6 +239,7 @@ export function LodgingList() {
                       ]).map(opt => (
                         <button
                           key={opt.value}
+                          type="button"
                           onClick={() => handleSectionModeChange(section.key, opt.value, guestRoomIds)}
                           className={`px-3 py-1.5 rounded-lg font-body text-xs transition-colors ${mode === opt.value ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
                         >
@@ -230,7 +249,6 @@ export function LodgingList() {
                     </div>
                   </div>
 
-                  {/* Couple suite callout */}
                   {coupleRoom && (
                     <div className="px-5 py-3 bg-sage/6 border-b border-sage/15">
                       <p className="font-body text-xs text-sage-dark italic mb-2">
@@ -246,7 +264,6 @@ export function LodgingList() {
                     </div>
                   )}
 
-                  {/* Room rows */}
                   {guestRooms.map((room, idx) => {
                     const a = getAssignment(room.id);
                     const isAssigned = !!a?.assigned_guest_name?.trim();
@@ -263,19 +280,19 @@ export function LodgingList() {
                           <input
                             type="text"
                             value={a?.assigned_guest_name ?? ""}
-                            onChange={e => updateField(room.id, "assigned_guest_name", e.target.value)}
-                            onBlur={() => handleBlurSave(room.id)}
+                            onChange={e => updateText(room.id, "assigned_guest_name", e.target.value)}
                             placeholder="Guest name"
                             maxLength={120}
+                            autoComplete="off"
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
                           />
                           <input
                             type="email"
                             value={a?.assigned_guest_email ?? ""}
-                            onChange={e => updateField(room.id, "assigned_guest_email", e.target.value)}
-                            onBlur={() => handleBlurSave(room.id)}
+                            onChange={e => updateText(room.id, "assigned_guest_email", e.target.value)}
                             placeholder="Guest email"
                             maxLength={255}
+                            autoComplete="off"
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
                           />
                         </div>
@@ -286,13 +303,15 @@ export function LodgingList() {
                             </p>
                             <div className="flex rounded-lg border border-border overflow-hidden text-xs font-body shrink-0">
                               <button
-                                onClick={() => { updateField(room.id, "host_pays", false); }}
+                                type="button"
+                                onClick={() => setHostPays(room.id, false)}
                                 className={`px-3 py-1.5 transition-colors ${!a?.host_pays ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
                               >
                                 Guest
                               </button>
                               <button
-                                onClick={() => { updateField(room.id, "host_pays", true); }}
+                                type="button"
+                                onClick={() => setHostPays(room.id, true)}
                                 className={`px-3 py-1.5 transition-colors ${a?.host_pays ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
                               >
                                 Host
@@ -309,21 +328,6 @@ export function LodgingList() {
           </Collapsible>
         );
       })}
-
-      {/* Save */}
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-body text-sm font-medium text-primary-foreground hover:bg-sage-dark transition-colors disabled:opacity-60"
-      >
-        {saving ? (
-          <><Loader2 size={15} className="animate-spin" /> Saving…</>
-        ) : saved ? (
-          <><Check size={15} /> Saved!</>
-        ) : (
-          <><Save size={15} /> Save Guest List</>
-        )}
-      </button>
     </div>
   );
 }
