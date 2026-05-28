@@ -99,6 +99,14 @@ export function LodgingList() {
     savedTimer.current = setTimeout(() => setSaveStatus("idle"), 1500);
   }, []);
 
+  const applyAssignments = useCallback((updater: (prev: Assignment[]) => Assignment[]) => {
+    setAssignments(prev => {
+      const next = updater(prev);
+      assignmentsRef.current = next;
+      return next;
+    });
+  }, []);
+
   const persistRow = useCallback(async (roomId: string, revertOnFail?: () => void) => {
     if (!eventId) return;
     const a = assignmentsRef.current.find(x => x.room_id === roomId);
@@ -141,18 +149,18 @@ export function LodgingList() {
   }, [persistRow]);
 
   const updateText = useCallback((roomId: string, field: "assigned_guest_name" | "assigned_guest_email", value: string) => {
-    setAssignments(prev => {
+    applyAssignments(prev => {
       const exists = prev.find(a => a.room_id === roomId);
       if (exists) return prev.map(a => a.room_id === roomId ? { ...a, [field]: value } : a);
       return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: false, [field]: value }];
     });
     scheduleSave(roomId, 500);
-  }, [scheduleSave]);
+  }, [applyAssignments, scheduleSave]);
 
   const setHostPays = useCallback((roomId: string, hostPays: boolean) => {
     const prevVal = assignmentsRef.current.find(a => a.room_id === roomId)?.host_pays ?? false;
     if (prevVal === hostPays) return;
-    setAssignments(prev => {
+    applyAssignments(prev => {
       const exists = prev.find(a => a.room_id === roomId);
       if (exists) return prev.map(a => a.room_id === roomId ? { ...a, host_pays: hostPays } : a);
       return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: hostPays }];
@@ -160,9 +168,9 @@ export function LodgingList() {
     // Cancel any pending debounced save for this row, save immediately
     if (saveTimers.current[roomId]) { clearTimeout(saveTimers.current[roomId]); delete saveTimers.current[roomId]; }
     persistRow(roomId, () => {
-      setAssignments(prev => prev.map(a => a.room_id === roomId ? { ...a, host_pays: prevVal } : a));
+      applyAssignments(prev => prev.map(a => a.room_id === roomId ? { ...a, host_pays: prevVal } : a));
     });
-  }, [persistRow]);
+  }, [applyAssignments, persistRow]);
 
   const handleSectionModeChange = useCallback((sectionKey: string, mode: SectionPaymentMode, sectionRoomIds: string[]) => {
     setSectionModes(prev => ({ ...prev, [sectionKey]: mode }));
