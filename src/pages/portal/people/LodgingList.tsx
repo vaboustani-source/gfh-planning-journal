@@ -303,22 +303,22 @@ export function LodgingList() {
                           />
                         </div>
                         {mode === "mixed" && (
-                          <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center justify-between gap-3 mt-3">
                             <p className="font-body text-xs text-muted-foreground">
                               {a?.host_pays ? "You're covering this room" : "Guest pays directly"}
                             </p>
-                            <div className="flex rounded-lg border border-border overflow-hidden text-xs font-body shrink-0">
+                            <div className="inline-grid grid-cols-2 items-stretch rounded-lg border border-border bg-background p-0.5 text-xs font-body shrink-0 min-w-[112px]">
                               <button
                                 type="button"
                                 onClick={() => setHostPays(room.id, false)}
-                                className={`px-3 py-1.5 transition-colors ${!a?.host_pays ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+                                className={`h-7 rounded-md px-3 leading-none transition-colors ${!a?.host_pays ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                               >
                                 Guest
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setHostPays(room.id, true)}
-                                className={`px-3 py-1.5 transition-colors ${a?.host_pays ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+                                className={`h-7 rounded-md px-3 leading-none transition-colors ${a?.host_pays ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                               >
                                 Host
                               </button>
