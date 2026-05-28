@@ -240,8 +240,8 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
                                   <p className="font-body text-xs text-foreground">Who pays?</p>
                                   <p className="font-body text-[10px] text-muted-foreground">{a?.host_pays ? "Host" : "Guest"}</p>
                                 </div>
-                                <button onClick={() => handleFieldChange(room.id, "host_pays", !(a?.host_pays))} className={`relative w-11 h-6 rounded-full transition-colors ${a?.host_pays ? "bg-sage" : "bg-muted border border-border"}`}>
-                                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${a?.host_pays ? "translate-x-5" : "translate-x-0.5"}`} />
+                                <button onClick={() => handleFieldChange(room.id, "host_pays", !(a?.host_pays))} className={`relative h-6 w-11 rounded-full p-0.5 transition-colors ${a?.host_pays ? "bg-sage" : "bg-muted border border-border"}`}>
+                                  <span className={`block h-5 w-5 rounded-full bg-card shadow transition-transform ${a?.host_pays ? "translate-x-5" : "translate-x-0"}`} />
                                 </button>
                               </div>
                               <div className="space-y-1">
