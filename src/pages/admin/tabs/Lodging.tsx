@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, Loader2, ChevronDown, Lock } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -51,6 +51,9 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
   });
   const [expandedRooms, setExpandedRooms] = useState<Record<string, boolean>>({});
   const { status, debouncedSave } = useAutosaveStatus();
+  const assignmentsRef = useRef<Assignment[]>([]);
+
+  useEffect(() => { assignmentsRef.current = assignments; }, [assignments]);
 
   useEffect(() => {
     fetchAll();
@@ -62,14 +65,18 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
       supabase.from("lodging_assignments").select("*").eq("event_id", eventId),
     ]);
     if (rData) setRooms(rData);
-    if (aData) setAssignments(aData);
+    if (aData) {
+      assignmentsRef.current = aData;
+      setAssignments(aData);
+    }
     setLoading(false);
   };
 
   const getAssignment = (roomId: string) => assignments.find(a => a.room_id === roomId);
 
   const updateField = useCallback((roomId: string, field: keyof Assignment, value: string | boolean | null) => {
-    setAssignments(prev => {
+    const next = (() => {
+      const prev = assignmentsRef.current;
       const existing = prev.find(a => a.room_id === roomId);
       if (existing) {
         return prev.map(a => a.room_id === roomId ? { ...a, [field]: value } : a);
@@ -81,24 +88,32 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
         invoice_1_sent: false, invoice_2_sent: false, invoice_final_sent: false,
         [field]: value,
       }];
-    });
+    })();
+    assignmentsRef.current = next;
+    setAssignments(next);
   }, [eventId]);
 
   const saveRoom = useCallback((roomId: string) => {
     debouncedSave(`room-${roomId}`, async () => {
-      const a = assignments.find(x => x.room_id === roomId);
+      const a = assignmentsRef.current.find(x => x.room_id === roomId);
       if (!a) return;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...payload } = { ...a, event_id: eventId, room_id: roomId };
       if (a.id) {
         const { data } = await supabase.from("lodging_assignments").update(payload).eq("id", a.id).select().single();
-        if (data) setAssignments(prev => prev.map(x => x.room_id === roomId ? data : x));
+        if (data) {
+          assignmentsRef.current = assignmentsRef.current.map(x => x.room_id === roomId ? data : x);
+          setAssignments(assignmentsRef.current);
+        }
       } else {
         const { data } = await supabase.from("lodging_assignments").insert(payload).select().single();
-        if (data) setAssignments(prev => prev.map(x => x.room_id === roomId ? data : x));
+        if (data) {
+          assignmentsRef.current = assignmentsRef.current.map(x => x.room_id === roomId ? data : x);
+          setAssignments(assignmentsRef.current);
+        }
       }
     });
-  }, [assignments, debouncedSave, eventId]);
+  }, [debouncedSave, eventId]);
 
   const handleFieldChange = (roomId: string, field: keyof Assignment, value: string | boolean | null) => {
     updateField(roomId, field, value);
@@ -225,8 +240,8 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
                                   <p className="font-body text-xs text-foreground">Who pays?</p>
                                   <p className="font-body text-[10px] text-muted-foreground">{a?.host_pays ? "Host" : "Guest"}</p>
                                 </div>
-                                <button onClick={() => handleFieldChange(room.id, "host_pays", !(a?.host_pays))} className={`relative w-11 h-6 rounded-full transition-colors ${a?.host_pays ? "bg-sage" : "bg-muted border border-border"}`}>
-                                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${a?.host_pays ? "translate-x-5" : "translate-x-0.5"}`} />
+                                <button onClick={() => handleFieldChange(room.id, "host_pays", !(a?.host_pays))} className={`relative h-6 w-11 rounded-full p-0.5 transition-colors ${a?.host_pays ? "bg-sage" : "bg-muted border border-border"}`}>
+                                  <span className={`block h-5 w-5 rounded-full bg-card shadow transition-transform ${a?.host_pays ? "translate-x-5" : "translate-x-0"}`} />
                                 </button>
                               </div>
                               <div className="space-y-1">
