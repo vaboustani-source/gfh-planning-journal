@@ -64,6 +64,7 @@ function SortableVendorCard({
         showDragHandle
         dragHandleProps={listeners}
         onBrowsePreferred={(category) => onBrowsePreferred(vendor.id, category)}
+        clearOnly={STANDARD_VENDOR_CATEGORIES.has(vendor.category)}
       />
     </div>
   );
