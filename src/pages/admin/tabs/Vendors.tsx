@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
-import { VendorCard, Vendor, VENDOR_GROUPS } from "@/components/vendor/VendorCard";
+import { VendorCard, Vendor, VENDOR_GROUPS, STANDARD_VENDOR_CATEGORIES } from "@/components/vendor/VendorCard";
 import { BrowsePreferredDrawer } from "@/components/admin/BrowsePreferredDrawer";
 import { PreferredVendor } from "@/components/admin/PreferredVendorCard";
 import {
