@@ -19,7 +19,7 @@ import ActivityTab from "./tabs/ActivityTab";
 import DecorTab from "./tabs/DecorTab";
 import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
-import SeatingTab from "./tabs/SeatingTab";
+import OurPeopleTab from "./tabs/OurPeopleTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -33,8 +33,7 @@ const TABS = [
   { id: "timeline", label: "Timeline" },
   { id: "menus-bar", label: "Menus & Bar" },
   { id: "dietary", label: "Dietary & Kids" },
-  { id: "seating", label: "Seating" },
-  { id: "lodging", label: "Lodging" },
+  { id: "our-people", label: "Our People" },
   { id: "financials", label: "Financials" },
   { id: "messages", label: "Messages" },
   { id: "notes", label: "Notes" },
@@ -223,8 +222,7 @@ export default function EventDetail() {
         {activeTab === "timeline" && <TimelineTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "menus-bar" && <MenusBarTab eventId={event.id} onNavigateNext={navigateToNextTab} tastingDate={event.tasting_date} tastingDateNote={event.tasting_date_note} />}
         {activeTab === "dietary" && <DietaryTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
-        {activeTab === "seating" && <SeatingTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
-        {activeTab === "lodging" && <LodgingTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+        {activeTab === "our-people" && <OurPeopleTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
         {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
         {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
