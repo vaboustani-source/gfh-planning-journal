@@ -2295,8 +2295,10 @@ export type Database = {
       }
       notification_log: {
         Row: {
+          created_at: string
           event_id: string | null
           id: string
+          message: string | null
           milestone_id: string | null
           notification_type: string
           opened_at: string | null
@@ -2304,11 +2306,14 @@ export type Database = {
           sent_at: string | null
           subject_line: string | null
           tasks_included: Json | null
+          type: string | null
           user_id: string | null
         }
         Insert: {
+          created_at?: string
           event_id?: string | null
           id?: string
+          message?: string | null
           milestone_id?: string | null
           notification_type: string
           opened_at?: string | null
@@ -2316,11 +2321,14 @@ export type Database = {
           sent_at?: string | null
           subject_line?: string | null
           tasks_included?: Json | null
+          type?: string | null
           user_id?: string | null
         }
         Update: {
+          created_at?: string
           event_id?: string | null
           id?: string
+          message?: string | null
           milestone_id?: string | null
           notification_type?: string
           opened_at?: string | null
@@ -2328,6 +2336,7 @@ export type Database = {
           sent_at?: string | null
           subject_line?: string | null
           tasks_included?: Json | null
+          type?: string | null
           user_id?: string | null
         }
         Relationships: [
