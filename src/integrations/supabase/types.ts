@@ -1351,6 +1351,77 @@ export type Database = {
           },
         ]
       }
+      guests: {
+        Row: {
+          added_by: string | null
+          created_at: string | null
+          dietary_restrictions: string[] | null
+          email: string | null
+          event_id: string
+          first_name: string
+          id: string
+          is_plus_one: boolean | null
+          last_name: string
+          lodging_preference: string | null
+          meal_preference: string | null
+          notes: string | null
+          phone: string | null
+          plus_one_of: string | null
+          relationship: string | null
+          rsvp_status: string | null
+          side: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string | null
+          dietary_restrictions?: string[] | null
+          email?: string | null
+          event_id: string
+          first_name: string
+          id?: string
+          is_plus_one?: boolean | null
+          last_name: string
+          lodging_preference?: string | null
+          meal_preference?: string | null
+          notes?: string | null
+          phone?: string | null
+          plus_one_of?: string | null
+          relationship?: string | null
+          rsvp_status?: string | null
+          side?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string | null
+          dietary_restrictions?: string[] | null
+          email?: string | null
+          event_id?: string
+          first_name?: string
+          id?: string
+          is_plus_one?: boolean | null
+          last_name?: string
+          lodging_preference?: string | null
+          meal_preference?: string | null
+          notes?: string | null
+          phone?: string | null
+          plus_one_of?: string | null
+          relationship?: string | null
+          rsvp_status?: string | null
+          side?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guests_plus_one_of_fkey"
+            columns: ["plus_one_of"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       layout_library: {
         Row: {
           created_at: string | null
