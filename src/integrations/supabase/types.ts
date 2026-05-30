@@ -2792,6 +2792,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_stale_session_locks: { Args: never; Returns: number }
+      ensure_standard_vendor_roles: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_event_member: {
         Args: { _event_id: string; _user_id: string }

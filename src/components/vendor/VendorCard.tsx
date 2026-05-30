@@ -19,24 +19,35 @@ export interface Vendor {
 }
 
 export const FRIENDLY_CATEGORY: Record<string, string> = {
-  venue: "Venue", caterer: "Caterer", photographer: "Photographer", videographer: "Videographer",
-  hair: "Hair Stylist", makeup: "Makeup Artist", officiant: "Officiant", ceremony_music: "Ceremony Music",
-  dj_band: "DJ / Band", florals: "Florals", rentals: "Rentals", photo_booth: "Photo Booth",
-  fireworks: "Fireworks", invitations: "Invitations", hotel: "Hotel", shuttle: "Shuttle Service",
-  planner: "Planner", cake: "Cake", other: "Other",
+  venue: "Venue", caterer: "Caterer",
+  planner: "Wedding Planner / Designer",
+  photographer: "Photographer", videographer: "Videographer",
+  hair: "Hair Stylist", makeup: "Makeup Artist",
+  florals: "Florist", rentals: "Décor / Rentals",
+  officiant: "Officiant", ceremony_music: "Ceremony Music",
+  dj_band: "DJ / Band", photo_booth: "Photo Booth / Installation",
+  fireworks: "Fireworks", shuttle: "Shuttle / Transportation",
+  cake: "Cake / Dessert", invitations: "Invitations / Stationery",
+  hotel: "Hotel", other: "Other",
 };
 
 export interface VendorGroup { label: string; categories: string[] }
 export const VENDOR_GROUPS: VendorGroup[] = [
   { label: "Venue & Catering", categories: ["venue", "caterer"] },
+  { label: "Planning & Design", categories: ["planner"] },
   { label: "Memory Capture", categories: ["photographer", "videographer"] },
   { label: "Beauty", categories: ["hair", "makeup"] },
-  { label: "Ceremony", categories: ["officiant", "ceremony_music", "dj_band"] },
-  { label: "Florals & Decor", categories: ["florals", "rentals", "photo_booth", "fireworks"] },
-  { label: "Printed & Graphic", categories: ["invitations"] },
-  { label: "Guest Logistics", categories: ["hotel", "shuttle"] },
-  { label: "Additional", categories: ["planner", "cake", "other"] },
+  { label: "Florals & Decor", categories: ["florals", "rentals"] },
+  { label: "Ceremony", categories: ["officiant", "ceremony_music"] },
+  { label: "Music & Entertainment", categories: ["dj_band", "photo_booth"] },
+  { label: "Extras", categories: ["fireworks", "shuttle", "cake", "invitations"] },
 ];
+
+export const STANDARD_VENDOR_CATEGORIES = new Set([
+  "venue","caterer","planner","photographer","videographer",
+  "hair","makeup","florals","rentals","officiant","ceremony_music",
+  "dj_band","photo_booth","fireworks","shuttle","cake","invitations",
+]);
 
 const STATUS_OPTIONS = ["pending", "confirmed", "done"];
 const STATUS_COLORS: Record<string, string> = {
@@ -62,13 +73,15 @@ interface VendorCardProps {
   showDragHandle?: boolean;
   /** Admin-only: handler for "Browse Preferred" button (shown on empty slots) */
   onBrowsePreferred?: (category: string) => void;
+  /** When true, the delete action clears the slot rather than removing the row. */
+  clearOnly?: boolean;
 }
 
 export function VendorCard({
   vendor, eventId, isAdmin, initialEditMode = false,
   onUpdate, onDelete, onSaveStart, onSaveEnd,
   dragHandleProps, showDragHandle = false,
-  onBrowsePreferred,
+  onBrowsePreferred, clearOnly = false,
 }: VendorCardProps) {
   const isGF = isGilbertsvilleRow(vendor);
   const hasContent = !!vendor.business_name;
@@ -204,11 +217,13 @@ export function VendorCard({
           {confirmingDelete && (
             <div className="mt-3 flex items-center gap-3 p-2.5 rounded-lg bg-destructive/5 border border-destructive/20">
               <p className="font-body text-xs text-foreground flex-1">
-                {isAdmin ? "Remove this vendor?" : "Clear this vendor? The category stays so you can fill it in later."}
+                {clearOnly
+                  ? "Clear this vendor? The slot stays so you can fill it in later."
+                  : "Remove this vendor?"}
               </p>
               <button onClick={() => { onDelete?.(vendor.id); setConfirmingDelete(false); }}
                 className="px-3 py-1 rounded-md bg-destructive text-destructive-foreground font-body text-xs hover:opacity-90 transition-opacity">
-                {isAdmin ? "Yes, remove" : "Yes, clear"}
+                {clearOnly ? "Yes, clear" : "Yes, remove"}
               </button>
               <button onClick={() => setConfirmingDelete(false)}
                 className="px-3 py-1 rounded-md border border-border font-body text-xs text-muted-foreground hover:text-foreground transition-colors">

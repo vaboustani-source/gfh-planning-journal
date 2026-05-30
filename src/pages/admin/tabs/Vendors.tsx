@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
-import { VendorCard, Vendor, VENDOR_GROUPS } from "@/components/vendor/VendorCard";
+import { VendorCard, Vendor, VENDOR_GROUPS, STANDARD_VENDOR_CATEGORIES } from "@/components/vendor/VendorCard";
 import { BrowsePreferredDrawer } from "@/components/admin/BrowsePreferredDrawer";
 import { PreferredVendor } from "@/components/admin/PreferredVendorCard";
 import {
@@ -64,6 +64,7 @@ function SortableVendorCard({
         showDragHandle
         dragHandleProps={listeners}
         onBrowsePreferred={(category) => onBrowsePreferred(vendor.id, category)}
+        clearOnly={STANDARD_VENDOR_CATEGORIES.has(vendor.category)}
       />
     </div>
   );
@@ -85,19 +86,14 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   useEffect(() => { loadVendors(); }, [eventId]);
 
   const loadVendors = async () => {
-    const { data } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
-    if (data && data.length > 0) {
-      setVendors(data);
-      setLoading(false);
-    } else if (!seeded.current) {
+    // Always make sure the full standard role template exists for this event.
+    if (!seeded.current) {
       seeded.current = true;
-      await supabase.rpc("seed_vendors", { p_event_id: eventId });
-      const { data: seededData } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
-      if (seededData) setVendors(seededData);
-      setLoading(false);
-    } else {
-      setLoading(false);
+      await (supabase as any).rpc("ensure_standard_vendor_roles", { p_event_id: eventId });
     }
+    const { data } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
+    if (data) setVendors(data);
+    setLoading(false);
   };
 
   const addVendor = async () => {
@@ -117,8 +113,30 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   };
 
   const deleteVendor = async (id: string) => {
-    await supabase.from("vendors").delete().eq("id", id);
-    setVendors(prev => prev.filter(v => v.id !== id));
+    const target = vendors.find(v => v.id === id);
+    if (!target) return;
+    // Standard template slots are cleared (kept visible). Only admin-added
+    // extras outside the standard role list are fully removed.
+    if (STANDARD_VENDOR_CATEGORIES.has(target.category)) {
+      const cleared: Partial<Vendor> = {
+        business_name: null,
+        contact_name: null,
+        phone: null,
+        email: null,
+        instagram: null,
+        status: "pending",
+        contract_uploaded: false,
+        coi_received: false,
+        info_emailed: false,
+        vendor_meals: 0,
+        brandon_notes: null,
+      };
+      await supabase.from("vendors").update(cleared).eq("id", id);
+      setVendors(prev => prev.map(v => v.id === id ? { ...v, ...cleared } : v));
+    } else {
+      await supabase.from("vendors").delete().eq("id", id);
+      setVendors(prev => prev.filter(v => v.id !== id));
+    }
   };
 
   const sortGroupVendors = (groupVendors: Vendor[]) => {

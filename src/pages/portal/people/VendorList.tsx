@@ -72,7 +72,7 @@ export function VendorList() {
             <div className="space-y-2">
               {groupVendors.map(v => (
                 <VendorCard key={v.id} vendor={v} eventId={eventId!} isAdmin={false}
-                   onUpdate={updateVendor} onDelete={deleteVendor} />
+                   onUpdate={updateVendor} onDelete={deleteVendor} clearOnly />
               ))}
             </div>
           </div>
