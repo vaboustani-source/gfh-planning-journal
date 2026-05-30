@@ -162,6 +162,7 @@ const App = () => (
               <Route path="ceremony" element={<Ceremony />} />
               <Route path="decor" element={<Decor />} />
               <Route path="experiences" element={<Experiences />} />
+              <Route path="seating" element={<Seating />} />
               <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
               <Route path="financials" element={<Financials />} />
