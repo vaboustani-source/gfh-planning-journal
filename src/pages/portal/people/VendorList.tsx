@@ -32,8 +32,23 @@ export function VendorList() {
   };
 
   const deleteVendor = async (id: string) => {
-    await supabase.from("vendors").delete().eq("id", id);
-    setVendors(prev => prev.filter(v => v.id !== id));
+    // Couples don't remove vendor roles — they just clear the slot's fill,
+    // leaving the category blank so it can be filled in later.
+    const cleared = {
+      business_name: null,
+      contact_name: null,
+      phone: null,
+      email: null,
+      instagram: null,
+      status: "pending",
+      contract_uploaded: false,
+      coi_received: false,
+      info_emailed: false,
+      vendor_meals: 0,
+      brandon_notes: null,
+    };
+    await supabase.from("vendors").update(cleared).eq("id", id);
+    setVendors(prev => prev.map(v => v.id === id ? { ...v, ...cleared } : v));
   };
 
   if (loading) {
