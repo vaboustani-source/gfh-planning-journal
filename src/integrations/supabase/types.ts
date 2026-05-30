@@ -1351,6 +1351,42 @@ export type Database = {
           },
         ]
       }
+      layout_library: {
+        Row: {
+          created_at: string | null
+          guest_count_max: number
+          guest_count_min: number
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          label: string
+          sort_order: number | null
+          table_config_description: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          guest_count_max: number
+          guest_count_min: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          label: string
+          sort_order?: number | null
+          table_config_description?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          guest_count_max?: number
+          guest_count_min?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          label?: string
+          sort_order?: number | null
+          table_config_description?: string | null
+        }
+        Relationships: []
+      }
       lb_activity_log: {
         Row: {
           action: string
@@ -2730,6 +2766,118 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      seating_assignments: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          guest_email: string | null
+          guest_name: string
+          id: string
+          lodging_room_id: string | null
+          meal_preference: string | null
+          notes: string | null
+          seat_number: number | null
+          source: string | null
+          table_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          guest_email?: string | null
+          guest_name: string
+          id?: string
+          lodging_room_id?: string | null
+          meal_preference?: string | null
+          notes?: string | null
+          seat_number?: number | null
+          source?: string | null
+          table_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          guest_email?: string | null
+          guest_name?: string
+          id?: string
+          lodging_room_id?: string | null
+          meal_preference?: string | null
+          notes?: string | null
+          seat_number?: number | null
+          source?: string | null
+          table_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seating_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seating_assignments_lodging_room_id_fkey"
+            columns: ["lodging_room_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seating_assignments_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "seating_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seating_tables: {
+        Row: {
+          capacity: number
+          created_at: string | null
+          event_id: string | null
+          id: string
+          layout_id: string | null
+          sort_order: number | null
+          table_name: string
+          table_type: string | null
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          layout_id?: string | null
+          sort_order?: number | null
+          table_name: string
+          table_type?: string | null
+        }
+        Update: {
+          capacity?: number
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          layout_id?: string | null
+          sort_order?: number | null
+          table_name?: string
+          table_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seating_tables_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seating_tables_layout_id_fkey"
+            columns: ["layout_id"]
+            isOneToOne: false
+            referencedRelation: "layout_library"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       section_group_limits: {
         Row: {
