@@ -2,20 +2,23 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Outlet, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalDataProvider } from "@/hooks/usePortalData";
-import { Eye, X, Sunrise, CalendarHeart, CheckSquare, Briefcase, Music, Sparkles, UtensilsCrossed, Users, DollarSign, MessageCircle, StickyNote, FileText } from "lucide-react";
+import { Eye, X, Sunrise, CalendarHeart, CheckSquare, Briefcase, Music, Sparkles, UtensilsCrossed, Users, DollarSign, MessageCircle, StickyNote, FileText, Clock, ClipboardList } from "lucide-react";
 
 const navItems = [
   { to: "today", label: "Today", icon: Sunrise },
   { to: "our-wedding", label: "Our Wedding", icon: CalendarHeart },
+  { to: "timeline", label: "Timeline", icon: Clock },
   { to: "planning", label: "Planning", icon: CheckSquare },
   { to: "vendors", label: "Vendors", icon: Briefcase },
   { to: "ceremony", label: "Ceremony & Music", icon: Music },
   { to: "decor", label: "Décor", icon: Sparkles },
+  { to: "experiences", label: "Experiences", icon: Sparkles },
   { to: "menus-meals", label: "Menus & Meals", icon: UtensilsCrossed },
   { to: "our-people", label: "Our People", icon: Users },
   { to: "financials", label: "Financials", icon: DollarSign },
   { to: "messages", label: "Messages", icon: MessageCircle },
   { to: "notes", label: "Notes", icon: StickyNote },
+  { to: "forms", label: "Forms", icon: ClipboardList },
   { to: "documents", label: "Documents", icon: FileText },
 ];
 
