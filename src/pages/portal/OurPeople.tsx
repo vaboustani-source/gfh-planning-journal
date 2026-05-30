@@ -13,11 +13,19 @@ export default function OurPeople() {
   const navigate = useNavigate();
   const { eventId } = usePortalData();
   const [params, setParams] = useSearchParams();
-  const initial = (params.get("sub") as PeopleSubTab) || "guests";
-  const [sub, setSub] = useState<PeopleSubTab>(initial);
+  const tabParam = params.get("tab");
+  const fromUrl: PeopleSubTab =
+    tabParam === "lodging" ? "lodging" :
+    tabParam === "seating" ? "seating" : "guests";
+  const [sub, setSub] = useState<PeopleSubTab>(fromUrl);
   const { counts, reload } = usePeopleCounts(eventId);
 
-  useEffect(() => { setParams({ sub }, { replace: true }); }, [sub]);
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    if (sub === "guests") next.delete("tab");
+    else next.set("tab", sub);
+    setParams(next, { replace: true });
+  }, [sub]);
 
   const onSub = (t: PeopleSubTab) => { setSub(t); reload(); };
 
