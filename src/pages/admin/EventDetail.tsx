@@ -19,6 +19,7 @@ import ActivityTab from "./tabs/ActivityTab";
 import DecorTab from "./tabs/DecorTab";
 import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
+import SeatingTab from "./tabs/SeatingTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
