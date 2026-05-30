@@ -1231,12 +1231,119 @@ export type Database = {
           },
         ]
       }
+      lb_activity_log: {
+        Row: {
+          action: string
+          actor: string
+          actor_name: string | null
+          booking_id: string | null
+          created_at: string
+          event_id: string | null
+          id: string
+          label: string
+          metadata: Json | null
+        }
+        Insert: {
+          action: string
+          actor: string
+          actor_name?: string | null
+          booking_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          label: string
+          metadata?: Json | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          actor_name?: string | null
+          booking_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          label?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lb_activity_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "lb_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lb_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "lb_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lb_additional_charges: {
+        Row: {
+          amount: number
+          booking_id: string
+          charged_at: string
+          charged_by: string | null
+          description: string
+          event_id: string
+          id: string
+          notes: string | null
+          status: string
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          charged_at?: string
+          charged_by?: string | null
+          description: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          charged_at?: string
+          charged_by?: string | null
+          description?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lb_additional_charges_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "lb_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lb_additional_charges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "lb_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lb_bookings: {
         Row: {
           addon_amount: number
           addons_selected: Json
           base_amount: number
           booked_at: string
+          checkin_reminder_sent: boolean
+          checkin_reminder_sent_at: string | null
           cot_fee: number
           cot_requested: boolean
           covered_at: string | null
@@ -1252,6 +1359,13 @@ export type Database = {
           nights_booked: number
           payment_schedule: string
           payment_status: string
+          payment_update_token: string | null
+          payment_update_token_expires_at: string | null
+          refund_amount: number | null
+          refund_notes: string | null
+          refund_reason: string | null
+          refunded_at: string | null
+          refunded_by: string | null
           reminder_count: number
           reminder_sent_at: string | null
           removed: boolean
@@ -1259,8 +1373,11 @@ export type Database = {
           resort_fee: number
           room_assignment: string | null
           section_id: string
+          stripe_customer_id: string | null
           stripe_payment_id: string | null
           stripe_payment_intent_id: string | null
+          stripe_payment_method_id: string | null
+          stripe_refund_id: string | null
           stripe_session_id: string | null
           tax_amount: number
           total_amount: number
@@ -1270,6 +1387,8 @@ export type Database = {
           addons_selected?: Json
           base_amount?: number
           booked_at?: string
+          checkin_reminder_sent?: boolean
+          checkin_reminder_sent_at?: string | null
           cot_fee?: number
           cot_requested?: boolean
           covered_at?: string | null
@@ -1285,6 +1404,13 @@ export type Database = {
           nights_booked?: number
           payment_schedule?: string
           payment_status?: string
+          payment_update_token?: string | null
+          payment_update_token_expires_at?: string | null
+          refund_amount?: number | null
+          refund_notes?: string | null
+          refund_reason?: string | null
+          refunded_at?: string | null
+          refunded_by?: string | null
           reminder_count?: number
           reminder_sent_at?: string | null
           removed?: boolean
@@ -1292,8 +1418,11 @@ export type Database = {
           resort_fee?: number
           room_assignment?: string | null
           section_id: string
+          stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_payment_method_id?: string | null
+          stripe_refund_id?: string | null
           stripe_session_id?: string | null
           tax_amount?: number
           total_amount?: number
@@ -1303,6 +1432,8 @@ export type Database = {
           addons_selected?: Json
           base_amount?: number
           booked_at?: string
+          checkin_reminder_sent?: boolean
+          checkin_reminder_sent_at?: string | null
           cot_fee?: number
           cot_requested?: boolean
           covered_at?: string | null
@@ -1318,6 +1449,13 @@ export type Database = {
           nights_booked?: number
           payment_schedule?: string
           payment_status?: string
+          payment_update_token?: string | null
+          payment_update_token_expires_at?: string | null
+          refund_amount?: number | null
+          refund_notes?: string | null
+          refund_reason?: string | null
+          refunded_at?: string | null
+          refunded_by?: string | null
           reminder_count?: number
           reminder_sent_at?: string | null
           removed?: boolean
@@ -1325,8 +1463,11 @@ export type Database = {
           resort_fee?: number
           room_assignment?: string | null
           section_id?: string
+          stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_payment_method_id?: string | null
+          stripe_refund_id?: string | null
           stripe_session_id?: string | null
           tax_amount?: number
           total_amount?: number
@@ -1358,7 +1499,9 @@ export type Database = {
       lb_events: {
         Row: {
           check_in_date: string | null
+          check_in_time: string
           check_out_date: string | null
+          check_out_time: string
           couple_access_token: string
           couple_names: string
           created_at: string
@@ -1374,7 +1517,9 @@ export type Database = {
         }
         Insert: {
           check_in_date?: string | null
+          check_in_time?: string
           check_out_date?: string | null
+          check_out_time?: string
           couple_access_token?: string
           couple_names: string
           created_at?: string
@@ -1390,7 +1535,9 @@ export type Database = {
         }
         Update: {
           check_in_date?: string | null
+          check_in_time?: string
           check_out_date?: string | null
+          check_out_time?: string
           couple_access_token?: string
           couple_names?: string
           created_at?: string
@@ -2631,6 +2778,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_stripe_session_lock: {
+        Args: { p_booking_id: string }
+        Returns: boolean
+      }
+      cleanup_stale_session_locks: { Args: never; Returns: number }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_event_member: {
         Args: { _event_id: string; _user_id: string }
