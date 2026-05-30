@@ -23,6 +23,7 @@ const allNavItems: NavItemDef[] = [
   { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4],     tab: "vendors" },
   { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4],     tab: "ceremony" },
   { to: "/portal/decor",           label: "Decor",             icon: Sparkles,          tiers: [1, 3, 4],     tab: "ceremony" },
+  { to: "/portal/experiences",     label: "Experiences",       icon: Sparkles,          tiers: [1, 3, 4],     tab: "experiences" },
   { to: "/portal/menus-meals",     label: "Menus & Meals",     icon: UtensilsCrossed,   tiers: [1, 3, 4],     tab: "menus" },
   { to: "/portal/our-people",      label: "Our People",        icon: Users,             tiers: [1, 3, 4],     tab: "lodging" },
   { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4],     tab: "financials" },
