@@ -217,11 +217,13 @@ export function VendorCard({
           {confirmingDelete && (
             <div className="mt-3 flex items-center gap-3 p-2.5 rounded-lg bg-destructive/5 border border-destructive/20">
               <p className="font-body text-xs text-foreground flex-1">
-                {isAdmin ? "Remove this vendor?" : "Clear this vendor? The category stays so you can fill it in later."}
+                {clearOnly
+                  ? "Clear this vendor? The slot stays so you can fill it in later."
+                  : "Remove this vendor?"}
               </p>
               <button onClick={() => { onDelete?.(vendor.id); setConfirmingDelete(false); }}
                 className="px-3 py-1 rounded-md bg-destructive text-destructive-foreground font-body text-xs hover:opacity-90 transition-opacity">
-                {isAdmin ? "Yes, remove" : "Yes, clear"}
+                {clearOnly ? "Yes, clear" : "Yes, remove"}
               </button>
               <button onClick={() => setConfirmingDelete(false)}
                 className="px-3 py-1 rounded-md border border-border font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
