@@ -80,6 +80,7 @@ const App = () => (
               <Route path="journal" element={<SettingsJournal />} />
               <Route path="preferred-vendors" element={<PreferredVendors />} />
               <Route path="decor-rentals" element={<DecorCatalog />} />
+              <Route path="experiences" element={<ExperienceCatalog />} />
               <Route path="resources" element={<Resources />} />
               <Route path="forms" element={<AdminForms />} />
             </Route>
