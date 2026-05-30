@@ -75,12 +75,13 @@ interface VendorCardProps {
   onBrowsePreferred?: (category: string) => void;
   /** When true, the delete action clears the slot rather than removing the row. */
   clearOnly?: boolean;
+}
 
 export function VendorCard({
   vendor, eventId, isAdmin, initialEditMode = false,
   onUpdate, onDelete, onSaveStart, onSaveEnd,
   dragHandleProps, showDragHandle = false,
-  onBrowsePreferred,
+  onBrowsePreferred, clearOnly = false,
 }: VendorCardProps) {
   const isGF = isGilbertsvilleRow(vendor);
   const hasContent = !!vendor.business_name;
