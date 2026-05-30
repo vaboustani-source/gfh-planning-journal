@@ -28,6 +28,8 @@ import Ceremony from "./pages/portal/Ceremony";
 import Decor from "./pages/portal/Decor";
 import Experiences from "./pages/portal/Experiences";
 import ExperienceCatalog from "./pages/admin/ExperienceCatalog";
+import LayoutLibrary from "./pages/admin/LayoutLibrary";
+import Seating from "./pages/portal/Seating";
 import MenusMeals from "./pages/portal/MenusMeals";
 import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
