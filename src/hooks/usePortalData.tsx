@@ -118,7 +118,7 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
         setTabAccess({
           overview: true, vendors: true, ceremony: true, timeline: true,
           menus: true, lodging: true, financials: true, messages: true,
-          notes: true, forms: true, documents: true, experiences: true,
+          notes: true, forms: true, documents: true, experiences: true, seating: true,
         });
       } else if (user) {
         const { data: eu } = await supabase
@@ -144,7 +144,7 @@ export function PortalDataProvider({ children, previewEventId }: { children: Rea
           setTabAccess({
             overview: true, vendors: true, ceremony: true, timeline: true,
             menus: true, lodging: true, financials: tier !== 4, messages: true,
-            notes: true, forms: true, documents: true, experiences: true,
+            notes: true, forms: true, documents: true, experiences: true, seating: true,
           });
         } else {
           setTabAccess(normalizeTabAccess(eu.tab_access));
