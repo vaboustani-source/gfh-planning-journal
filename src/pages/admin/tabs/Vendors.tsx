@@ -113,8 +113,30 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   };
 
   const deleteVendor = async (id: string) => {
-    await supabase.from("vendors").delete().eq("id", id);
-    setVendors(prev => prev.filter(v => v.id !== id));
+    const target = vendors.find(v => v.id === id);
+    if (!target) return;
+    // Standard template slots are cleared (kept visible). Only admin-added
+    // extras outside the standard role list are fully removed.
+    if (STANDARD_VENDOR_CATEGORIES.has(target.category)) {
+      const cleared: Partial<Vendor> = {
+        business_name: null,
+        contact_name: null,
+        phone: null,
+        email: null,
+        instagram: null,
+        status: "pending",
+        contract_uploaded: false,
+        coi_received: false,
+        info_emailed: false,
+        vendor_meals: 0,
+        brandon_notes: null,
+      };
+      await supabase.from("vendors").update(cleared).eq("id", id);
+      setVendors(prev => prev.map(v => v.id === id ? { ...v, ...cleared } : v));
+    } else {
+      await supabase.from("vendors").delete().eq("id", id);
+      setVendors(prev => prev.filter(v => v.id !== id));
+    }
   };
 
   const sortGroupVendors = (groupVendors: Vendor[]) => {
