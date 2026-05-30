@@ -26,6 +26,8 @@ import Planning from "./pages/portal/Planning";
 import Vendors from "./pages/portal/Vendors";
 import Ceremony from "./pages/portal/Ceremony";
 import Decor from "./pages/portal/Decor";
+import Experiences from "./pages/portal/Experiences";
+import ExperienceCatalog from "./pages/admin/ExperienceCatalog";
 import MenusMeals from "./pages/portal/MenusMeals";
 import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
@@ -78,6 +80,7 @@ const App = () => (
               <Route path="journal" element={<SettingsJournal />} />
               <Route path="preferred-vendors" element={<PreferredVendors />} />
               <Route path="decor-rentals" element={<DecorCatalog />} />
+              <Route path="experiences" element={<ExperienceCatalog />} />
               <Route path="resources" element={<Resources />} />
               <Route path="forms" element={<AdminForms />} />
             </Route>
@@ -110,6 +113,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <DecorCatalog />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/experiences"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ExperienceCatalog />
                 </ProtectedRoute>
               }
             />
@@ -147,6 +158,7 @@ const App = () => (
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
               <Route path="decor" element={<Decor />} />
+              <Route path="experiences" element={<Experiences />} />
               <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
               <Route path="financials" element={<Financials />} />
@@ -173,6 +185,7 @@ const App = () => (
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
               <Route path="decor" element={<Decor />} />
+              <Route path="experiences" element={<Experiences />} />
               <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
               <Route path="financials" element={<Financials />} />
