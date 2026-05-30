@@ -8,7 +8,7 @@ import ChecklistTab from "./tabs/Checklist";
 import VendorsTab from "./tabs/Vendors";
 import AdminMessages from "./tabs/AdminMessages";
 import FinancialsTab from "./tabs/Financials";
-import LodgingTab from "./tabs/Lodging";
+
 import CeremonyTab from "./tabs/CeremonyTab";
 import TimelineTab from "./tabs/TimelineTab";
 import DietaryTab from "./tabs/DietaryTab";
