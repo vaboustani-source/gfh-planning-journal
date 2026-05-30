@@ -126,6 +126,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/admin/layouts" element={<ProtectedRoute requiredRole="admin"><LayoutLibrary /></ProtectedRoute>} />
             <Route
               path="/admin/resources"
               element={
