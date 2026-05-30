@@ -19,24 +19,35 @@ export interface Vendor {
 }
 
 export const FRIENDLY_CATEGORY: Record<string, string> = {
-  venue: "Venue", caterer: "Caterer", photographer: "Photographer", videographer: "Videographer",
-  hair: "Hair Stylist", makeup: "Makeup Artist", officiant: "Officiant", ceremony_music: "Ceremony Music",
-  dj_band: "DJ / Band", florals: "Florals", rentals: "Rentals", photo_booth: "Photo Booth",
-  fireworks: "Fireworks", invitations: "Invitations", hotel: "Hotel", shuttle: "Shuttle Service",
-  planner: "Planner", cake: "Cake", other: "Other",
+  venue: "Venue", caterer: "Caterer",
+  planner: "Wedding Planner / Designer",
+  photographer: "Photographer", videographer: "Videographer",
+  hair: "Hair Stylist", makeup: "Makeup Artist",
+  florals: "Florist", rentals: "Décor / Rentals",
+  officiant: "Officiant", ceremony_music: "Ceremony Music",
+  dj_band: "DJ / Band", photo_booth: "Photo Booth / Installation",
+  fireworks: "Fireworks", shuttle: "Shuttle / Transportation",
+  cake: "Cake / Dessert", invitations: "Invitations / Stationery",
+  hotel: "Hotel", other: "Other",
 };
 
 export interface VendorGroup { label: string; categories: string[] }
 export const VENDOR_GROUPS: VendorGroup[] = [
   { label: "Venue & Catering", categories: ["venue", "caterer"] },
+  { label: "Planning & Design", categories: ["planner"] },
   { label: "Memory Capture", categories: ["photographer", "videographer"] },
   { label: "Beauty", categories: ["hair", "makeup"] },
-  { label: "Ceremony", categories: ["officiant", "ceremony_music", "dj_band"] },
-  { label: "Florals & Decor", categories: ["florals", "rentals", "photo_booth", "fireworks"] },
-  { label: "Printed & Graphic", categories: ["invitations"] },
-  { label: "Guest Logistics", categories: ["hotel", "shuttle"] },
-  { label: "Additional", categories: ["planner", "cake", "other"] },
+  { label: "Florals & Decor", categories: ["florals", "rentals"] },
+  { label: "Ceremony", categories: ["officiant", "ceremony_music"] },
+  { label: "Music & Entertainment", categories: ["dj_band", "photo_booth"] },
+  { label: "Extras", categories: ["fireworks", "shuttle", "cake", "invitations"] },
 ];
+
+export const STANDARD_VENDOR_CATEGORIES = new Set([
+  "venue","caterer","planner","photographer","videographer",
+  "hair","makeup","florals","rentals","officiant","ceremony_music",
+  "dj_band","photo_booth","fireworks","shuttle","cake","invitations",
+]);
 
 const STATUS_OPTIONS = ["pending", "confirmed", "done"];
 const STATUS_COLORS: Record<string, string> = {
