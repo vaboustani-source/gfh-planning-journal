@@ -86,19 +86,14 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   useEffect(() => { loadVendors(); }, [eventId]);
 
   const loadVendors = async () => {
-    const { data } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
-    if (data && data.length > 0) {
-      setVendors(data);
-      setLoading(false);
-    } else if (!seeded.current) {
+    // Always make sure the full standard role template exists for this event.
+    if (!seeded.current) {
       seeded.current = true;
-      await supabase.rpc("seed_vendors", { p_event_id: eventId });
-      const { data: seededData } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
-      if (seededData) setVendors(seededData);
-      setLoading(false);
-    } else {
-      setLoading(false);
+      await supabase.rpc("ensure_standard_vendor_roles", { p_event_id: eventId });
     }
+    const { data } = await supabase.from("vendors").select("*").eq("event_id", eventId).order("sort_order", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
+    if (data) setVendors(data);
+    setLoading(false);
   };
 
   const addVendor = async () => {
