@@ -937,6 +937,126 @@ export type Database = {
           },
         ]
       }
+      experience_catalog: {
+        Row: {
+          available: boolean | null
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          photo_url: string | null
+          pricing_config: Json | null
+          pricing_type: string | null
+          pricing_visible_to_couple: boolean | null
+          requires_discussion: boolean | null
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          available?: boolean | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          photo_url?: string | null
+          pricing_config?: Json | null
+          pricing_type?: string | null
+          pricing_visible_to_couple?: boolean | null
+          requires_discussion?: boolean | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          available?: boolean | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          photo_url?: string | null
+          pricing_config?: Json | null
+          pricing_type?: string | null
+          pricing_visible_to_couple?: boolean | null
+          requires_discussion?: boolean | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      experience_requests: {
+        Row: {
+          approved_at: string | null
+          brandon_notes: string | null
+          catalog_item_id: string | null
+          couple_notes: string | null
+          created_at: string | null
+          decline_reason: string | null
+          event_id: string
+          final_price: number | null
+          final_price_label: string | null
+          guest_count: number | null
+          hours: number | null
+          id: string
+          preferred_day: string | null
+          selected_tier: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          brandon_notes?: string | null
+          catalog_item_id?: string | null
+          couple_notes?: string | null
+          created_at?: string | null
+          decline_reason?: string | null
+          event_id: string
+          final_price?: number | null
+          final_price_label?: string | null
+          guest_count?: number | null
+          hours?: number | null
+          id?: string
+          preferred_day?: string | null
+          selected_tier?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          brandon_notes?: string | null
+          catalog_item_id?: string | null
+          couple_notes?: string | null
+          created_at?: string | null
+          decline_reason?: string | null
+          event_id?: string
+          final_price?: number | null
+          final_price_label?: string | null
+          guest_count?: number | null
+          hours?: number | null
+          id?: string
+          preferred_day?: string | null
+          selected_tier?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_requests_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "experience_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experience_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_line_items: {
         Row: {
           created_at: string | null
