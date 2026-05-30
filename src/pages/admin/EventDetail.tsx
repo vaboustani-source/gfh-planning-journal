@@ -33,6 +33,7 @@ const TABS = [
   { id: "timeline", label: "Timeline" },
   { id: "menus-bar", label: "Menus & Bar" },
   { id: "dietary", label: "Dietary & Kids" },
+  { id: "seating", label: "Seating" },
   { id: "lodging", label: "Lodging" },
   { id: "financials", label: "Financials" },
   { id: "messages", label: "Messages" },
