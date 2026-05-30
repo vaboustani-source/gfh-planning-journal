@@ -73,7 +73,8 @@ interface VendorCardProps {
   showDragHandle?: boolean;
   /** Admin-only: handler for "Browse Preferred" button (shown on empty slots) */
   onBrowsePreferred?: (category: string) => void;
-}
+  /** When true, the delete action clears the slot rather than removing the row. */
+  clearOnly?: boolean;
 
 export function VendorCard({
   vendor, eventId, isAdmin, initialEditMode = false,
