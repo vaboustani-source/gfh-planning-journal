@@ -240,7 +240,7 @@ export function LodgingList() {
             {totalAssigned} of {totalGuestRooms} guest rooms assigned
           </p>
           <p className="font-body text-xs text-muted-foreground mt-1">
-            {stillNeedsRoom} confirmed on-site guest{stillNeedsRoom === 1 ? "" : "s"} still need{stillNeedsRoom === 1 ? "s" : ""} a room
+            Still needs a room: {stillNeedsRoom} confirmed on-site guest{stillNeedsRoom === 1 ? "" : "s"}
           </p>
         </div>
         <div className="font-body text-xs text-muted-foreground h-4 min-w-[70px] text-right" aria-live="polite">
