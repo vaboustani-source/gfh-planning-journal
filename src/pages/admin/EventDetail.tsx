@@ -20,6 +20,7 @@ import DecorTab from "./tabs/DecorTab";
 import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
 import OurPeopleTab from "./tabs/OurPeopleTab";
+import Rsvp from "../portal/Rsvp";
 
 type NavItem = { id: string; label: string };
 type NavGroup = { label: string; items: NavItem[] };
