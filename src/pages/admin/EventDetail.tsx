@@ -20,6 +20,7 @@ import DecorTab from "./tabs/DecorTab";
 import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
 import OurPeopleTab from "./tabs/OurPeopleTab";
+import Rsvp from "../portal/Rsvp";
 
 type NavItem = { id: string; label: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -35,7 +36,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Guests & Lodging",
-    items: [{ id: "our-people", label: "Our People" }],
+    items: [
+      { id: "our-people", label: "Our People" },
+      { id: "rsvp", label: "RSVP" },
+    ],
   },
   {
     label: "Planning",
@@ -305,6 +309,7 @@ export default function EventDetail() {
             {activeTab === "menus-bar" && <MenusBarTab eventId={event.id} onNavigateNext={navigateToNextTab} tastingDate={event.tasting_date} tastingDateNote={event.tasting_date_note} />}
             {activeTab === "dietary" && <DietaryTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "our-people" && <OurPeopleTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+            {activeTab === "rsvp" && <Rsvp eventId={event.id} />}
             {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
             {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}

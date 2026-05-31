@@ -37,6 +37,7 @@ import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
 import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
+import Rsvp from "./pages/portal/Rsvp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -171,6 +172,7 @@ const App = () => (
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="rsvp" element={<Rsvp />} />
             </Route>
 
             {/* Couple Portal — nested */}
@@ -199,6 +201,7 @@ const App = () => (
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="rsvp" element={<Rsvp />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
