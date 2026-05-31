@@ -171,6 +171,22 @@ export function LodgingList() {
     scheduleSave(roomId, 500);
   }, [applyAssignments, scheduleSave]);
 
+  const updateGuestName = useCallback((roomId: string, value: string) => {
+    const match = guests.find(g => guestName(g).toLowerCase() === value.trim().toLowerCase());
+    applyAssignments(prev => {
+      const exists = prev.find(a => a.room_id === roomId);
+      if (exists) {
+        return prev.map(a => a.room_id === roomId ? {
+          ...a,
+          assigned_guest_name: value,
+          assigned_guest_email: match?.email ?? a.assigned_guest_email,
+        } : a);
+      }
+      return [{ id: "", room_id: roomId, assigned_guest_name: value, assigned_guest_email: match?.email ?? "", host_pays: false }, ...prev];
+    });
+    scheduleSave(roomId, 500);
+  }, [applyAssignments, guests, scheduleSave]);
+
   const setHostPays = useCallback((roomId: string, hostPays: boolean) => {
     const prevVal = assignmentsRef.current.find(a => a.room_id === roomId)?.host_pays ?? false;
     if (prevVal === hostPays) return;
@@ -198,6 +214,13 @@ export function LodgingList() {
 
   const totalAssigned = assignments.filter(a => a.assigned_guest_name?.trim()).length;
   const totalGuestRooms = rooms.filter(r => !LODGING_SECTIONS.find(s => s.coupleRoomName && rooms.find(rm => rm.room_type === s.roomType && rm.room_name === s.coupleRoomName)?.id === r.id)).length;
+  const stillNeedsRoom = useMemo(() => {
+    const assigned = new Set(assignments.flatMap(a => [a.assigned_guest_email?.trim().toLowerCase(), a.assigned_guest_name?.trim().toLowerCase()].filter(Boolean)));
+    return guests.filter(g => {
+      if (g.rsvp_status !== "confirmed" || g.lodging_preference !== "on_site") return false;
+      return !assigned.has((g.email ?? "").trim().toLowerCase()) && !assigned.has(guestName(g).toLowerCase());
+    }).length;
+  }, [assignments, guests]);
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>;
