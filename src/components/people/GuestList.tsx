@@ -173,7 +173,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total Invited", value: stats.total },
+          { label: "Total", value: stats.total },
           { label: "Confirmed", value: stats.confirmed, tone: "text-sage-dark" },
           { label: "Declined", value: stats.declined, tone: "text-muted-foreground" },
           { label: "Awaiting", value: stats.awaiting, tone: "text-amber-700" },
@@ -196,9 +196,9 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
           {(["all", "confirmed", "declined", "invited", "on_site", "off_site"] as Filter[]).map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-full font-body text-xs transition-colors ${
-                filter === f ? "bg-sage text-white" : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                filter === f ? "bg-sage text-primary-foreground" : "bg-muted/60 text-muted-foreground hover:text-foreground"
               }`}>
-              {f === "all" ? "All" : f === "on_site" ? "On-site" : f === "off_site" ? "Off-site" : f.charAt(0).toUpperCase() + f.slice(1)}
+              {f === "all" ? "All" : f === "on_site" ? "On-site" : f === "off_site" ? "Off-site" : f === "invited" ? "Awaiting" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
@@ -213,7 +213,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
           </button>
         )}
         <button onClick={() => setEditing(emptyGuest(eventId, isAdmin))}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:bg-sage-dark">
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">
           <Plus size={14} /> Add Guest
         </button>
       </div>
