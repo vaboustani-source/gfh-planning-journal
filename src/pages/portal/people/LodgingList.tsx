@@ -6,6 +6,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { LODGING_SECTIONS, type SectionPaymentMode } from "@/lib/lodgingConfig";
 import { toast } from "sonner";
 
+const db = supabase as any;
+
 interface Room {
   id: string;
   room_name: string;
@@ -32,6 +34,8 @@ interface GuestOption {
 }
 
 type SaveStatus = "idle" | "saving" | "saved";
+
+const guestName = (guest: GuestOption) => `${guest.first_name} ${guest.last_name}`.trim();
 
 export function LodgingList() {
   const { eventId } = usePortalData();
