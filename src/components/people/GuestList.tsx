@@ -176,7 +176,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
           { label: "Total", value: stats.total },
           { label: "Confirmed", value: stats.confirmed, tone: "text-sage-dark" },
           { label: "Declined", value: stats.declined, tone: "text-muted-foreground" },
-          { label: "Awaiting", value: stats.awaiting, tone: "text-amber-700" },
+          { label: "Awaiting", value: stats.awaiting, tone: "text-foreground" },
         ].map(s => (
           <div key={s.label} className="bg-white border border-border rounded-lg px-4 py-3">
             <p className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">{s.label}</p>
@@ -402,7 +402,7 @@ function SideBadge({ side }: { side: string | null }) {
   if (!side) return <span className="text-muted-foreground text-xs">—</span>;
   const map: Record<string, { label: string; cls: string }> = {
     partner_1: { label: "P1", cls: "bg-sage/15 text-sage-dark" },
-    partner_2: { label: "P2", cls: "bg-amber-100 text-amber-800" },
+    partner_2: { label: "P2", cls: "bg-gold/20 text-foreground" },
     both: { label: "Both", cls: "bg-muted text-foreground" },
     other: { label: "Other", cls: "bg-muted text-muted-foreground" },
   };
@@ -414,8 +414,8 @@ function RsvpChip({ status }: { status: string }) {
   const map: Record<string, string> = {
     confirmed: "bg-sage/15 text-sage-dark",
     declined: "bg-muted text-muted-foreground line-through",
-    invited: "bg-amber-50 text-amber-800",
-    maybe: "bg-amber-50 text-amber-800",
+    invited: "bg-gold/20 text-foreground",
+    maybe: "bg-gold/20 text-foreground",
   };
   return <span className={`px-2 py-0.5 rounded-full font-body text-[11px] capitalize ${map[status] ?? "bg-muted"}`}>{status}</span>;
 }
