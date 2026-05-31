@@ -172,6 +172,7 @@ const App = () => (
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="rsvp" element={<Rsvp />} />
             </Route>
 
             {/* Couple Portal — nested */}
