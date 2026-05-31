@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -354,9 +354,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
                   <td className="px-4 py-3"><SideBadge side={g.side} /></td>
                   <td className="px-4 py-3"><RsvpChip status={g.rsvp_status} /></td>
                   <td className="px-4 py-3"><LodgingChip pref={g.lodging_preference} /></td>
-                  <td className="px-4 py-3 font-body text-xs text-muted-foreground">
-                    {(g.dietary_restrictions ?? []).join(", ") || "—"}
-                  </td>
+                  <td className="px-4 py-3"><DietaryIcons restrictions={g.dietary_restrictions} /></td>
                   {isAdmin && (
                     <td className="px-4 py-3 font-body text-xs text-muted-foreground capitalize">{g.added_by ?? "—"}</td>
                   )}
@@ -430,5 +428,20 @@ function LodgingChip({ pref }: { pref: string | null }) {
     }`}>
       {pref === "on_site" ? "On-site" : "Off-site"}
     </span>
+  );
+}
+
+function DietaryIcons({ restrictions }: { restrictions: string[] | null }) {
+  const items = restrictions ?? [];
+  if (items.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+  return (
+    <div className="flex flex-wrap gap-1.5" title={items.join(", ")}>
+      {items.slice(0, 3).map(item => (
+        <span key={item} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-body text-[11px] text-secondary-foreground">
+          <UtensilsCrossed size={10} /> {item}
+        </span>
+      ))}
+      {items.length > 3 && <span className="font-body text-[11px] text-muted-foreground">+{items.length - 3}</span>}
+    </div>
   );
 }
