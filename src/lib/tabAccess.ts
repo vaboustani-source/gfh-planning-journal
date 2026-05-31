@@ -63,6 +63,7 @@ export const PATH_TO_TAB: Record<string, TabKey> = {
   "/portal/experiences": "experiences",
   "/portal/seating": "seating",
   "/portal/planning": "overview",
+  "/portal/rsvp": "rsvp",
 };
 
 export function tabKeyForPath(pathname: string): TabKey | null {
