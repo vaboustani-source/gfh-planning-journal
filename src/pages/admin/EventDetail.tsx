@@ -35,7 +35,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Guests & Lodging",
-    items: [{ id: "our-people", label: "Our People" }],
+    items: [
+      { id: "our-people", label: "Our People" },
+      { id: "rsvp", label: "RSVP" },
+    ],
   },
   {
     label: "Planning",
