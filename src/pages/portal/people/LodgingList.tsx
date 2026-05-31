@@ -235,9 +235,14 @@ export function LodgingList() {
       </div>
 
       <div className="rounded-xl bg-card border border-border px-5 py-4 flex items-center justify-between">
-        <p className="font-body text-sm text-foreground font-medium">
-          {totalAssigned} of {totalGuestRooms} guest rooms assigned
-        </p>
+        <div>
+          <p className="font-body text-sm text-foreground font-medium">
+            {totalAssigned} of {totalGuestRooms} guest rooms assigned
+          </p>
+          <p className="font-body text-xs text-muted-foreground mt-1">
+            {stillNeedsRoom} confirmed on-site guest{stillNeedsRoom === 1 ? "" : "s"} still need{stillNeedsRoom === 1 ? "s" : ""} a room
+          </p>
+        </div>
         <div className="font-body text-xs text-muted-foreground h-4 min-w-[70px] text-right" aria-live="polite">
           {saveStatus === "saving" && (<span className="inline-flex items-center gap-1.5"><Loader2 size={11} className="animate-spin" /> Saving…</span>)}
           {saveStatus === "saved" && (<span className="inline-flex items-center gap-1.5 text-sage-dark"><Check size={11} /> Saved</span>)}
@@ -322,15 +327,21 @@ export function LodgingList() {
                           )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <input
-                            type="text"
-                            value={a?.assigned_guest_name ?? ""}
-                            onChange={e => updateText(room.id, "assigned_guest_name", e.target.value)}
-                            placeholder="Guest name"
-                            maxLength={120}
-                            autoComplete="off"
-                            className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
-                          />
+                          <div>
+                            <input
+                              type="text"
+                              list={`guest-options-${room.id}`}
+                              value={a?.assigned_guest_name ?? ""}
+                              onChange={e => updateGuestName(room.id, e.target.value)}
+                              placeholder="Guest name"
+                              maxLength={120}
+                              autoComplete="off"
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                            <datalist id={`guest-options-${room.id}`}>
+                              {guests.map(guest => <option key={guest.id} value={guestName(guest)} />)}
+                            </datalist>
+                          </div>
                           <input
                             type="email"
                             value={a?.assigned_guest_email ?? ""}
