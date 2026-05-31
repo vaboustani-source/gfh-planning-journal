@@ -309,6 +309,7 @@ export default function EventDetail() {
             {activeTab === "menus-bar" && <MenusBarTab eventId={event.id} onNavigateNext={navigateToNextTab} tastingDate={event.tasting_date} tastingDateNote={event.tasting_date_note} />}
             {activeTab === "dietary" && <DietaryTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "our-people" && <OurPeopleTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+            {activeTab === "rsvp" && <Rsvp eventId={event.id} />}
             {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
             {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
