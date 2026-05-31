@@ -2847,6 +2847,75 @@ export type Database = {
         }
         Relationships: []
       }
+      rsvp_config: {
+        Row: {
+          ask_dietary: boolean
+          ask_meal_preference: boolean
+          ask_song_request: boolean
+          color_accent: string
+          color_primary: string
+          color_secondary: string
+          conditional_reminders: Json
+          confirmation_message: string | null
+          created_at: string
+          custom_questions: Json
+          event_id: string
+          id: string
+          is_live: boolean
+          offsite_questions: Json
+          onsite_questions: Json
+          public_token: string | null
+          rsvp_deadline: string | null
+          updated_at: string
+          welcome_headline: string | null
+          welcome_message: string | null
+        }
+        Insert: {
+          ask_dietary?: boolean
+          ask_meal_preference?: boolean
+          ask_song_request?: boolean
+          color_accent?: string
+          color_primary?: string
+          color_secondary?: string
+          conditional_reminders?: Json
+          confirmation_message?: string | null
+          created_at?: string
+          custom_questions?: Json
+          event_id: string
+          id?: string
+          is_live?: boolean
+          offsite_questions?: Json
+          onsite_questions?: Json
+          public_token?: string | null
+          rsvp_deadline?: string | null
+          updated_at?: string
+          welcome_headline?: string | null
+          welcome_message?: string | null
+        }
+        Update: {
+          ask_dietary?: boolean
+          ask_meal_preference?: boolean
+          ask_song_request?: boolean
+          color_accent?: string
+          color_primary?: string
+          color_secondary?: string
+          conditional_reminders?: Json
+          confirmation_message?: string | null
+          created_at?: string
+          custom_questions?: Json
+          event_id?: string
+          id?: string
+          is_live?: boolean
+          offsite_questions?: Json
+          onsite_questions?: Json
+          public_token?: string | null
+          rsvp_deadline?: string | null
+          updated_at?: string
+          welcome_headline?: string | null
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
       seating_assignments: {
         Row: {
           created_at: string | null
