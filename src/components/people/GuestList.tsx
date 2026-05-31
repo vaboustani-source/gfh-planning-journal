@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info } from "lucide-react";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -170,6 +170,15 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
 
   return (
     <div className="space-y-6">
+      {/* Info banner */}
+      <div className="flex items-start gap-3 rounded-lg bg-sage/10 border border-sage/20 px-4 py-3">
+        <Info size={16} className="text-sage-dark shrink-0 mt-0.5" />
+        <p className="font-body text-sm text-foreground">
+          Guest dietary information is collected automatically when guests RSVP. You can also add guests
+          and their dietary needs manually here.
+        </p>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[

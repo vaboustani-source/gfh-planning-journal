@@ -1368,7 +1368,10 @@ export type Database = {
           phone: string | null
           plus_one_of: string | null
           relationship: string | null
+          rsvp_source: string | null
           rsvp_status: string | null
+          rsvp_submitted_at: string | null
+          rsvp_token: string | null
           side: string | null
           updated_at: string | null
         }
@@ -1388,7 +1391,10 @@ export type Database = {
           phone?: string | null
           plus_one_of?: string | null
           relationship?: string | null
+          rsvp_source?: string | null
           rsvp_status?: string | null
+          rsvp_submitted_at?: string | null
+          rsvp_token?: string | null
           side?: string | null
           updated_at?: string | null
         }
@@ -1408,7 +1414,10 @@ export type Database = {
           phone?: string | null
           plus_one_of?: string | null
           relationship?: string | null
+          rsvp_source?: string | null
           rsvp_status?: string | null
+          rsvp_submitted_at?: string | null
+          rsvp_token?: string | null
           side?: string | null
           updated_at?: string | null
         }
