@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -173,10 +173,10 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total Invited", value: stats.total },
+          { label: "Total", value: stats.total },
           { label: "Confirmed", value: stats.confirmed, tone: "text-sage-dark" },
           { label: "Declined", value: stats.declined, tone: "text-muted-foreground" },
-          { label: "Awaiting", value: stats.awaiting, tone: "text-amber-700" },
+          { label: "Awaiting", value: stats.awaiting, tone: "text-foreground" },
         ].map(s => (
           <div key={s.label} className="bg-white border border-border rounded-lg px-4 py-3">
             <p className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">{s.label}</p>
@@ -196,9 +196,9 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
           {(["all", "confirmed", "declined", "invited", "on_site", "off_site"] as Filter[]).map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-full font-body text-xs transition-colors ${
-                filter === f ? "bg-sage text-white" : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                filter === f ? "bg-sage text-primary-foreground" : "bg-muted/60 text-muted-foreground hover:text-foreground"
               }`}>
-              {f === "all" ? "All" : f === "on_site" ? "On-site" : f === "off_site" ? "Off-site" : f.charAt(0).toUpperCase() + f.slice(1)}
+              {f === "all" ? "All" : f === "on_site" ? "On-site" : f === "off_site" ? "Off-site" : f === "invited" ? "Awaiting" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
@@ -213,7 +213,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
           </button>
         )}
         <button onClick={() => setEditing(emptyGuest(eventId, isAdmin))}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:bg-sage-dark">
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">
           <Plus size={14} /> Add Guest
         </button>
       </div>
@@ -230,7 +230,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             placeholder="Jane Smith&#10;John Doe&#10;…"
             className="w-full p-3 rounded-md border border-input bg-background font-body text-sm" />
           <div className="flex justify-end">
-            <button onClick={bulkImport} className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:bg-sage-dark">Add all</button>
+            <button onClick={bulkImport} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Add all</button>
           </div>
         </div>
       )}
@@ -289,7 +289,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
                       });
                     }}
                     className={`px-3 py-1.5 rounded-full font-body text-xs border transition-colors ${
-                      checked ? "bg-sage text-white border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
+                      checked ? "bg-sage text-primary-foreground border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
                     }`}>
                     {d}
                   </button>
@@ -320,7 +320,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
           </Field>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setEditing(null)} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">Cancel</button>
-            <button onClick={save} className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:bg-sage-dark">Save</button>
+            <button onClick={save} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Save</button>
           </div>
         </div>
       )}
@@ -354,9 +354,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
                   <td className="px-4 py-3"><SideBadge side={g.side} /></td>
                   <td className="px-4 py-3"><RsvpChip status={g.rsvp_status} /></td>
                   <td className="px-4 py-3"><LodgingChip pref={g.lodging_preference} /></td>
-                  <td className="px-4 py-3 font-body text-xs text-muted-foreground">
-                    {(g.dietary_restrictions ?? []).join(", ") || "—"}
-                  </td>
+                  <td className="px-4 py-3"><DietaryIcons restrictions={g.dietary_restrictions} /></td>
                   {isAdmin && (
                     <td className="px-4 py-3 font-body text-xs text-muted-foreground capitalize">{g.added_by ?? "—"}</td>
                   )}
@@ -391,7 +389,7 @@ function Pills({ options, value, onChange }: { options: { value: string; label: 
       {options.map(o => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)}
           className={`px-3 py-1.5 rounded-full font-body text-xs border transition-colors ${
-            value === o.value ? "bg-sage text-white border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
+            value === o.value ? "bg-sage text-primary-foreground border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
           }`}>
           {o.label}
         </button>
@@ -404,7 +402,7 @@ function SideBadge({ side }: { side: string | null }) {
   if (!side) return <span className="text-muted-foreground text-xs">—</span>;
   const map: Record<string, { label: string; cls: string }> = {
     partner_1: { label: "P1", cls: "bg-sage/15 text-sage-dark" },
-    partner_2: { label: "P2", cls: "bg-amber-100 text-amber-800" },
+    partner_2: { label: "P2", cls: "bg-gold/20 text-foreground" },
     both: { label: "Both", cls: "bg-muted text-foreground" },
     other: { label: "Other", cls: "bg-muted text-muted-foreground" },
   };
@@ -416,8 +414,8 @@ function RsvpChip({ status }: { status: string }) {
   const map: Record<string, string> = {
     confirmed: "bg-sage/15 text-sage-dark",
     declined: "bg-muted text-muted-foreground line-through",
-    invited: "bg-amber-50 text-amber-800",
-    maybe: "bg-amber-50 text-amber-800",
+    invited: "bg-gold/20 text-foreground",
+    maybe: "bg-gold/20 text-foreground",
   };
   return <span className={`px-2 py-0.5 rounded-full font-body text-[11px] capitalize ${map[status] ?? "bg-muted"}`}>{status}</span>;
 }
@@ -430,5 +428,20 @@ function LodgingChip({ pref }: { pref: string | null }) {
     }`}>
       {pref === "on_site" ? "On-site" : "Off-site"}
     </span>
+  );
+}
+
+function DietaryIcons({ restrictions }: { restrictions: string[] | null }) {
+  const items = restrictions ?? [];
+  if (items.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+  return (
+    <div className="flex flex-wrap gap-1.5" title={items.join(", ")}>
+      {items.slice(0, 3).map(item => (
+        <span key={item} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-body text-[11px] text-secondary-foreground">
+          <UtensilsCrossed size={10} /> {item}
+        </span>
+      ))}
+      {items.length > 3 && <span className="font-body text-[11px] text-muted-foreground">+{items.length - 3}</span>}
+    </div>
   );
 }
