@@ -82,8 +82,10 @@ const QTYPE_LABEL: Record<QType, string> = {
   dropdown: "Dropdown",
 };
 
-export default function Rsvp() {
-  const { eventId, loading: portalLoading } = usePortalData();
+export default function Rsvp({ eventId: eventIdProp }: { eventId?: string } = {}) {
+  const portal = (() => { try { return usePortalData(); } catch { return null; } })();
+  const eventId = eventIdProp ?? portal?.eventId ?? null;
+  const portalLoading = eventIdProp ? false : (portal?.loading ?? false);
   const [cfg, setCfg] = useState<RsvpConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
