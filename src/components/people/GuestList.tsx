@@ -230,7 +230,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             placeholder="Jane Smith&#10;John Doe&#10;…"
             className="w-full p-3 rounded-md border border-input bg-background font-body text-sm" />
           <div className="flex justify-end">
-            <button onClick={bulkImport} className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:bg-sage-dark">Add all</button>
+            <button onClick={bulkImport} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Add all</button>
           </div>
         </div>
       )}
@@ -289,7 +289,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
                       });
                     }}
                     className={`px-3 py-1.5 rounded-full font-body text-xs border transition-colors ${
-                      checked ? "bg-sage text-white border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
+                      checked ? "bg-sage text-primary-foreground border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
                     }`}>
                     {d}
                   </button>
@@ -320,7 +320,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
           </Field>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setEditing(null)} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">Cancel</button>
-            <button onClick={save} className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:bg-sage-dark">Save</button>
+            <button onClick={save} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Save</button>
           </div>
         </div>
       )}
@@ -391,7 +391,7 @@ function Pills({ options, value, onChange }: { options: { value: string; label: 
       {options.map(o => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)}
           className={`px-3 py-1.5 rounded-full font-body text-xs border transition-colors ${
-            value === o.value ? "bg-sage text-white border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
+            value === o.value ? "bg-sage text-primary-foreground border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
           }`}>
           {o.label}
         </button>
