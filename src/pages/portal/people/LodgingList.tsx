@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { Check, Loader2, ChevronDown, Lock } from "lucide-react";
@@ -22,12 +22,22 @@ interface Assignment {
   host_pays: boolean;
 }
 
+interface GuestOption {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  rsvp_status: string;
+  lodging_preference: string | null;
+}
+
 type SaveStatus = "idle" | "saving" | "saved";
 
 export function LodgingList() {
   const { eventId } = usePortalData();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [guests, setGuests] = useState<GuestOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -49,14 +59,16 @@ export function LodgingList() {
     if (!eventId) return;
     let cancelled = false;
     (async () => {
-      const [{ data: rData }, { data: aData }] = await Promise.all([
+      const [{ data: rData }, { data: aData }, { data: gData }] = await Promise.all([
         supabase.from("lodging_rooms").select("id, room_name, room_type, nightly_rate, sort_order").order("sort_order", { ascending: true }),
         supabase.from("lodging_assignments").select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays").eq("event_id", eventId),
+        db.from("guests").select("id, first_name, last_name, email, rsvp_status, lodging_preference").eq("event_id", eventId).order("last_name").order("first_name"),
       ]);
       if (cancelled) return;
       const allRooms = rData || [];
       let allAssignments = aData || [];
       setRooms(allRooms);
+      setGuests((gData ?? []) as GuestOption[]);
 
       const assignedRoomIds = new Set(allAssignments.map(a => a.room_id));
       const missingRooms = allRooms.filter(r => !assignedRoomIds.has(r.id));
