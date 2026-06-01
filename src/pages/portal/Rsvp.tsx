@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
+import { useEventGuestCounts } from "@/hooks/useEventGuestCounts";
 import { toast } from "sonner";
 import {
   Copy, Plus, Trash2, GripVertical, AlertTriangle, ExternalLink,

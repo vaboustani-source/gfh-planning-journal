@@ -40,9 +40,13 @@ export default function DietaryTab({ eventId, onNavigateNext }: { eventId: strin
     setLoading(false);
   };
 
-  const withRestrictions = useMemo(
-    () => guests.filter(g => (g.dietary_restrictions ?? []).length > 0),
+  const confirmedGuests = useMemo(
+    () => guests.filter(g => g.rsvp_status === "confirmed"),
     [guests]
+  );
+  const withRestrictions = useMemo(
+    () => confirmedGuests.filter(g => (g.dietary_restrictions ?? []).length > 0),
+    [confirmedGuests]
   );
 
   const visible = showAll ? guests : withRestrictions;
@@ -84,7 +88,7 @@ export default function DietaryTab({ eventId, onNavigateNext }: { eventId: strin
         </div>
         <div className="rounded-lg bg-white border border-border px-4 py-2">
           <p className="font-body text-sm text-foreground">
-            <span className="font-medium">{guests.length}</span> total guests
+            <span className="font-medium">{confirmedGuests.length}</span> confirmed of {guests.length} invited
           </p>
         </div>
         <button
