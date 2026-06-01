@@ -341,7 +341,8 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
           <Field label="Event Title" value={event.title} onSave={v => patch({ title: v })} />
           <SelectField label="Status" value={event.status} options={STATUSES} onSave={v => patch({ status: v })} />
           <SelectField label="Package Tier" value={event.package_tier || "base"} options={PACKAGE_TIERS} onSave={v => patch({ package_tier: v })} />
-          <Field label="Estimated Guest Count" value={String(event.estimated_guest_count || "")} onSave={v => patch({ estimated_guest_count: parseInt(v) || null })} />
+          <Field label="Estimated Guest Count (planning)" value={String(event.estimated_guest_count || "")} onSave={v => patch({ estimated_guest_count: parseInt(v) || null })} />
+          <ConfirmedRsvpField eventId={event.id} />
         </div>
 
         {/* Locations */}
@@ -358,6 +359,18 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
       <ParticipantsPanel eventId={event.id} />
 
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
+    </div>
+  );
+}
+
+function ConfirmedRsvpField({ eventId }: { eventId: string }) {
+  const { counts } = useEventGuestCounts(eventId);
+  return (
+    <div className="flex items-center justify-between gap-4 py-2 border-t border-border/40">
+      <span className="font-body text-xs uppercase tracking-wider text-muted-foreground">Confirmed RSVPs (live)</span>
+      <span className="font-display text-base text-foreground">
+        {counts.confirmed} confirmed of {counts.invited} invited
+      </span>
     </div>
   );
 }
