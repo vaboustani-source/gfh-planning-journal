@@ -37,6 +37,7 @@ import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
 import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
+import Contracts from "./pages/portal/Contracts";
 import Rsvp from "./pages/portal/Rsvp";
 import PublicRsvp from "./pages/PublicRsvp";
 import NotFound from "./pages/NotFound";
@@ -176,6 +177,7 @@ const App = () => (
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="contracts" element={<Contracts />} />
               <Route path="rsvp" element={<Rsvp />} />
             </Route>
 
@@ -205,6 +207,7 @@ const App = () => (
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="contracts" element={<Contracts />} />
               <Route path="rsvp" element={<Rsvp />} />
             </Route>
 
