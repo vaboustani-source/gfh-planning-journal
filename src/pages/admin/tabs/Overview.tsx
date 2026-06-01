@@ -8,6 +8,7 @@ import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import SaveButton from "@/components/admin/SaveButton";
+import { useEventGuestCounts } from "@/hooks/useEventGuestCounts";
 
 const PACKAGE_TIERS = ["base", "premium", "elite"];
 const STATUSES = ["onboarding", "planning", "active", "complete", "archived"];
