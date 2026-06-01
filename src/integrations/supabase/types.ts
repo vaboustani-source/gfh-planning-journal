@@ -1367,9 +1367,12 @@ export type Database = {
           needs_assistance: boolean
           needs_wheelchair: boolean
           notes: string | null
+          party_size: number
           phone: string | null
           plus_one_of: string | null
           relationship: string | null
+          rsvp_lodging_details: Json
+          rsvp_responses: Json
           rsvp_source: string | null
           rsvp_status: string | null
           rsvp_submitted_at: string | null
@@ -1392,9 +1395,12 @@ export type Database = {
           needs_assistance?: boolean
           needs_wheelchair?: boolean
           notes?: string | null
+          party_size?: number
           phone?: string | null
           plus_one_of?: string | null
           relationship?: string | null
+          rsvp_lodging_details?: Json
+          rsvp_responses?: Json
           rsvp_source?: string | null
           rsvp_status?: string | null
           rsvp_submitted_at?: string | null
@@ -1417,9 +1423,12 @@ export type Database = {
           needs_assistance?: boolean
           needs_wheelchair?: boolean
           notes?: string | null
+          party_size?: number
           phone?: string | null
           plus_one_of?: string | null
           relationship?: string | null
+          rsvp_lodging_details?: Json
+          rsvp_responses?: Json
           rsvp_source?: string | null
           rsvp_status?: string | null
           rsvp_submitted_at?: string | null
@@ -3322,6 +3331,44 @@ export type Database = {
           wedding_name: string
         }[]
       }
+      lookup_rsvp_event: {
+        Args: { p_token: string }
+        Returns: {
+          event_id: string
+          event_title: string
+          partner1_name: string
+          partner2_name: string
+          wedding_date: string
+        }[]
+      }
+      lookup_rsvp_guests: {
+        Args: { p_token: string }
+        Returns: {
+          dietary_restrictions: string[]
+          email: string
+          first_name: string
+          id: string
+          is_plus_one: boolean
+          last_name: string
+          lodging_preference: string
+          meal_preference: string
+          party_size: number
+          plus_one_of: string
+          rsvp_lodging_details: Json
+          rsvp_responses: Json
+          rsvp_status: string
+          rsvp_submitted_at: string
+        }[]
+      }
+      lookup_rsvp_meal_events: {
+        Args: { p_token: string }
+        Returns: {
+          id: string
+          included_in_package: boolean
+          location: string
+          meal_type: string
+        }[]
+      }
       lookup_secondary_guest: {
         Args: { p_email: string; p_event_slug: string }
         Returns: {
@@ -3359,6 +3406,20 @@ export type Database = {
       seed_working_timeline: {
         Args: { p_event_id: string }
         Returns: undefined
+      }
+      submit_rsvp: {
+        Args: { p_guest_id: string; p_payload: Json; p_token: string }
+        Returns: undefined
+      }
+      submit_rsvp_unmatched: {
+        Args: {
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_payload: Json
+          p_token: string
+        }
+        Returns: string
       }
     }
     Enums: {

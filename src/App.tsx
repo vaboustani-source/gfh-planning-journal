@@ -38,6 +38,7 @@ import Notes from "./pages/portal/Notes";
 import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
 import Rsvp from "./pages/portal/Rsvp";
+import PublicRsvp from "./pages/PublicRsvp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,9 @@ const App = () => (
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
+
+            {/* Public RSVP — no auth */}
+            <Route path="/rsvp/:token" element={<PublicRsvp />} />
 
             {/* Admin */}
             <Route
