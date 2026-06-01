@@ -37,6 +37,7 @@ import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
 import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
+import Contracts from "./pages/portal/Contracts";
 import Rsvp from "./pages/portal/Rsvp";
 import PublicRsvp from "./pages/PublicRsvp";
 import NotFound from "./pages/NotFound";

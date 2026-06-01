@@ -15,6 +15,7 @@ import DietaryTab from "./tabs/DietaryTab";
 import MenusBarTab from "./tabs/MenusBarTab";
 import AdminNotesTab from "./tabs/AdminNotesTab";
 import AdminDocumentsTab from "./tabs/AdminDocumentsTab";
+import ContractsTab from "./tabs/ContractsTab";
 import ActivityTab from "./tabs/ActivityTab";
 import DecorTab from "./tabs/DecorTab";
 import EventForms from "./tabs/EventForms";
@@ -47,6 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "checklist", label: "Checklist" },
       { id: "forms", label: "Forms" },
       { id: "documents", label: "Documents" },
+      { id: "contracts", label: "Contracts" },
     ],
   },
   {
@@ -315,6 +317,7 @@ export default function EventDetail() {
             {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "forms" && <EventForms eventId={event.id} />}
             {activeTab === "documents" && <AdminDocumentsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+            {activeTab === "contracts" && <ContractsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "activity" && <ActivityTab eventId={event.id} />}
           </div>
         </main>
