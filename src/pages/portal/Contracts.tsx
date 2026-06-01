@@ -170,9 +170,8 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
     (async () => {
       if (!user?.id) return;
       const { data: u } = await supabase
-        .from("users").select("email, full_name" as any).eq("id", user.id).maybeSingle();
-      // fallback to event_users display_name
-      let name = (u as any)?.full_name || "";
+        .from("users").select("first_name, last_name, email").eq("id", user.id).maybeSingle();
+      let name = [u?.first_name, u?.last_name].filter(Boolean).join(" ");
       if (!name) {
         const { data: eu } = await supabase
           .from("event_users").select("display_name").eq("user_id", user.id).eq("event_id", contract.event_id).maybeSingle();
