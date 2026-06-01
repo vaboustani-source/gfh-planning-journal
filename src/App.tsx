@@ -177,6 +177,7 @@ const App = () => (
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="contracts" element={<Contracts />} />
               <Route path="rsvp" element={<Rsvp />} />
             </Route>
 
@@ -206,6 +207,7 @@ const App = () => (
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
+              <Route path="contracts" element={<Contracts />} />
               <Route path="rsvp" element={<Rsvp />} />
             </Route>
 
