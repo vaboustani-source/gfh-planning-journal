@@ -1364,6 +1364,8 @@ export type Database = {
           last_name: string
           lodging_preference: string | null
           meal_preference: string | null
+          needs_assistance: boolean
+          needs_wheelchair: boolean
           notes: string | null
           phone: string | null
           plus_one_of: string | null
@@ -1387,6 +1389,8 @@ export type Database = {
           last_name: string
           lodging_preference?: string | null
           meal_preference?: string | null
+          needs_assistance?: boolean
+          needs_wheelchair?: boolean
           notes?: string | null
           phone?: string | null
           plus_one_of?: string | null
@@ -1410,6 +1414,8 @@ export type Database = {
           last_name?: string
           lodging_preference?: string | null
           meal_preference?: string | null
+          needs_assistance?: boolean
+          needs_wheelchair?: boolean
           notes?: string | null
           phone?: string | null
           plus_one_of?: string | null
@@ -2921,7 +2927,8 @@ export type Database = {
           created_at: string | null
           event_id: string | null
           guest_email: string | null
-          guest_name: string
+          guest_id: string | null
+          guest_name: string | null
           id: string
           lodging_room_id: string | null
           meal_preference: string | null
@@ -2934,7 +2941,8 @@ export type Database = {
           created_at?: string | null
           event_id?: string | null
           guest_email?: string | null
-          guest_name: string
+          guest_id?: string | null
+          guest_name?: string | null
           id?: string
           lodging_room_id?: string | null
           meal_preference?: string | null
@@ -2947,7 +2955,8 @@ export type Database = {
           created_at?: string | null
           event_id?: string | null
           guest_email?: string | null
-          guest_name?: string
+          guest_id?: string | null
+          guest_name?: string | null
           id?: string
           lodging_room_id?: string | null
           meal_preference?: string | null
@@ -2962,6 +2971,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seating_assignments_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
             referencedColumns: ["id"]
           },
           {
@@ -2980,35 +2996,79 @@ export type Database = {
           },
         ]
       }
+      seating_config: {
+        Row: {
+          event_id: string
+          layout_image_url: string | null
+          seating_mode: string
+          table_count: number
+          updated_at: string
+        }
+        Insert: {
+          event_id: string
+          layout_image_url?: string | null
+          seating_mode?: string
+          table_count?: number
+          updated_at?: string
+        }
+        Update: {
+          event_id?: string
+          layout_image_url?: string | null
+          seating_mode?: string
+          table_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seating_config_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seating_tables: {
         Row: {
           capacity: number
+          color: string
           created_at: string | null
           event_id: string | null
           id: string
+          label: string | null
           layout_id: string | null
+          seat_count: number
           sort_order: number | null
           table_name: string
+          table_number: number | null
           table_type: string | null
         }
         Insert: {
           capacity?: number
+          color?: string
           created_at?: string | null
           event_id?: string | null
           id?: string
+          label?: string | null
           layout_id?: string | null
+          seat_count?: number
           sort_order?: number | null
           table_name: string
+          table_number?: number | null
           table_type?: string | null
         }
         Update: {
           capacity?: number
+          color?: string
           created_at?: string | null
           event_id?: string | null
           id?: string
+          label?: string | null
           layout_id?: string | null
+          seat_count?: number
           sort_order?: number | null
           table_name?: string
+          table_number?: number | null
           table_type?: string | null
         }
         Relationships: [
