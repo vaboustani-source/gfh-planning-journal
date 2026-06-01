@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
+import { useEventGuestCounts } from "@/hooks/useEventGuestCounts";
 import { toast } from "sonner";
 import {
   Copy, Plus, Trash2, GripVertical, AlertTriangle, ExternalLink,
@@ -96,7 +97,7 @@ function RsvpInner({ eventId, portalLoading }: { eventId: string | null; portalL
   const [cfg, setCfg] = useState<RsvpConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [guestStats, setGuestStats] = useState({ total: 0, responded: 0, attending: 0, declined: 0, undecidedLodging: 0 });
+  const { counts: guestCounts } = useEventGuestCounts(eventId);
   const saveTimer = useRef<number | null>(null);
   const isFirstLoad = useRef(true);
 
@@ -132,21 +133,7 @@ function RsvpInner({ eventId, portalLoading }: { eventId: string | null; portalL
     })();
   }, [eventId]);
 
-  // Guest stats
-  useEffect(() => {
-    if (!eventId) return;
-    (async () => {
-      const { data } = await db.from("guests").select("rsvp_status,lodging_preference").eq("event_id", eventId);
-      const rows = data || [];
-      setGuestStats({
-        total: rows.length,
-        responded: rows.filter((r: any) => r.rsvp_status && r.rsvp_status !== "invited").length,
-        attending: rows.filter((r: any) => r.rsvp_status === "attending").length,
-        declined: rows.filter((r: any) => r.rsvp_status === "declined").length,
-        undecidedLodging: rows.filter((r: any) => !r.lodging_preference || r.lodging_preference === "undecided").length,
-      });
-    })();
-  }, [eventId, cfg?.is_live]);
+  // Guest stats now come from useEventGuestCounts (single source of truth)
 
   // Debounced autosave (800ms)
   useEffect(() => {
@@ -384,21 +371,21 @@ function RsvpInner({ eventId, portalLoading }: { eventId: string | null; portalL
       {/* Section 8 — Responses */}
       <Section title="Responses" subtitle="Live counts pulled from your guest list.">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Stat label="Responded" value={guestStats.responded} />
-          <Stat label="Attending" value={guestStats.attending} />
-          <Stat label="Declined" value={guestStats.declined} />
-          <Stat label="Awaiting" value={Math.max(guestStats.total - guestStats.responded, 0)} />
+          <Stat label="Invited" value={guestCounts.invited} />
+          <Stat label="Confirmed" value={guestCounts.confirmed} />
+          <Stat label="Declined" value={guestCounts.declined} />
+          <Stat label="Awaiting" value={guestCounts.awaiting} />
         </div>
         <div className="flex flex-col gap-2 mt-4">
           <a href="/portal/our-people?tab=guests" className="inline-flex items-center gap-1.5 text-sm text-sage hover:underline font-body">
             View full responses in Guest List <ExternalLink size={12}/>
           </a>
-          {guestStats.undecidedLodging > 0 && (
+          {guestCounts.undecidedLodging > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2.5 mt-2">
               <AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0" />
               <div className="flex-1">
                 <p className="font-body text-sm text-amber-900 font-medium">
-                  {guestStats.undecidedLodging} guest{guestStats.undecidedLodging === 1 ? "" : "s"} need lodging status set before RSVP
+                  {guestCounts.undecidedLodging} confirmed guest{guestCounts.undecidedLodging === 1 ? "" : "s"} need lodging status set
                 </p>
                 <a href="/portal/our-people?tab=lodging" className="text-xs text-amber-700 hover:underline font-body">
                   Set their lodging status →
