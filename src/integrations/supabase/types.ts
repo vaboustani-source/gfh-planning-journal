@@ -401,6 +401,106 @@ export type Database = {
           },
         ]
       }
+      contract_signatures: {
+        Row: {
+          agreed_to_terms: boolean
+          content_version_hash: string
+          contract_id: string | null
+          id: string
+          ip_address: string | null
+          signed_at: string
+          signer_email: string
+          signer_name: string
+          signer_user_id: string | null
+          typed_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          agreed_to_terms?: boolean
+          content_version_hash: string
+          contract_id?: string | null
+          id?: string
+          ip_address?: string | null
+          signed_at?: string
+          signer_email: string
+          signer_name: string
+          signer_user_id?: string | null
+          typed_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          agreed_to_terms?: boolean
+          content_version_hash?: string
+          contract_id?: string | null
+          id?: string
+          ip_address?: string | null
+          signed_at?: string
+          signer_email?: string
+          signer_name?: string
+          signer_user_id?: string | null
+          typed_name?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signatures_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          content: string
+          content_hash: string | null
+          created_at: string | null
+          created_by: string | null
+          document_type: string | null
+          event_id: string | null
+          id: string
+          requires_both_partners: boolean | null
+          sent_at: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          content: string
+          content_hash?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          document_type?: string | null
+          event_id?: string | null
+          id?: string
+          requires_both_partners?: boolean | null
+          sent_at?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          content?: string
+          content_hash?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          document_type?: string | null
+          event_id?: string | null
+          id?: string
+          requires_both_partners?: boolean | null
+          sent_at?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couple_history: {
         Row: {
           action: string
