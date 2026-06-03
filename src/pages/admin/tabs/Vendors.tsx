@@ -76,6 +76,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [browseFor, setBrowseFor] = useState<{ vendorId: string; category: string } | null>(null);
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
   const { status, markSaving, markSaved } = useAutosaveStatus();
   const seeded = useRef(false);
 
