@@ -404,6 +404,7 @@ export type Database = {
       contract_signatures: {
         Row: {
           agreed_to_terms: boolean
+          auth_method: string
           content_version_hash: string
           contract_id: string | null
           id: string
@@ -417,6 +418,7 @@ export type Database = {
         }
         Insert: {
           agreed_to_terms?: boolean
+          auth_method?: string
           content_version_hash: string
           contract_id?: string | null
           id?: string
@@ -430,6 +432,7 @@ export type Database = {
         }
         Update: {
           agreed_to_terms?: boolean
+          auth_method?: string
           content_version_hash?: string
           contract_id?: string | null
           id?: string
