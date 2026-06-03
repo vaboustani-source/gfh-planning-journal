@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Copy, Check, X, Share2 } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Vendor, VENDOR_GROUPS, FRIENDLY_CATEGORY } from "@/components/vendor/VendorCard";
+import { Vendor, FRIENDLY_CATEGORY } from "@/components/vendor/VendorCard";
 
 const SOCIAL_LABELS: Record<string, string> = {
   venue: "Venue",
