@@ -34,7 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("*")
       .eq("id", userId)
       .single();
-    if (!error && data) setProfile(data);
+    if (!error && data) {
+      setProfile(data);
+    } else {
+      // No matching invited account — likely a Google sign-in with an un-invited email.
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const provider = authUser?.app_metadata?.provider;
+      if (provider && provider !== "email") {
+        await supabase.auth.signOut();
+        const { toast } = await import("sonner");
+        toast.error("We couldn't find an invitation for this email — please contact your coordinator.");
+      }
+    }
     setLoading(false);
   };
 
