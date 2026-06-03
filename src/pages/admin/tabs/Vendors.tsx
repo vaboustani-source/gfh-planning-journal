@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus } from "lucide-react";
+import { Plus, Share2 } from "lucide-react";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import { VendorCard, Vendor, VENDOR_GROUPS, STANDARD_VENDOR_CATEGORIES } from "@/components/vendor/VendorCard";
 import { BrowsePreferredDrawer } from "@/components/admin/BrowsePreferredDrawer";
 import { PreferredVendor } from "@/components/admin/PreferredVendorCard";
+import { SocialExportModal } from "@/components/admin/SocialExportModal";
 import {
   DndContext,
   closestCenter,
@@ -75,6 +76,7 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [browseFor, setBrowseFor] = useState<{ vendorId: string; category: string } | null>(null);
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
   const { status, markSaving, markSaved } = useAutosaveStatus();
   const seeded = useRef(false);
 
@@ -193,10 +195,16 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           <span className="font-body text-sm text-sage">{byStatus.done + byStatus.confirmed} confirmed</span>
           <span className="font-body text-sm text-muted-foreground">{byStatus.pending} pending</span>
         </div>
-        <button onClick={addVendor} disabled={adding}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-          <Plus size={14} /> Add Vendor
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setSocialModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-foreground font-body text-sm hover:bg-muted/50 transition-colors">
+            <Share2 size={14} /> Export for Social
+          </button>
+          <button onClick={addVendor} disabled={adding}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+            <Plus size={14} /> Add Vendor
+          </button>
+        </div>
       </div>
 
       {VENDOR_GROUPS.map(group => {
@@ -253,6 +261,12 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           });
           markSaved();
         }}
+      />
+
+      <SocialExportModal
+        open={socialModalOpen}
+        onClose={() => setSocialModalOpen(false)}
+        vendors={vendors}
       />
 
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
