@@ -286,26 +286,40 @@ function PaymentRow({ p, onTogglePaid, onDelete }: {
 }) {
   const status = computeStatus(p);
   return (
-    <div className="px-5 py-3 grid grid-cols-[2rem_1fr_auto_auto_auto_auto] gap-3 items-center">
-      <span className="font-body text-xs text-muted-foreground tabular-nums">{p.payment_number ? `#${p.payment_number}` : "—"}</span>
-      <div className="min-w-0">
-        <p className="font-body text-sm text-foreground truncate">{p.label}</p>
-        {p.due_date && (
-          <p className={`font-body text-[11px] ${status === "overdue" ? "text-destructive" : "text-muted-foreground"}`}>
-            Due {format(parseISO(p.due_date), "MMM d, yyyy")}
-          </p>
-        )}
-      </div>
-      <p className="font-body text-sm tabular-nums text-foreground">{fmt(p.amount)}</p>
-      <span className={`px-2 py-0.5 rounded-full border font-body text-[10px] uppercase tracking-wide ${STATUS_CHIP[status]}`}>{STATUS_LABEL[status]}</span>
+    <div className="px-5 py-3 flex items-center gap-2 overflow-hidden">
+      <span className="shrink-0 w-6 font-body text-xs text-muted-foreground tabular-nums text-center">
+        {p.payment_number ? `#${p.payment_number}` : "—"}
+      </span>
+
+      <p className="flex-1 min-w-0 font-body text-sm text-foreground truncate">
+        {p.label}
+      </p>
+
+      {p.due_date ? (
+        <span className={`shrink-0 w-[100px] font-body text-[11px] whitespace-nowrap ${status === "overdue" ? "text-destructive" : "text-muted-foreground"}`}>
+          Due {format(parseISO(p.due_date), "MMM d, yyyy")}
+        </span>
+      ) : (
+        <span className="shrink-0 w-[100px]" />
+      )}
+
+      <p className="shrink-0 w-[75px] font-body text-sm tabular-nums text-foreground text-right">
+        {fmt(p.amount)}
+      </p>
+
+      <span className={`shrink-0 px-2 py-0.5 rounded-full border font-body text-[10px] uppercase tracking-wide whitespace-nowrap ${STATUS_CHIP[status]}`}>
+        {STATUS_LABEL[status]}
+      </span>
+
       <button
         onClick={() => onTogglePaid(p)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs transition-colors ${p.paid ? "bg-sage/15 text-sage border border-sage/30" : "bg-muted text-muted-foreground border border-border hover:border-sage/40"}`}
+        className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg font-body text-[11px] transition-colors ${p.paid ? "bg-sage/15 text-sage border border-sage/30" : "bg-muted text-muted-foreground border border-border hover:border-sage/40"}`}
       >
         {p.paid && <Check size={10} />}
         {p.paid ? "Paid" : "Mark paid"}
       </button>
-      <button onClick={() => onDelete(p.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+
+      <button onClick={() => onDelete(p.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
         <Trash2 size={14} />
       </button>
     </div>
