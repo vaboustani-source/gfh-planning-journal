@@ -146,7 +146,6 @@ export default function Login() {
               <label className="font-body text-xs tracking-widest uppercase text-muted-foreground font-medium">
                 Email address
               </label>
-              </label>
               <input
                 type="email"
                 value={email}
