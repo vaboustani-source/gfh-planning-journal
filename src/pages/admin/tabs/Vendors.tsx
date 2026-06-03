@@ -263,6 +263,12 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
         }}
       />
 
+      <SocialExportModal
+        open={socialModalOpen}
+        onClose={() => setSocialModalOpen(false)}
+        vendors={vendors}
+      />
+
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
