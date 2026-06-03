@@ -212,6 +212,8 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
 
       const hash = await sha256Hex(contract.content);
 
+      const authMethod = (user.app_metadata as any)?.provider === "google" ? "google" : "password";
+
       const insertRow = {
         contract_id: contract.id,
         signer_name: accountName || (user.email ?? "Signer"),
@@ -222,6 +224,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
         ip_address: ip,
         user_agent: navigator.userAgent,
         content_version_hash: hash,
+        auth_method: authMethod,
       };
 
       const { error } = await (supabase as any).from("contract_signatures").insert(insertRow);
