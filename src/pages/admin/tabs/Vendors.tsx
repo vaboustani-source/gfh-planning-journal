@@ -195,10 +195,16 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           <span className="font-body text-sm text-sage">{byStatus.done + byStatus.confirmed} confirmed</span>
           <span className="font-body text-sm text-muted-foreground">{byStatus.pending} pending</span>
         </div>
-        <button onClick={addVendor} disabled={adding}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-          <Plus size={14} /> Add Vendor
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setSocialModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-foreground font-body text-sm hover:bg-muted/50 transition-colors">
+            <Share2 size={14} /> Export for Social
+          </button>
+          <button onClick={addVendor} disabled={adding}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+            <Plus size={14} /> Add Vendor
+          </button>
+        </div>
       </div>
 
       {VENDOR_GROUPS.map(group => {
