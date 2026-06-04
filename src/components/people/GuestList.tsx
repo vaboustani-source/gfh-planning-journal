@@ -379,7 +379,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
                   <td className="px-4 py-3"><SideBadge side={g.side} /></td>
                   <td className="px-4 py-3"><RsvpChip status={g.rsvp_status} /></td>
                   <td className="px-4 py-3"><LodgingChip pref={g.lodging_preference} /></td>
-                  <td className="px-4 py-3"><DietaryIcons restrictions={g.dietary_restrictions} /></td>
+                  <td className="px-4 py-3"><DietaryCell guestId={g.id} legacy={g.dietary_restrictions} info={dietaryByGuest[g.id]} /></td>
                   {isAdmin && (
                     <td className="px-4 py-3 font-body text-xs text-muted-foreground capitalize">{g.added_by ?? "—"}</td>
                   )}
