@@ -1160,6 +1160,41 @@ export type Database = {
           },
         ]
       }
+      filed_threads: {
+        Row: {
+          event_id: string
+          filed_at: string
+          filed_by: string | null
+          gmail_thread_id: string
+          id: string
+          last_synced_at: string | null
+        }
+        Insert: {
+          event_id: string
+          filed_at?: string
+          filed_by?: string | null
+          gmail_thread_id: string
+          id?: string
+          last_synced_at?: string | null
+        }
+        Update: {
+          event_id?: string
+          filed_at?: string
+          filed_by?: string | null
+          gmail_thread_id?: string
+          id?: string
+          last_synced_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filed_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_line_items: {
         Row: {
           created_at: string | null
@@ -1388,6 +1423,39 @@ export type Database = {
           sort_order?: number | null
           title?: string
           visible?: boolean | null
+        }
+        Relationships: []
+      }
+      gmail_connections: {
+        Row: {
+          access_token: string | null
+          access_token_expires_at: string | null
+          connected_at: string
+          email_address: string | null
+          id: string
+          refresh_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          connected_at?: string
+          email_address?: string | null
+          id?: string
+          refresh_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          connected_at?: string
+          email_address?: string | null
+          id?: string
+          refresh_token?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3018,6 +3086,71 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      project_emails: {
+        Row: {
+          attachments: Json | null
+          body_html: string | null
+          body_text: string | null
+          event_id: string
+          filed_at: string
+          filed_by: string | null
+          from_address: string | null
+          from_name: string | null
+          gmail_message_id: string
+          gmail_thread_id: string
+          has_attachments: boolean | null
+          id: string
+          received_at: string | null
+          snippet: string | null
+          subject: string | null
+          to_addresses: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          event_id: string
+          filed_at?: string
+          filed_by?: string | null
+          from_address?: string | null
+          from_name?: string | null
+          gmail_message_id: string
+          gmail_thread_id: string
+          has_attachments?: boolean | null
+          id?: string
+          received_at?: string | null
+          snippet?: string | null
+          subject?: string | null
+          to_addresses?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          event_id?: string
+          filed_at?: string
+          filed_by?: string | null
+          from_address?: string | null
+          from_name?: string | null
+          gmail_message_id?: string
+          gmail_thread_id?: string
+          has_attachments?: boolean | null
+          id?: string
+          received_at?: string | null
+          snippet?: string | null
+          subject?: string | null
+          to_addresses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_emails_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rsvp_config: {
         Row: {
