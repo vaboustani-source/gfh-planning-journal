@@ -83,6 +83,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
   const [search, setSearch] = useState("");
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
+  const [dietaryByGuest, setDietaryByGuest] = useState<Record<string, { count: number; topSeverity: string | null; hasProximity: boolean }>>({});
 
   useEffect(() => { if (eventId) load(); }, [eventId]);
 
@@ -90,8 +91,27 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     setLoading(true);
     const { data, error } = await db.from("guests").select("*").eq("event_id", eventId).order("created_at");
     if (error) toast.error("Could not load guests");
-    setGuests((data ?? []) as Guest[]);
-    onCountChange?.((data ?? []).length);
+    const list = (data ?? []) as Guest[];
+    setGuests(list);
+    onCountChange?.(list.length);
+
+    // Aggregate structured dietary entries
+    const { data: entries } = await db
+      .from("guest_dietary_entries")
+      .select("guest_id,severity,restriction_type")
+      .eq("event_id", eventId);
+    const map: Record<string, { count: number; topSeverity: string | null; hasProximity: boolean }> = {};
+    const rank = (s: string | null) => (s === "fatal" ? 3 : s === "medical" ? 2 : s === "preference" ? 1 : 0);
+    for (const e of (entries ?? []) as any[]) {
+      const gid = e.guest_id;
+      if (!gid) continue;
+      const cur = map[gid] ?? { count: 0, topSeverity: null, hasProximity: false };
+      cur.count += 1;
+      if (rank(e.severity) > rank(cur.topSeverity)) cur.topSeverity = e.severity;
+      if ((e.restriction_type ?? "").toLowerCase().startsWith("proximity")) cur.hasProximity = true;
+      map[gid] = cur;
+    }
+    setDietaryByGuest(map);
     setLoading(false);
   };
 
