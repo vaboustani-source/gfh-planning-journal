@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAllMessages from "./pages/admin/AdminAllMessages";
+import AdminInbox from "./pages/admin/AdminInbox";
 import PreferredVendors from "./pages/admin/PreferredVendors";
 import DecorCatalog from "./pages/admin/DecorCatalog";
 import Resources from "./pages/admin/Resources";
@@ -106,6 +107,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminAllMessages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/inbox"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminInbox />
                 </ProtectedRoute>
               }
             />
