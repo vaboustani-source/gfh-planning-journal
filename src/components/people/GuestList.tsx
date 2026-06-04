@@ -456,17 +456,29 @@ function LodgingChip({ pref }: { pref: string | null }) {
   );
 }
 
-function DietaryIcons({ restrictions }: { restrictions: string[] | null }) {
-  const items = restrictions ?? [];
-  if (items.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+function DietaryCell({ guestId, legacy, info }: { guestId: string; legacy: string[] | null; info?: { count: number; topSeverity: string | null; hasProximity: boolean } }) {
+  const legacyItems = legacy ?? [];
+  if ((!info || info.count === 0) && legacyItems.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+  const sevBadge = info?.topSeverity ? SEVERITY_BADGE[info.topSeverity] : null;
   return (
-    <div className="flex flex-wrap gap-1.5" title={items.join(", ")}>
-      {items.slice(0, 3).map(item => (
-        <span key={item} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-body text-[11px] text-secondary-foreground">
-          <UtensilsCrossed size={10} /> {item}
+    <div className="flex flex-wrap items-center gap-1.5">
+      {info && info.count > 0 && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-body text-[11px] text-secondary-foreground">
+          <UtensilsCrossed size={10} /> {info.count} {info.count === 1 ? "need" : "needs"}
         </span>
-      ))}
-      {items.length > 3 && <span className="font-body text-[11px] text-muted-foreground">+{items.length - 3}</span>}
+      )}
+      {sevBadge && (
+        <span className={`px-2 py-0.5 rounded-full font-body text-[10px] border ${sevBadge.cls}`}>{sevBadge.label}</span>
+      )}
+      {info?.hasProximity && (
+        <span title="Proximity restriction" className="inline-flex items-center text-amber-700"><AlertTriangle size={12} /></span>
+      )}
+      {legacyItems.length > 0 && (
+        <span className="font-body text-[10px] text-muted-foreground italic" title={legacyItems.join(", ")}>
+          legacy: {legacyItems.slice(0, 2).join(", ")}{legacyItems.length > 2 ? "…" : ""}
+        </span>
+      )}
     </div>
   );
 }
+
