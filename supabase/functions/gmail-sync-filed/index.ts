@@ -41,9 +41,12 @@ Deno.serve(async (req) => {
         const thread = await gmailApi(accessToken, `/threads/${f.gmail_thread_id}?format=full`);
         const messages = thread.messages ?? [];
         const newRows = [];
+        const myAddr = (conn.email_address || "").toLowerCase();
         for (const m of messages) {
           if (seen.has(m.id)) continue;
           const p = parseGmailMessage(m);
+          const fromAddr = (p.from_address || "").toLowerCase();
+          const isSent = fromAddr && myAddr && fromAddr === myAddr;
           newRows.push({
             event_id: f.event_id,
             gmail_thread_id: p.threadId,
@@ -59,6 +62,7 @@ Deno.serve(async (req) => {
             attachments: p.attachments,
             received_at: p.received_at,
             filed_by: f.filed_by,
+            direction: isSent ? "sent" : "received",
           });
         }
         if (newRows.length) {

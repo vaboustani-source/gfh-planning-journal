@@ -1,5 +1,5 @@
-// Files an entire Gmail thread into a project. Stores all messages and marks
-// the thread as "filed" so the cron sync keeps it up to date.
+// Files an entire Gmail thread into a project. Stores all messages, marks thread as filed,
+// and updates email_sender_map so future emails from those senders auto-suggest this event.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders, gmailApi, parseGmailMessage, refreshAccessToken } from "../_shared/gmail.ts";
 
@@ -32,12 +32,16 @@ Deno.serve(async (req) => {
     if (!conn) return new Response(JSON.stringify({ error: "Gmail not connected" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const accessToken = await refreshAccessToken(conn.refresh_token);
-
     const thread = await gmailApi(accessToken, `/threads/${gmail_thread_id}?format=full`);
     const messages = thread.messages ?? [];
 
+    const myAddr = (conn.email_address || "").toLowerCase();
+    const senderCounts: Record<string, number> = {};
     const rows = messages.map((m: any) => {
       const p = parseGmailMessage(m);
+      const fromAddr = (p.from_address || "").toLowerCase();
+      const isSent = fromAddr && myAddr && fromAddr === myAddr;
+      if (!isSent && fromAddr) senderCounts[fromAddr] = (senderCounts[fromAddr] ?? 0) + 1;
       return {
         event_id,
         gmail_thread_id: p.threadId,
@@ -53,6 +57,7 @@ Deno.serve(async (req) => {
         attachments: p.attachments,
         received_at: p.received_at,
         filed_by: user.id,
+        direction: isSent ? "sent" : "received",
       };
     });
 
@@ -72,6 +77,28 @@ Deno.serve(async (req) => {
         last_synced_at: new Date().toISOString(),
       }, { onConflict: "gmail_thread_id" });
     if (ftErr) throw ftErr;
+
+    // Learn the senders → event mapping
+    for (const [addr, count] of Object.entries(senderCounts)) {
+      const { data: existing } = await admin
+        .from("email_sender_map")
+        .select("id, times_filed")
+        .eq("sender_address", addr)
+        .eq("event_id", event_id)
+        .maybeSingle();
+      if (existing) {
+        await admin.from("email_sender_map").update({
+          times_filed: (existing.times_filed ?? 1) + count,
+          last_filed_at: new Date().toISOString(),
+        }).eq("id", existing.id);
+      } else {
+        await admin.from("email_sender_map").insert({
+          sender_address: addr,
+          event_id,
+          times_filed: count,
+        });
+      }
+    }
 
     return new Response(JSON.stringify({ ok: true, count: rows.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
