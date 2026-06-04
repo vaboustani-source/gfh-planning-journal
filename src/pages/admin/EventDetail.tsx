@@ -21,6 +21,7 @@ import DecorTab from "./tabs/DecorTab";
 import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
 import OurPeopleTab from "./tabs/OurPeopleTab";
+import EmailsTab from "./tabs/EmailsTab";
 import Rsvp from "../portal/Rsvp";
 
 type NavItem = { id: string; label: string };
@@ -73,6 +74,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "financials", label: "Financials" },
       { id: "messages", label: "Messages" },
+      { id: "emails", label: "Emails" },
       { id: "notes", label: "Notes" },
     ],
   },
@@ -314,6 +316,7 @@ export default function EventDetail() {
             {activeTab === "rsvp" && <Rsvp eventId={event.id} />}
             {activeTab === "financials" && <FinancialsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "messages" && <AdminMessages eventId={event.id} onUnreadChange={setUnreadCount} />}
+            {activeTab === "emails" && <EmailsTab eventId={event.id} />}
             {activeTab === "notes" && <AdminNotesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "forms" && <EventForms eventId={event.id} />}
             {activeTab === "documents" && <AdminDocumentsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
