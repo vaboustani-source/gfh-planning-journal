@@ -87,15 +87,16 @@ export default function ActionQueue() {
       const eventName = (eid: string) => {
         const ev = events!.find(e => e.id === eid);
         if (!ev) return "Event";
-        const couples = (eus ?? []).filter(u => u.event_id === eid && u.role_in_event === "couple")
+        const couples = (eus ?? []).filter(u => u.event_id === eid && ["couple","partner_1","partner_2","partner1","partner2"].includes(u.role_in_event as string))
           .map(u => u.display_name).filter(Boolean) as string[];
         if (couples.length) return couples.join(" & ");
         if (ev.partner1_name && ev.partner2_name) return `${ev.partner1_name} & ${ev.partner2_name}`;
         return ev.title;
       };
       const eventWedding = (eid: string) => events!.find(e => e.id === eid)?.wedding_date ?? null;
+      const COUPLE_ROLES = new Set(["couple", "partner_1", "partner_2", "partner1", "partner2"]);
       const coupleUserIds = new Set(
-        (eus ?? []).filter(u => u.role_in_event === "couple" && u.user_id).map(u => u.user_id as string)
+        (eus ?? []).filter(u => COUPLE_ROLES.has(u.role_in_event as string) && u.user_id).map(u => u.user_id as string)
       );
       const euById = Object.fromEntries((eus ?? []).map(u => [u.id, u]));
 
