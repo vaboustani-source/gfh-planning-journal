@@ -3,3 +3,7 @@ project_id = "orbzcbnhljpriwuvxsjr"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.gmail-oauth-callback]
+    verify_jwt = false
+  [functions.gmail-sync-filed]
+    verify_jwt = false
