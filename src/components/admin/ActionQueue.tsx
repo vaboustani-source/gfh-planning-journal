@@ -87,7 +87,7 @@ export default function ActionQueue() {
       const eventName = (eid: string) => {
         const ev = events!.find(e => e.id === eid);
         if (!ev) return "Event";
-        const couples = (eus ?? []).filter(u => u.event_id === eid && u.role_in_event === "couple")
+        const couples = (eus ?? []).filter(u => u.event_id === eid && ["couple","partner_1","partner_2","partner1","partner2"].includes(u.role_in_event as string))
           .map(u => u.display_name).filter(Boolean) as string[];
         if (couples.length) return couples.join(" & ");
         if (ev.partner1_name && ev.partner2_name) return `${ev.partner1_name} & ${ev.partner2_name}`;
