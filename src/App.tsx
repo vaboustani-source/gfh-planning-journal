@@ -18,6 +18,7 @@ import Resources from "./pages/admin/Resources";
 import AdminForms from "./pages/admin/Forms";
 import SettingsLayout from "./pages/admin/SettingsLayout";
 import SettingsJournal from "./pages/admin/settings/SettingsJournal";
+import SettingsIntegrations from "./pages/admin/settings/SettingsIntegrations";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="layouts" element={<LayoutLibrary />} />
               <Route path="resources" element={<Resources />} />
               <Route path="forms" element={<AdminForms />} />
+              <Route path="integrations" element={<SettingsIntegrations />} />
             </Route>
             <Route
               path="/admin/account"
