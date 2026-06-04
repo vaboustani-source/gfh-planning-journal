@@ -10,6 +10,7 @@ const LIBRARIES = [
   { slug: "layouts", label: "Table Layouts" },
   { slug: "resources", label: "Resources" },
   { slug: "forms", label: "Forms" },
+  { slug: "integrations", label: "Integrations" },
 ];
 
 export default function SettingsLayout() {
