@@ -1391,6 +1391,60 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_dietary_entries: {
+        Row: {
+          applies_to_meals: string[] | null
+          created_at: string
+          event_id: string
+          guest_id: string | null
+          id: string
+          notes: string | null
+          restriction: string
+          restriction_type: string | null
+          severity: string | null
+          updated_at: string
+        }
+        Insert: {
+          applies_to_meals?: string[] | null
+          created_at?: string
+          event_id: string
+          guest_id?: string | null
+          id?: string
+          notes?: string | null
+          restriction: string
+          restriction_type?: string | null
+          severity?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applies_to_meals?: string[] | null
+          created_at?: string
+          event_id?: string
+          guest_id?: string | null
+          id?: string
+          notes?: string | null
+          restriction?: string
+          restriction_type?: string | null
+          severity?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_dietary_entries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_dietary_entries_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_invitations: {
         Row: {
           created_at: string

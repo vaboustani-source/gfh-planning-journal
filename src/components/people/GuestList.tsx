@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import DietaryEntriesEditor from "@/components/dietary/DietaryEntriesEditor";
+import { SEVERITY_BADGE } from "@/lib/dietary";
 
 const db = supabase as any;
 
@@ -45,7 +47,7 @@ const LODGING = [
   { value: "off_site", label: "Off-site" },
   { value: "undecided", label: "Undecided" },
 ];
-const DIET = ["Vegetarian", "Vegan", "Gluten-Free", "Nut Allergy", "Halal", "Kosher", "Other"];
+
 
 type Filter = "all" | "confirmed" | "declined" | "invited" | "on_site" | "off_site";
 
@@ -81,6 +83,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
   const [search, setSearch] = useState("");
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
+  const [dietaryByGuest, setDietaryByGuest] = useState<Record<string, { count: number; topSeverity: string | null; hasProximity: boolean }>>({});
 
   useEffect(() => { if (eventId) load(); }, [eventId]);
 
@@ -88,8 +91,27 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     setLoading(true);
     const { data, error } = await db.from("guests").select("*").eq("event_id", eventId).order("created_at");
     if (error) toast.error("Could not load guests");
-    setGuests((data ?? []) as Guest[]);
-    onCountChange?.((data ?? []).length);
+    const list = (data ?? []) as Guest[];
+    setGuests(list);
+    onCountChange?.(list.length);
+
+    // Aggregate structured dietary entries
+    const { data: entries } = await db
+      .from("guest_dietary_entries")
+      .select("guest_id,severity,restriction_type")
+      .eq("event_id", eventId);
+    const map: Record<string, { count: number; topSeverity: string | null; hasProximity: boolean }> = {};
+    const rank = (s: string | null) => (s === "fatal" ? 3 : s === "medical" ? 2 : s === "preference" ? 1 : 0);
+    for (const e of (entries ?? []) as any[]) {
+      const gid = e.guest_id;
+      if (!gid) continue;
+      const cur = map[gid] ?? { count: 0, topSeverity: null, hasProximity: false };
+      cur.count += 1;
+      if (rank(e.severity) > rank(cur.topSeverity)) cur.topSeverity = e.severity;
+      if ((e.restriction_type ?? "").toLowerCase().startsWith("proximity")) cur.hasProximity = true;
+      map[gid] = cur;
+    }
+    setDietaryByGuest(map);
     setLoading(false);
   };
 
@@ -284,27 +306,21 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             <Pills options={LODGING} value={editing.lodging_preference ?? "undecided"}
               onChange={v => setEditing({ ...editing, lodging_preference: v as any })} />
           </Field>
-          <Field label="Dietary restrictions">
-            <div className="flex flex-wrap gap-2">
-              {DIET.map(d => {
-                const checked = (editing.dietary_restrictions ?? []).includes(d);
-                return (
-                  <button key={d} type="button"
-                    onClick={() => {
-                      const cur = editing.dietary_restrictions ?? [];
-                      setEditing({
-                        ...editing,
-                        dietary_restrictions: checked ? cur.filter(x => x !== d) : [...cur, d],
-                      });
-                    }}
-                    className={`px-3 py-1.5 rounded-full font-body text-xs border transition-colors ${
-                      checked ? "bg-sage text-primary-foreground border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
-                    }`}>
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
+          <Field label="Dietary needs">
+            {editing.id ? (
+              <>
+                {(editing.dietary_restrictions ?? []).length > 0 && (
+                  <p className="font-body text-[11px] text-muted-foreground italic mb-2">
+                    Legacy notes: {(editing.dietary_restrictions ?? []).join(", ")}
+                  </p>
+                )}
+                <DietaryEntriesEditor eventId={eventId} guestId={editing.id!} />
+              </>
+            ) : (
+              <p className="font-body text-xs text-muted-foreground italic">
+                Save this guest first, then re-open to add dietary needs.
+              </p>
+            )}
           </Field>
           <Field label="Plus one">
             <label className="inline-flex items-center gap-2 font-body text-sm">
@@ -363,7 +379,7 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
                   <td className="px-4 py-3"><SideBadge side={g.side} /></td>
                   <td className="px-4 py-3"><RsvpChip status={g.rsvp_status} /></td>
                   <td className="px-4 py-3"><LodgingChip pref={g.lodging_preference} /></td>
-                  <td className="px-4 py-3"><DietaryIcons restrictions={g.dietary_restrictions} /></td>
+                  <td className="px-4 py-3"><DietaryCell guestId={g.id} legacy={g.dietary_restrictions} info={dietaryByGuest[g.id]} /></td>
                   {isAdmin && (
                     <td className="px-4 py-3 font-body text-xs text-muted-foreground capitalize">{g.added_by ?? "—"}</td>
                   )}
@@ -440,17 +456,29 @@ function LodgingChip({ pref }: { pref: string | null }) {
   );
 }
 
-function DietaryIcons({ restrictions }: { restrictions: string[] | null }) {
-  const items = restrictions ?? [];
-  if (items.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+function DietaryCell({ guestId, legacy, info }: { guestId: string; legacy: string[] | null; info?: { count: number; topSeverity: string | null; hasProximity: boolean } }) {
+  const legacyItems = legacy ?? [];
+  if ((!info || info.count === 0) && legacyItems.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+  const sevBadge = info?.topSeverity ? SEVERITY_BADGE[info.topSeverity] : null;
   return (
-    <div className="flex flex-wrap gap-1.5" title={items.join(", ")}>
-      {items.slice(0, 3).map(item => (
-        <span key={item} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-body text-[11px] text-secondary-foreground">
-          <UtensilsCrossed size={10} /> {item}
+    <div className="flex flex-wrap items-center gap-1.5">
+      {info && info.count > 0 && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-body text-[11px] text-secondary-foreground">
+          <UtensilsCrossed size={10} /> {info.count} {info.count === 1 ? "need" : "needs"}
         </span>
-      ))}
-      {items.length > 3 && <span className="font-body text-[11px] text-muted-foreground">+{items.length - 3}</span>}
+      )}
+      {sevBadge && (
+        <span className={`px-2 py-0.5 rounded-full font-body text-[10px] border ${sevBadge.cls}`}>{sevBadge.label}</span>
+      )}
+      {info?.hasProximity && (
+        <span title="Proximity restriction" className="inline-flex items-center text-amber-700"><AlertTriangle size={12} /></span>
+      )}
+      {legacyItems.length > 0 && (
+        <span className="font-body text-[10px] text-muted-foreground italic" title={legacyItems.join(", ")}>
+          legacy: {legacyItems.slice(0, 2).join(", ")}{legacyItems.length > 2 ? "…" : ""}
+        </span>
+      )}
     </div>
   );
 }
+
