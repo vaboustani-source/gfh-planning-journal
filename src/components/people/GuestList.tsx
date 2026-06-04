@@ -47,7 +47,7 @@ const LODGING = [
   { value: "off_site", label: "Off-site" },
   { value: "undecided", label: "Undecided" },
 ];
-const DIET = ["Vegetarian", "Vegan", "Gluten-Free", "Nut Allergy", "Halal", "Kosher", "Other"];
+
 
 type Filter = "all" | "confirmed" | "declined" | "invited" | "on_site" | "off_site";
 
