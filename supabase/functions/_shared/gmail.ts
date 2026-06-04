@@ -1,7 +1,7 @@
 // Shared Gmail helpers for edge functions.
 // Token refresh + message fetch + parsing.
 
-export const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+export const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send";
 
 export interface ParsedMessage {
   id: string;
