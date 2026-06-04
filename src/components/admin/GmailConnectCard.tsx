@@ -43,13 +43,24 @@ export default function GmailConnectCard() {
 
   const connect = async () => {
     setConnecting(true);
+    const oauthWindow = window.open("about:blank", "_blank");
+    if (oauthWindow) oauthWindow.opener = null;
+
     try {
       const { data, error } = await supabase.functions.invoke("gmail-oauth-start", {
-        body: { return_to: window.location.pathname },
+        body: {
+          return_to: `${window.location.pathname}${window.location.search}`,
+          app_origin: window.location.origin,
+        },
       });
       if (error || !data?.url) throw new Error(error?.message ?? "Could not start OAuth");
-      window.location.href = data.url;
+      if (oauthWindow) {
+        oauthWindow.location.href = data.url;
+      } else {
+        window.location.href = data.url;
+      }
     } catch (e: any) {
+      if (oauthWindow && !oauthWindow.closed) oauthWindow.close();
       toast.error(e.message ?? "Connection failed");
       setConnecting(false);
     }
