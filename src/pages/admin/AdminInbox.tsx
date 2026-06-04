@@ -129,6 +129,16 @@ export default function AdminInbox() {
               <span className="font-body text-xs text-muted-foreground ml-2">· {connected}</span>
             )}
           </div>
+          {connected && (
+            <button
+              onClick={() => { load(); syncNow(); }}
+              disabled={syncing || loading}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
+            >
+              {syncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Sync now
+            </button>
+          )}
         </div>
       </header>
 
