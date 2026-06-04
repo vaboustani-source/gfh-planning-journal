@@ -40,6 +40,21 @@ export default function AdminInbox() {
   const [events, setEvents] = useState<EventOpt[]>([]);
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const [filingId, setFilingId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const syncNow = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("gmail-sync-filed");
+      if (error) throw error;
+      const n = (data as any)?.new_messages ?? 0;
+      toast.success(n ? `Pulled ${n} new message${n === 1 ? "" : "s"}.` : "Already up to date.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
