@@ -94,8 +94,9 @@ export default function ActionQueue() {
         return ev.title;
       };
       const eventWedding = (eid: string) => events!.find(e => e.id === eid)?.wedding_date ?? null;
+      const COUPLE_ROLES = new Set(["couple", "partner_1", "partner_2", "partner1", "partner2"]);
       const coupleUserIds = new Set(
-        (eus ?? []).filter(u => u.role_in_event === "couple" && u.user_id).map(u => u.user_id as string)
+        (eus ?? []).filter(u => COUPLE_ROLES.has(u.role_in_event as string) && u.user_id).map(u => u.user_id as string)
       );
       const euById = Object.fromEntries((eus ?? []).map(u => [u.id, u]));
 
