@@ -868,6 +868,38 @@ export type Database = {
           },
         ]
       }
+      email_sender_map: {
+        Row: {
+          event_id: string | null
+          id: string
+          last_filed_at: string | null
+          sender_address: string
+          times_filed: number | null
+        }
+        Insert: {
+          event_id?: string | null
+          id?: string
+          last_filed_at?: string | null
+          sender_address: string
+          times_filed?: number | null
+        }
+        Update: {
+          event_id?: string | null
+          id?: string
+          last_filed_at?: string | null
+          sender_address?: string
+          times_filed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sender_map_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_addons: {
         Row: {
           addon: string
@@ -3092,6 +3124,7 @@ export type Database = {
           attachments: Json | null
           body_html: string | null
           body_text: string | null
+          direction: string | null
           event_id: string
           filed_at: string
           filed_by: string | null
@@ -3110,6 +3143,7 @@ export type Database = {
           attachments?: Json | null
           body_html?: string | null
           body_text?: string | null
+          direction?: string | null
           event_id: string
           filed_at?: string
           filed_by?: string | null
@@ -3128,6 +3162,7 @@ export type Database = {
           attachments?: Json | null
           body_html?: string | null
           body_text?: string | null
+          direction?: string | null
           event_id?: string
           filed_at?: string
           filed_by?: string | null
