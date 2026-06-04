@@ -43,9 +43,6 @@ export default function GmailConnectCard() {
 
   const connect = async () => {
     setConnecting(true);
-    const oauthWindow = window.open("about:blank", "_blank");
-    if (oauthWindow) oauthWindow.opener = null;
-
     try {
       const { data, error } = await supabase.functions.invoke("gmail-oauth-start", {
         body: {
@@ -54,13 +51,19 @@ export default function GmailConnectCard() {
         },
       });
       if (error || !data?.url) throw new Error(error?.message ?? "Could not start OAuth");
-      if (oauthWindow) {
-        oauthWindow.location.href = data.url;
-      } else {
-        window.location.href = data.url;
+      // Navigate the top-level window (escape Lovable preview iframe if present)
+      const top = window.top ?? window;
+      try {
+        top.location.href = data.url;
+      } catch {
+        // Cross-origin iframe: fall back to opening a new tab
+        const win = window.open(data.url, "_blank", "noopener,noreferrer");
+        if (!win) {
+          toast.error("Popup blocked — please allow popups and try again.");
+          setConnecting(false);
+        }
       }
     } catch (e: any) {
-      if (oauthWindow && !oauthWindow.closed) oauthWindow.close();
       toast.error(e.message ?? "Connection failed");
       setConnecting(false);
     }
