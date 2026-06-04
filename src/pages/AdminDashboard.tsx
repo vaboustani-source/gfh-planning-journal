@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import CreateEventModal from "@/components/admin/CreateEventModal";
+import ActionQueue from "@/components/admin/ActionQueue";
 import { format, differenceInDays, parseISO, isValid } from "date-fns";
 
 /* ─── Types ─── */
@@ -376,6 +377,11 @@ export default function AdminDashboard() {
           <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm hover:opacity-90 transition-opacity">
             <Plus size={15} /> New Event
           </button>
+        </div>
+
+        {/* ─── Action Queue (Needs Your Attention) ─── */}
+        <div className="mb-8">
+          <ActionQueue />
         </div>
 
         {/* ─── Quick Stats Bar ─── */}
