@@ -3,6 +3,24 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders, gmailApi } from "../_shared/gmail.ts";
 
+const FALLBACK_APP_ORIGIN = "https://plan.gilbertsvillefarmhouse.com";
+const ALLOWED_APP_ORIGINS = new Set([
+  FALLBACK_APP_ORIGIN,
+  "https://farmhouse-wedding-whisper.lovable.app",
+  "https://id-preview--58ba8cd6-9302-4791-9c7e-658300686f9c.lovable.app",
+  "https://58ba8cd6-9302-4791-9c7e-658300686f9c.lovableproject.com",
+]);
+
+function safeAppOrigin(rawOrigin: string | null): string {
+  if (!rawOrigin) return FALLBACK_APP_ORIGIN;
+  try {
+    const origin = new URL(rawOrigin).origin;
+    return ALLOWED_APP_ORIGINS.has(origin) ? origin : FALLBACK_APP_ORIGIN;
+  } catch {
+    return FALLBACK_APP_ORIGIN;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -16,16 +34,17 @@ Deno.serve(async (req) => {
 
   let returnTo = "/admin/account";
   let userId: string | null = null;
+  let appOrigin = FALLBACK_APP_ORIGIN;
   try {
     if (stateRaw) {
       const parsed = JSON.parse(atob(stateRaw));
       returnTo = parsed.return_to || returnTo;
       userId = parsed.user_id ?? null;
+      appOrigin = safeAppOrigin(parsed.app_origin ?? null);
     }
   } catch { /* ignore */ }
 
-  const appOrigin = req.headers.get("origin") || req.headers.get("referer") || "https://plan.gilbertsvillefarmhouse.com";
-  const baseOrigin = new URL(appOrigin).origin;
+  const baseOrigin = appOrigin;
 
   if (error || !code || !userId) {
     const dest = `${baseOrigin}${returnTo}?gmail=error&reason=${encodeURIComponent(error || "missing_code")}`;
