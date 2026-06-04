@@ -2,6 +2,24 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders, GMAIL_SCOPE } from "../_shared/gmail.ts";
 
+const FALLBACK_APP_ORIGIN = "https://plan.gilbertsvillefarmhouse.com";
+const ALLOWED_APP_ORIGINS = new Set([
+  FALLBACK_APP_ORIGIN,
+  "https://farmhouse-wedding-whisper.lovable.app",
+  "https://id-preview--58ba8cd6-9302-4791-9c7e-658300686f9c.lovable.app",
+  "https://58ba8cd6-9302-4791-9c7e-658300686f9c.lovableproject.com",
+]);
+
+function safeAppOrigin(rawOrigin: string | null): string {
+  if (!rawOrigin) return FALLBACK_APP_ORIGIN;
+  try {
+    const origin = new URL(rawOrigin).origin;
+    return ALLOWED_APP_ORIGINS.has(origin) ? origin : FALLBACK_APP_ORIGIN;
+  } catch {
+    return FALLBACK_APP_ORIGIN;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -29,6 +47,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const returnTo = body.return_to || "/admin/account";
+    const appOrigin = safeAppOrigin(req.headers.get("origin") || body.app_origin || null);
 
     const clientId = Deno.env.get("GMAIL_CLIENT_ID");
     if (!clientId) throw new Error("GMAIL_CLIENT_ID not configured");
@@ -36,7 +55,7 @@ Deno.serve(async (req) => {
     const projectRef = Deno.env.get("SUPABASE_URL")!.replace("https://", "").split(".")[0];
     const redirectUri = `https://${projectRef}.supabase.co/functions/v1/gmail-oauth-callback`;
 
-    const state = btoa(JSON.stringify({ user_id: user.id, return_to: returnTo, nonce: crypto.randomUUID() }));
+    const state = btoa(JSON.stringify({ user_id: user.id, return_to: returnTo, app_origin: appOrigin, nonce: crypto.randomUUID() }));
 
     const params = new URLSearchParams({
       client_id: clientId,
