@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import DietaryEntriesEditor from "@/components/dietary/DietaryEntriesEditor";
+import { SEVERITY_BADGE } from "@/lib/dietary";
 
 const db = supabase as any;
 
@@ -284,27 +286,21 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             <Pills options={LODGING} value={editing.lodging_preference ?? "undecided"}
               onChange={v => setEditing({ ...editing, lodging_preference: v as any })} />
           </Field>
-          <Field label="Dietary restrictions">
-            <div className="flex flex-wrap gap-2">
-              {DIET.map(d => {
-                const checked = (editing.dietary_restrictions ?? []).includes(d);
-                return (
-                  <button key={d} type="button"
-                    onClick={() => {
-                      const cur = editing.dietary_restrictions ?? [];
-                      setEditing({
-                        ...editing,
-                        dietary_restrictions: checked ? cur.filter(x => x !== d) : [...cur, d],
-                      });
-                    }}
-                    className={`px-3 py-1.5 rounded-full font-body text-xs border transition-colors ${
-                      checked ? "bg-sage text-primary-foreground border-sage" : "bg-white text-muted-foreground border-border hover:text-foreground"
-                    }`}>
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
+          <Field label="Dietary needs">
+            {editing.id ? (
+              <>
+                {(editing.dietary_restrictions ?? []).length > 0 && (
+                  <p className="font-body text-[11px] text-muted-foreground italic mb-2">
+                    Legacy notes: {(editing.dietary_restrictions ?? []).join(", ")}
+                  </p>
+                )}
+                <DietaryEntriesEditor eventId={eventId} guestId={editing.id!} />
+              </>
+            ) : (
+              <p className="font-body text-xs text-muted-foreground italic">
+                Save this guest first, then re-open to add dietary needs.
+              </p>
+            )}
           </Field>
           <Field label="Plus one">
             <label className="inline-flex items-center gap-2 font-body text-sm">
