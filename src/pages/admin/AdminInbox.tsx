@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Mail, Loader2, Inbox, FileText, CheckCircle2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Mail, Loader2, Inbox, FileText, CheckCircle2, ChevronDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface InboxItem {
@@ -40,6 +40,21 @@ export default function AdminInbox() {
   const [events, setEvents] = useState<EventOpt[]>([]);
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const [filingId, setFilingId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const syncNow = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("gmail-sync-filed");
+      if (error) throw error;
+      const n = (data as any)?.new_messages ?? 0;
+      toast.success(n ? `Pulled ${n} new message${n === 1 ? "" : "s"}.` : "Already up to date.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -114,6 +129,16 @@ export default function AdminInbox() {
               <span className="font-body text-xs text-muted-foreground ml-2">· {connected}</span>
             )}
           </div>
+          {connected && (
+            <button
+              onClick={() => { load(); syncNow(); }}
+              disabled={syncing || loading}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
+            >
+              {syncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Sync now
+            </button>
+          )}
         </div>
       </header>
 
@@ -128,7 +153,7 @@ export default function AdminInbox() {
             <p className="font-display text-xl font-light mb-1">Gmail isn't connected</p>
             <p className="font-body text-sm text-muted-foreground mb-5">Connect Brandon's Gmail in Settings to start filing emails.</p>
             <button
-              onClick={() => navigate("/admin/account")}
+              onClick={() => navigate("/admin/settings/integrations")}
               className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-body text-sm hover:opacity-90"
             >
               Open Settings
