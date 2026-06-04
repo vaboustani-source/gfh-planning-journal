@@ -153,7 +153,7 @@ export default function AdminInbox() {
             <p className="font-display text-xl font-light mb-1">Gmail isn't connected</p>
             <p className="font-body text-sm text-muted-foreground mb-5">Connect Brandon's Gmail in Settings to start filing emails.</p>
             <button
-              onClick={() => navigate("/admin/account")}
+              onClick={() => navigate("/admin/settings/integrations")}
               className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-body text-sm hover:opacity-90"
             >
               Open Settings
