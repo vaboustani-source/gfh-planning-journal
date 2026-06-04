@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Mail, Loader2, Inbox, FileText, CheckCircle2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Mail, Loader2, Inbox, FileText, CheckCircle2, ChevronDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface InboxItem {
