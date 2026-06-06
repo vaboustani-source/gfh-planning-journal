@@ -250,6 +250,28 @@ export default function CreateEventModal({ onClose }: Props) {
               </div>
             </div>
 
+            {canSeeSales && (
+              <>
+                <div className="h-px bg-border" />
+                <div>
+                  <p className="font-display text-base font-light text-foreground mb-1 flex items-center gap-2">
+                    <TrendingUp size={16} className="text-sage" />
+                    Sales Details
+                  </p>
+                  <p className="font-body text-xs text-muted-foreground mb-3">Pricing intelligence — visible only to sales, event directors, and CEO/owner.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Stated Budget ($)" type="number" value={sales.stated_budget} onChange={v => setSalesField("stated_budget", v)} placeholder="80000" />
+                    <Field label="Original Quote ($)" type="number" value={sales.original_quote} onChange={v => setSalesField("original_quote", v)} placeholder="92000" />
+                    <Field label="Original Catering Est. ($)" type="number" value={sales.original_catering_estimate} onChange={v => setSalesField("original_catering_estimate", v)} placeholder="35000" />
+                    <Field label="Original Guest Estimate" type="number" value={sales.original_guest_estimate} onChange={v => setSalesField("original_guest_estimate", v)} placeholder="120" />
+                    <Field label="Lead Source" value={sales.lead_source} onChange={v => setSalesField("lead_source", v)} placeholder="The Knot, Referral…" />
+                    <Field label="Date Booked" type="date" value={sales.date_booked} onChange={v => setSalesField("date_booked", v)} />
+                  </div>
+                </div>
+              </>
+            )}
+
+
             {error && (
               <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3">
                 <p className="font-body text-sm text-destructive">{error}</p>
