@@ -605,6 +605,8 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
         </div>
       </div>
 
+      <SalesDetailsCard eventId={eventId} />
+
       <WireInstructions editable />
 
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
