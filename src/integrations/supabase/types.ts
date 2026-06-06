@@ -3241,6 +3241,33 @@ export type Database = {
           },
         ]
       }
+      role_change_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_user_id: string | null
+          id: string
+          new_role: string | null
+          old_role: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_user_id?: string | null
+          id?: string
+          new_role?: string | null
+          old_role?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_user_id?: string | null
+          id?: string
+          new_role?: string | null
+          old_role?: string | null
+        }
+        Relationships: []
+      }
       rsvp_config: {
         Row: {
           ask_dietary: boolean

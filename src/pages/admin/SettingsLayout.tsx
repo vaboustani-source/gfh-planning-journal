@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const LIBRARIES = [
   { slug: "journal", label: "Journal" },
@@ -13,8 +14,14 @@ const LIBRARIES = [
   { slug: "integrations", label: "Integrations" },
 ];
 
+const ADMIN_ONLY = [
+  { slug: "team", label: "Team & Roles" },
+];
+
 export default function SettingsLayout() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const SidebarInner = ({ onItemClick }: { onItemClick?: () => void }) => (
@@ -70,6 +77,37 @@ export default function SettingsLayout() {
             {item.label}
           </NavLink>
         ))}
+
+        {isAdmin && (
+          <>
+            <p
+              className="font-body uppercase pl-6 mt-8 mb-4"
+              style={{ color: "#6B6B6B", fontSize: "11px", letterSpacing: "2px" }}
+            >
+              Admin
+            </p>
+            {ADMIN_ONLY.map((item) => (
+              <NavLink
+                key={item.slug}
+                to={`/admin/settings/${item.slug}`}
+                onClick={onItemClick}
+                className={({ isActive }) =>
+                  [
+                    "block font-body transition-colors pl-6 pr-4",
+                    isActive ? "border-l-[3px]" : "border-l-[3px] border-transparent hover:bg-[#FAF8F4]",
+                  ].join(" ")
+                }
+                style={({ isActive }) =>
+                  isActive
+                    ? { fontSize: "15px", paddingTop: "12px", paddingBottom: "12px", paddingLeft: "21px", backgroundColor: "#FAF8F4", borderLeftColor: "#2C3E2D", color: "#2C3E2D" }
+                    : { fontSize: "15px", paddingTop: "12px", paddingBottom: "12px", paddingLeft: "21px", color: "#1A1A1A" }
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
 
       <button

@@ -21,6 +21,7 @@ import AdminForms from "./pages/admin/Forms";
 import SettingsLayout from "./pages/admin/SettingsLayout";
 import SettingsJournal from "./pages/admin/settings/SettingsJournal";
 import SettingsIntegrations from "./pages/admin/settings/SettingsIntegrations";
+import SettingsTeamRoles from "./pages/admin/settings/SettingsTeamRoles";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -97,6 +98,7 @@ const App = () => (
               <Route path="resources" element={<Resources />} />
               <Route path="forms" element={<AdminForms />} />
               <Route path="integrations" element={<SettingsIntegrations />} />
+              <Route path="team" element={<SettingsTeamRoles />} />
             </Route>
             <Route
               path="/admin/account"
