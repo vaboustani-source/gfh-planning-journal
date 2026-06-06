@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, CalendarClock, MessageCircle, Clock, ChevronRight, LogOut, Plus,
-  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox,
+  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import CreateEventModal from "@/components/admin/CreateEventModal";
@@ -352,6 +352,14 @@ export default function AdminDashboard() {
               <p className="font-body text-xs text-muted-foreground">Signed in as</p>
               <p className="font-body text-sm font-medium text-foreground">{profile?.first_name || "Brandon"}</p>
             </div>
+            <button
+              onClick={() => navigate("/admin/marketing-roster")}
+              title="Marketing Roster"
+              aria-label="Marketing Roster"
+              className="transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <Sparkles size={20} />
+            </button>
             <button
               onClick={() => navigate("/admin/inbox")}
               title="Inbox"
