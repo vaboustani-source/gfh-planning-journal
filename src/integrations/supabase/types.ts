@@ -3310,6 +3310,56 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_details: {
+        Row: {
+          created_at: string
+          date_booked: string | null
+          entered_by: string | null
+          event_id: string
+          id: string
+          lead_source: string | null
+          original_catering_estimate: number | null
+          original_guest_estimate: number | null
+          original_quote: number | null
+          stated_budget: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_booked?: string | null
+          entered_by?: string | null
+          event_id: string
+          id?: string
+          lead_source?: string | null
+          original_catering_estimate?: number | null
+          original_guest_estimate?: number | null
+          original_quote?: number | null
+          stated_budget?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_booked?: string | null
+          entered_by?: string | null
+          event_id?: string
+          id?: string
+          lead_source?: string | null
+          original_catering_estimate?: number | null
+          original_guest_estimate?: number | null
+          original_quote?: number | null
+          stated_budget?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_details_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seating_assignments: {
         Row: {
           created_at: string | null
@@ -3667,6 +3717,7 @@ export type Database = {
         Returns: boolean
       }
       is_marketing_viewer: { Args: { _user_id: string }; Returns: boolean }
+      is_sales_viewer: { Args: { _user_id: string }; Returns: boolean }
       lb_ensure_block_for_event: {
         Args: { _event_id: string }
         Returns: string
