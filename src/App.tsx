@@ -12,6 +12,7 @@ import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAllMessages from "./pages/admin/AdminAllMessages";
 import AdminInbox from "./pages/admin/AdminInbox";
+import MarketingRoster from "./pages/admin/MarketingRoster";
 import PreferredVendors from "./pages/admin/PreferredVendors";
 import DecorCatalog from "./pages/admin/DecorCatalog";
 import Resources from "./pages/admin/Resources";
@@ -117,6 +118,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminInbox />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/marketing-roster"
+              element={
+                <ProtectedRoute>
+                  <MarketingRoster />
                 </ProtectedRoute>
               }
             />
