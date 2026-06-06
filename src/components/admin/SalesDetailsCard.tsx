@@ -48,6 +48,7 @@ export default function SalesDetailsCard({ eventId }: { eventId: string }) {
   }, [eventId, allowed]);
 
   function update<K extends keyof SalesFields>(k: K, v: string) {
+    if (!canEditCard) return;
     setFields(f => ({ ...f, [k]: v }));
     setSaved(false);
     if (timer.current) window.clearTimeout(timer.current);
@@ -88,35 +89,38 @@ export default function SalesDetailsCard({ eventId }: { eventId: string }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Money label="Initial stated budget" value={fields.stated_budget} onChange={v => update("stated_budget", v)} />
-        <Money label="Original quote" value={fields.original_quote} onChange={v => update("original_quote", v)} />
-        <Money label="Original catering estimate" value={fields.original_catering_estimate} onChange={v => update("original_catering_estimate", v)} />
-        <Field label="Original guest count estimate" value={fields.original_guest_estimate} onChange={v => update("original_guest_estimate", v)} type="number" />
-        <Field label="Lead source" value={fields.lead_source} onChange={v => update("lead_source", v)} placeholder="e.g. The Knot, Referral, Instagram" />
-        <Field label="Date booked" value={fields.date_booked} onChange={v => update("date_booked", v)} type="date" />
+        <Money label="Initial stated budget" value={fields.stated_budget} onChange={v => update("stated_budget", v)} disabled={!canEditCard} />
+        <Money label="Original quote" value={fields.original_quote} onChange={v => update("original_quote", v)} disabled={!canEditCard} />
+        <Money label="Original catering estimate" value={fields.original_catering_estimate} onChange={v => update("original_catering_estimate", v)} disabled={!canEditCard} />
+        <Field label="Original guest count estimate" value={fields.original_guest_estimate} onChange={v => update("original_guest_estimate", v)} type="number" disabled={!canEditCard} />
+        <Field label="Lead source" value={fields.lead_source} onChange={v => update("lead_source", v)} placeholder="e.g. The Knot, Referral, Instagram" disabled={!canEditCard} />
+        <Field label="Date booked" value={fields.date_booked} onChange={v => update("date_booked", v)} type="date" disabled={!canEditCard} />
       </div>
+      {!canEditCard && (
+        <p className="font-body text-[11px] text-muted-foreground italic">Read-only — your role can view sales details but not edit them.</p>
+      )}
     </div>
   );
 }
 
-function Field({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+function Field({ label, value, onChange, type = "text", placeholder, disabled }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; disabled?: boolean }) {
   return (
     <div>
       <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">{label}</p>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full border border-border rounded-lg px-3 py-2 font-body text-sm bg-background focus:outline-none focus:border-sage/50" />
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} readOnly={disabled}
+        className="w-full border border-border rounded-lg px-3 py-2 font-body text-sm bg-background focus:outline-none focus:border-sage/50 disabled:bg-muted/40 disabled:cursor-not-allowed" />
     </div>
   );
 }
 
-function Money({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Money({ label, value, onChange, disabled }: { label: string; value: string; onChange: (v: string) => void; disabled?: boolean }) {
   return (
     <div>
       <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">{label}</p>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-        <input type="number" inputMode="decimal" value={value} onChange={e => onChange(e.target.value)}
-          className="w-full border border-border rounded-lg pl-7 pr-3 py-2 font-body text-sm bg-background focus:outline-none focus:border-sage/50" />
+        <input type="number" inputMode="decimal" value={value} onChange={e => onChange(e.target.value)} disabled={disabled} readOnly={disabled}
+          className="w-full border border-border rounded-lg pl-7 pr-3 py-2 font-body text-sm bg-background focus:outline-none focus:border-sage/50 disabled:bg-muted/40 disabled:cursor-not-allowed" />
       </div>
     </div>
   );
