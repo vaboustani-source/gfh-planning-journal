@@ -3032,6 +3032,42 @@ export type Database = {
           },
         ]
       }
+      payment_settings: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          additional_instructions: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          routing_number: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          additional_instructions?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          routing_number?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          additional_instructions?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          routing_number?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       preferred_vendors: {
         Row: {
           active: boolean | null
