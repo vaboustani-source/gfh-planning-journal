@@ -81,7 +81,7 @@ export default function PortalLayout() {
 
 function PortalLayoutInner() {
   const { profile, signOut } = useAuth();
-  const { accessTier, tabAccess, isPreviewMode } = usePortalData();
+  const { accessTier, tabAccess, isPreviewMode, eventId } = usePortalData();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
