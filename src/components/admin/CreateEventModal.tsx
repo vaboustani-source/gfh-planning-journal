@@ -61,6 +61,12 @@ export default function CreateEventModal({ onClose }: Props) {
   const [earlyArrival, setEarlyArrival] = useState(false);
   const [lateDeparture, setLateDeparture] = useState(false);
 
+  const [sales, setSales] = useState({
+    stated_budget: "", original_quote: "", original_catering_estimate: "",
+    original_guest_estimate: "", lead_source: "", date_booked: "",
+  });
+  const setSalesField = (k: keyof typeof sales, v: string) => setSales(s => ({ ...s, [k]: v }));
+
   const set = (field: keyof typeof form, value: string) =>
     setForm(f => ({ ...f, [field]: value }));
 
