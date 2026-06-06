@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, AlertCircle, Loader2, CalendarClock } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { format, parseISO, differenceInDays } from "date-fns";
+import WireInstructions from "@/components/financials/WireInstructions";
 
 interface Payment {
   id: string;
@@ -228,6 +229,10 @@ export default function Financials() {
               </div>
             </>
           )}
+
+          <div className="mt-8">
+            <WireInstructions />
+          </div>
         </div>
       </div>
       <PortalStickyFooter onContinue={() => navigate("/portal/messages")} nextOnly />
