@@ -362,6 +362,16 @@ export default function AdminDashboard() {
             >
               <Sparkles size={20} />
             </button>
+            {profile?.role && SALES_ROLES.includes(profile.role) && (
+              <button
+                onClick={() => navigate("/admin/sales-roster")}
+                title="Sales Roster"
+                aria-label="Sales Roster"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <TrendingUp size={20} />
+              </button>
+            )}
             <button
               onClick={() => navigate("/admin/inbox")}
               title="Inbox"
