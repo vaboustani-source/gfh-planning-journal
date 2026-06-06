@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Menu, X } from "lucide-react";
+import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
 import OverviewTab from "./tabs/Overview";
 import MilestonesTab from "./tabs/Milestones";
 import ChecklistTab from "./tabs/Checklist";
@@ -298,7 +299,14 @@ export default function EventDetail() {
             </p>
             <p className="font-body text-[10px] text-muted-foreground leading-none">{activeLabel}</p>
           </div>
+          <GlobalSearchTrigger scope="admin-event" eventId={event.id} variant="icon" />
         </header>
+
+        {/* Desktop search bar */}
+        <div className="hidden lg:flex sticky top-0 z-20 bg-background/85 backdrop-blur-sm border-b border-border px-8 py-2.5">
+          <GlobalSearchTrigger scope="admin-event" eventId={event.id} variant="bar" />
+        </div>
+
 
         <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-8 pb-24">
           <div className="max-w-7xl mx-auto">

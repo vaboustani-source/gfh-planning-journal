@@ -9,6 +9,7 @@ import {
   MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
 
 type NavItemDef = {
   to: string; label: string; icon: React.ElementType;
@@ -80,7 +81,7 @@ export default function PortalLayout() {
 
 function PortalLayoutInner() {
   const { profile, signOut } = useAuth();
-  const { accessTier, tabAccess, isPreviewMode } = usePortalData();
+  const { accessTier, tabAccess, isPreviewMode, eventId } = usePortalData();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -203,13 +204,19 @@ function PortalLayoutInner() {
               </div>
               <span className="font-display text-base font-light text-foreground">Gilbertsville Farmhouse</span>
             </div>
-            <div className="w-8" />
+            <GlobalSearchTrigger scope="couple" eventId={eventId} variant="icon" />
           </header>
+
+          {/* Desktop search bar */}
+          <div className="hidden lg:flex sticky top-0 z-20 bg-background/85 backdrop-blur-sm border-b border-border px-8 py-2.5">
+            <GlobalSearchTrigger scope="couple" eventId={eventId} variant="bar" />
+          </div>
 
           {/* Page content */}
           <main className="flex-1 overflow-y-auto pb-24 lg:pb-20">
             <Outlet />
           </main>
+
 
           {/* ── Mobile bottom nav ──────────────── */}
           <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t border-border flex justify-around overflow-x-auto pb-16">
