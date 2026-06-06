@@ -9,6 +9,7 @@ import {
   MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
 
 type NavItemDef = {
   to: string; label: string; icon: React.ElementType;
