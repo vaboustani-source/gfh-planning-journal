@@ -77,6 +77,37 @@ export default function SettingsLayout() {
             {item.label}
           </NavLink>
         ))}
+
+        {isAdmin && (
+          <>
+            <p
+              className="font-body uppercase pl-6 mt-8 mb-4"
+              style={{ color: "#6B6B6B", fontSize: "11px", letterSpacing: "2px" }}
+            >
+              Admin
+            </p>
+            {ADMIN_ONLY.map((item) => (
+              <NavLink
+                key={item.slug}
+                to={`/admin/settings/${item.slug}`}
+                onClick={onItemClick}
+                className={({ isActive }) =>
+                  [
+                    "block font-body transition-colors pl-6 pr-4",
+                    isActive ? "border-l-[3px]" : "border-l-[3px] border-transparent hover:bg-[#FAF8F4]",
+                  ].join(" ")
+                }
+                style={({ isActive }) =>
+                  isActive
+                    ? { fontSize: "15px", paddingTop: "12px", paddingBottom: "12px", paddingLeft: "21px", backgroundColor: "#FAF8F4", borderLeftColor: "#2C3E2D", color: "#2C3E2D" }
+                    : { fontSize: "15px", paddingTop: "12px", paddingBottom: "12px", paddingLeft: "21px", color: "#1A1A1A" }
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
 
       <button
