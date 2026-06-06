@@ -544,7 +544,7 @@ export default function MarketingRoster() {
                   {filtered.map((r) => {
                     const open = expanded.has(r.event_id);
                     return (
-                      <>
+                      <FragmentWithKey key={r.event_id}>
                         <tr
                           key={r.event_id}
                           className="border-t border-border hover:bg-muted/30 cursor-pointer"
