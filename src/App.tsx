@@ -13,6 +13,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAllMessages from "./pages/admin/AdminAllMessages";
 import AdminInbox from "./pages/admin/AdminInbox";
 import MarketingRoster from "./pages/admin/MarketingRoster";
+import SalesRoster from "./pages/admin/SalesRoster";
 import PreferredVendors from "./pages/admin/PreferredVendors";
 import DecorCatalog from "./pages/admin/DecorCatalog";
 import Resources from "./pages/admin/Resources";
@@ -126,6 +127,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MarketingRoster />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/sales-roster"
+              element={
+                <ProtectedRoute>
+                  <SalesRoster />
                 </ProtectedRoute>
               }
             />

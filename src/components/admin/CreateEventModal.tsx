@@ -1,8 +1,11 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Loader2, UserPlus, CalendarDays } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { X, Loader2, UserPlus, CalendarDays, TrendingUp } from "lucide-react";
 import { addDays, subDays, format, parseISO } from "date-fns";
+
+const SALES_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"];
 
 interface Props {
   onClose: () => void;
@@ -39,6 +42,8 @@ function Field({ label, type = "text", placeholder, value, onChange }: FieldProp
 
 export default function CreateEventModal({ onClose }: Props) {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const canSeeSales = profile?.role && SALES_ROLES.includes(profile.role);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +60,12 @@ export default function CreateEventModal({ onClose }: Props) {
 
   const [earlyArrival, setEarlyArrival] = useState(false);
   const [lateDeparture, setLateDeparture] = useState(false);
+
+  const [sales, setSales] = useState({
+    stated_budget: "", original_quote: "", original_catering_estimate: "",
+    original_guest_estimate: "", lead_source: "", date_booked: "",
+  });
+  const setSalesField = (k: keyof typeof sales, v: string) => setSales(s => ({ ...s, [k]: v }));
 
   const set = (field: keyof typeof form, value: string) =>
     setForm(f => ({ ...f, [field]: value }));
@@ -98,6 +109,21 @@ export default function CreateEventModal({ onClose }: Props) {
 
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
+
+      if (canSeeSales && data?.event_id) {
+        const hasAny = Object.values(sales).some(v => v !== "");
+        if (hasAny) {
+          await (supabase as any).from("sales_details").upsert({
+            event_id: data.event_id,
+            stated_budget: sales.stated_budget === "" ? null : Number(sales.stated_budget),
+            original_quote: sales.original_quote === "" ? null : Number(sales.original_quote),
+            original_catering_estimate: sales.original_catering_estimate === "" ? null : Number(sales.original_catering_estimate),
+            original_guest_estimate: sales.original_guest_estimate === "" ? null : Number(sales.original_guest_estimate),
+            lead_source: sales.lead_source || null,
+            date_booked: sales.date_booked || null,
+          }, { onConflict: "event_id" });
+        }
+      }
 
       navigate(`/admin/events/${data.event_id}`);
     } catch (err: any) {
@@ -223,6 +249,28 @@ export default function CreateEventModal({ onClose }: Props) {
                 ))}
               </div>
             </div>
+
+            {canSeeSales && (
+              <>
+                <div className="h-px bg-border" />
+                <div>
+                  <p className="font-display text-base font-light text-foreground mb-1 flex items-center gap-2">
+                    <TrendingUp size={16} className="text-sage" />
+                    Sales Details
+                  </p>
+                  <p className="font-body text-xs text-muted-foreground mb-3">Pricing intelligence — visible only to sales, event directors, and CEO/owner.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Stated Budget ($)" type="number" value={sales.stated_budget} onChange={v => setSalesField("stated_budget", v)} placeholder="80000" />
+                    <Field label="Original Quote ($)" type="number" value={sales.original_quote} onChange={v => setSalesField("original_quote", v)} placeholder="92000" />
+                    <Field label="Original Catering Est. ($)" type="number" value={sales.original_catering_estimate} onChange={v => setSalesField("original_catering_estimate", v)} placeholder="35000" />
+                    <Field label="Original Guest Estimate" type="number" value={sales.original_guest_estimate} onChange={v => setSalesField("original_guest_estimate", v)} placeholder="120" />
+                    <Field label="Lead Source" value={sales.lead_source} onChange={v => setSalesField("lead_source", v)} placeholder="The Knot, Referral…" />
+                    <Field label="Date Booked" type="date" value={sales.date_booked} onChange={v => setSalesField("date_booked", v)} />
+                  </div>
+                </div>
+              </>
+            )}
+
 
             {error && (
               <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3">

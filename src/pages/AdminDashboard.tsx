@@ -4,8 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, CalendarClock, MessageCircle, Clock, ChevronRight, LogOut, Plus,
-  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles,
+  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles, TrendingUp,
 } from "lucide-react";
+
+const SALES_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"];
 import { Progress } from "@/components/ui/progress";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 import ActionQueue from "@/components/admin/ActionQueue";
@@ -360,6 +362,16 @@ export default function AdminDashboard() {
             >
               <Sparkles size={20} />
             </button>
+            {profile?.role && SALES_ROLES.includes(profile.role) && (
+              <button
+                onClick={() => navigate("/admin/sales-roster")}
+                title="Sales Roster"
+                aria-label="Sales Roster"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <TrendingUp size={20} />
+              </button>
+            )}
             <button
               onClick={() => navigate("/admin/inbox")}
               title="Inbox"

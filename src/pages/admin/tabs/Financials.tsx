@@ -6,6 +6,7 @@ import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { format, parseISO, differenceInDays, addDays } from "date-fns";
 import WireInstructions from "@/components/financials/WireInstructions";
+import SalesDetailsCard from "@/components/admin/SalesDetailsCard";
 
 interface PaymentLine {
   id: string;
@@ -603,6 +604,8 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
           <p className="font-display text-2xl font-light tabular-nums">{fmt(allRemaining)}</p>
         </div>
       </div>
+
+      <SalesDetailsCard eventId={eventId} />
 
       <WireInstructions editable />
 
