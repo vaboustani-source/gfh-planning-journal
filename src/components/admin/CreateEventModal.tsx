@@ -2,10 +2,10 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermission";
 import { X, Loader2, UserPlus, CalendarDays, TrendingUp } from "lucide-react";
 import { addDays, subDays, format, parseISO } from "date-fns";
 
-const SALES_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"];
 
 interface Props {
   onClose: () => void;
