@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -544,7 +544,7 @@ export default function MarketingRoster() {
                   {filtered.map((r) => {
                     const open = expanded.has(r.event_id);
                     return (
-                      <FragmentWithKey key={r.event_id}>
+                      <Fragment key={r.event_id}>
                         <tr
                           key={r.event_id}
                           className="border-t border-border hover:bg-muted/30 cursor-pointer"
@@ -601,7 +601,7 @@ export default function MarketingRoster() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
