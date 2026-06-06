@@ -83,6 +83,7 @@ const getDaysLabel = (days: number | null) => {
 /* ─── Component ─── */
 export default function AdminDashboard() {
   const { profile, signOut, user } = useAuth();
+  const { canView } = usePermissions();
   const currentUserId = user?.id ?? null;
   const navigate = useNavigate();
   const [events, setEvents] = useState<EventCard[]>([]);
