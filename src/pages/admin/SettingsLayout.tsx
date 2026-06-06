@@ -20,6 +20,8 @@ const ADMIN_ONLY = [
 
 export default function SettingsLayout() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const SidebarInner = ({ onItemClick }: { onItemClick?: () => void }) => (
