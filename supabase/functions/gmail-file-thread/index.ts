@@ -1,7 +1,9 @@
 // Files an entire Gmail thread into a project. Stores all messages, marks thread as filed,
-// and updates email_sender_map so future emails from those senders auto-suggest this event.
+// updates email_sender_map so future emails from those senders auto-suggest this event,
+// and categorizes each message by matched vendor on the event.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders, gmailApi, parseGmailMessage, refreshAccessToken } from "../_shared/gmail.ts";
+import { loadMatchContext, matchVendorForSender } from "../_shared/vendor-match.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -35,6 +37,8 @@ Deno.serve(async (req) => {
     const thread = await gmailApi(accessToken, `/threads/${gmail_thread_id}?format=full`);
     const messages = thread.messages ?? [];
 
+    const matchCtx = await loadMatchContext(admin, event_id);
+
     const myAddr = (conn.email_address || "").toLowerCase();
     const senderCounts: Record<string, number> = {};
     const rows = messages.map((m: any) => {
@@ -42,6 +46,7 @@ Deno.serve(async (req) => {
       const fromAddr = (p.from_address || "").toLowerCase();
       const isSent = fromAddr && myAddr && fromAddr === myAddr;
       if (!isSent && fromAddr) senderCounts[fromAddr] = (senderCounts[fromAddr] ?? 0) + 1;
+      const vm = matchVendorForSender(isSent ? null : fromAddr, matchCtx);
       return {
         event_id,
         gmail_thread_id: p.threadId,
@@ -58,6 +63,9 @@ Deno.serve(async (req) => {
         received_at: p.received_at,
         filed_by: user.id,
         direction: isSent ? "sent" : "received",
+        vendor_category: vm.vendor_category,
+        matched_vendor_id: vm.vendor_id,
+        matched_vendor_name: vm.vendor_name,
       };
     });
 
@@ -78,24 +86,34 @@ Deno.serve(async (req) => {
       }, { onConflict: "gmail_thread_id" });
     if (ftErr) throw ftErr;
 
-    // Learn the senders → event mapping
+    // Learn the senders → event mapping (also persist vendor link if we matched one)
     for (const [addr, count] of Object.entries(senderCounts)) {
+      const vm = matchVendorForSender(addr, matchCtx);
       const { data: existing } = await admin
         .from("email_sender_map")
-        .select("id, times_filed")
+        .select("id, times_filed, vendor_id")
         .eq("sender_address", addr)
         .eq("event_id", event_id)
         .maybeSingle();
       if (existing) {
-        await admin.from("email_sender_map").update({
+        const patch: any = {
           times_filed: (existing.times_filed ?? 1) + count,
           last_filed_at: new Date().toISOString(),
-        }).eq("id", existing.id);
+        };
+        if (!existing.vendor_id && vm.vendor_id) {
+          patch.vendor_id = vm.vendor_id;
+          patch.vendor_name = vm.vendor_name;
+          patch.vendor_category = vm.vendor_category;
+        }
+        await admin.from("email_sender_map").update(patch).eq("id", existing.id);
       } else {
         await admin.from("email_sender_map").insert({
           sender_address: addr,
           event_id,
           times_filed: count,
+          vendor_id: vm.vendor_id,
+          vendor_name: vm.vendor_name,
+          vendor_category: vm.vendor_category,
         });
       }
     }

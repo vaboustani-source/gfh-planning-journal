@@ -875,6 +875,9 @@ export type Database = {
           last_filed_at: string | null
           sender_address: string
           times_filed: number | null
+          vendor_category: string | null
+          vendor_id: string | null
+          vendor_name: string | null
         }
         Insert: {
           event_id?: string | null
@@ -882,6 +885,9 @@ export type Database = {
           last_filed_at?: string | null
           sender_address: string
           times_filed?: number | null
+          vendor_category?: string | null
+          vendor_id?: string | null
+          vendor_name?: string | null
         }
         Update: {
           event_id?: string | null
@@ -889,6 +895,9 @@ export type Database = {
           last_filed_at?: string | null
           sender_address?: string
           times_filed?: number | null
+          vendor_category?: string | null
+          vendor_id?: string | null
+          vendor_name?: string | null
         }
         Relationships: [
           {
@@ -3134,10 +3143,13 @@ export type Database = {
           gmail_thread_id: string
           has_attachments: boolean | null
           id: string
+          matched_vendor_id: string | null
+          matched_vendor_name: string | null
           received_at: string | null
           snippet: string | null
           subject: string | null
           to_addresses: string | null
+          vendor_category: string | null
         }
         Insert: {
           attachments?: Json | null
@@ -3153,10 +3165,13 @@ export type Database = {
           gmail_thread_id: string
           has_attachments?: boolean | null
           id?: string
+          matched_vendor_id?: string | null
+          matched_vendor_name?: string | null
           received_at?: string | null
           snippet?: string | null
           subject?: string | null
           to_addresses?: string | null
+          vendor_category?: string | null
         }
         Update: {
           attachments?: Json | null
@@ -3172,10 +3187,13 @@ export type Database = {
           gmail_thread_id?: string
           has_attachments?: boolean | null
           id?: string
+          matched_vendor_id?: string | null
+          matched_vendor_name?: string | null
           received_at?: string | null
           snippet?: string | null
           subject?: string | null
           to_addresses?: string | null
+          vendor_category?: string | null
         }
         Relationships: [
           {
