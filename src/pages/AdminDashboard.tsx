@@ -354,15 +354,17 @@ export default function AdminDashboard() {
               <p className="font-body text-xs text-muted-foreground">Signed in as</p>
               <p className="font-body text-sm font-medium text-foreground">{profile?.first_name || "Brandon"}</p>
             </div>
-            <button
-              onClick={() => navigate("/admin/marketing-roster")}
-              title="Marketing Roster"
-              aria-label="Marketing Roster"
-              className="transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Sparkles size={20} />
-            </button>
-            {profile?.role && SALES_ROLES.includes(profile.role) && (
+            {canView("marketing_roster") && (
+              <button
+                onClick={() => navigate("/admin/marketing-roster")}
+                title="Marketing Roster"
+                aria-label="Marketing Roster"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Sparkles size={20} />
+              </button>
+            )}
+            {canView("sales_roster") && (
               <button
                 onClick={() => navigate("/admin/sales-roster")}
                 title="Sales Roster"
@@ -372,25 +374,29 @@ export default function AdminDashboard() {
                 <TrendingUp size={20} />
               </button>
             )}
-            <button
-              onClick={() => navigate("/admin/inbox")}
-              title="Inbox"
-              aria-label="Inbox"
-              className="transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Inbox size={20} />
-            </button>
-            <button
-              onClick={() => navigate("/admin/settings")}
-              title="Settings"
-              aria-label="Settings"
-              className="transition-colors"
-              style={{ color: "#6B6B6B" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#2C3E2D")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#6B6B6B")}
-            >
-              <Settings size={20} />
-            </button>
+            {canView("gmail_inbox") && (
+              <button
+                onClick={() => navigate("/admin/inbox")}
+                title="Inbox"
+                aria-label="Inbox"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Inbox size={20} />
+              </button>
+            )}
+            {canView("settings") && (
+              <button
+                onClick={() => navigate("/admin/settings")}
+                title="Settings"
+                aria-label="Settings"
+                className="transition-colors"
+                style={{ color: "#6B6B6B" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#2C3E2D")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#6B6B6B")}
+              >
+                <Settings size={20} />
+              </button>
+            )}
             <button onClick={() => signOut().then(() => navigate("/login"))} className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
               <LogOut size={14} />Sign out
             </button>
