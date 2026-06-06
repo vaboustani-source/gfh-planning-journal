@@ -98,6 +98,7 @@ const App = () => (
               <Route path="resources" element={<Resources />} />
               <Route path="forms" element={<AdminForms />} />
               <Route path="integrations" element={<SettingsIntegrations />} />
+              <Route path="team" element={<SettingsTeamRoles />} />
             </Route>
             <Route
               path="/admin/account"
