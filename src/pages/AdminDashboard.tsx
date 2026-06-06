@@ -6,8 +6,7 @@ import {
   Calendar, CalendarClock, MessageCircle, Clock, ChevronRight, LogOut, Plus,
   AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles, TrendingUp,
 } from "lucide-react";
-
-const SALES_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"];
+import { usePermissions } from "@/hooks/usePermission";
 import { Progress } from "@/components/ui/progress";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 import ActionQueue from "@/components/admin/ActionQueue";
