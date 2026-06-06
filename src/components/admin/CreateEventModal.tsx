@@ -110,6 +110,21 @@ export default function CreateEventModal({ onClose }: Props) {
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
 
+      if (canSeeSales && data?.event_id) {
+        const hasAny = Object.values(sales).some(v => v !== "");
+        if (hasAny) {
+          await (supabase as any).from("sales_details").upsert({
+            event_id: data.event_id,
+            stated_budget: sales.stated_budget === "" ? null : Number(sales.stated_budget),
+            original_quote: sales.original_quote === "" ? null : Number(sales.original_quote),
+            original_catering_estimate: sales.original_catering_estimate === "" ? null : Number(sales.original_catering_estimate),
+            original_guest_estimate: sales.original_guest_estimate === "" ? null : Number(sales.original_guest_estimate),
+            lead_source: sales.lead_source || null,
+            date_booked: sales.date_booked || null,
+          }, { onConflict: "event_id" });
+        }
+      }
+
       navigate(`/admin/events/${data.event_id}`);
     } catch (err: any) {
       setError(err.message ?? "Something went wrong. Please try again.");
