@@ -96,15 +96,27 @@ Deno.serve(async (req) => {
         .filter(n => n && n.length >= 3),
     }));
 
-    const out: Record<string, { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low" } | null> = {};
+    const out: Record<string, { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low"; vendor_id?: string | null; vendor_name?: string | null; vendor_category?: string | null } | null> = {};
     for (const e of emails) {
       const addr = parseAddress(e.from || "");
+      const dom = addr.split("@")[1] || "";
       let pick: { event_id: string; confidence: "high" | "medium" | "low" } | null = null;
+      let vendor: { vendor_id: string | null; vendor_name: string | null; vendor_category: string | null } | null = null;
 
-      if (addr && mapBySender[addr]) {
-        pick = { event_id: mapBySender[addr].event_id, confidence: "high" };
+      if (addr && learnedVendorBySender[addr]) {
+        const v = learnedVendorBySender[addr];
+        pick = { event_id: v.event_id, confidence: "high" };
+        vendor = { vendor_id: v.vendor_id, vendor_name: v.vendor_name, vendor_category: v.vendor_category };
       } else if (addr && vendorBySender[addr]) {
-        pick = { event_id: vendorBySender[addr], confidence: "high" };
+        const v = vendorBySender[addr];
+        pick = { event_id: v.event_id, confidence: "high" };
+        vendor = { vendor_id: v.vendor_id, vendor_name: v.vendor_name, vendor_category: v.vendor_category };
+      } else if (dom && vendorByDomain[dom]) {
+        const v = vendorByDomain[dom];
+        pick = { event_id: v.event_id, confidence: "high" };
+        vendor = { vendor_id: v.vendor_id, vendor_name: v.vendor_name, vendor_category: v.vendor_category };
+      } else if (addr && mapBySender[addr]) {
+        pick = { event_id: mapBySender[addr].event_id, confidence: "high" };
       } else if (addr && coupleBySender[addr]) {
         pick = { event_id: coupleBySender[addr], confidence: "high" };
       } else {
@@ -118,7 +130,14 @@ Deno.serve(async (req) => {
       }
 
       out[e.id] = pick
-        ? { suggested_event_id: pick.event_id, suggested_couple_name: eventLabel[pick.event_id] || "Event", confidence: pick.confidence }
+        ? {
+            suggested_event_id: pick.event_id,
+            suggested_couple_name: eventLabel[pick.event_id] || "Event",
+            confidence: pick.confidence,
+            vendor_id: vendor?.vendor_id ?? null,
+            vendor_name: vendor?.vendor_name ?? null,
+            vendor_category: vendor?.vendor_category ?? null,
+          }
         : null;
     }
 
