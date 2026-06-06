@@ -17,7 +17,7 @@ interface InboxItem {
 
 interface EventOpt { id: string; title: string; couple: string | null }
 
-interface Suggestion { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low" }
+interface Suggestion { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low"; vendor_id?: string | null; vendor_name?: string | null; vendor_category?: string | null }
 
 interface FullMessage { body_text: string | null; body_html: string | null; attachments: any[] }
 
