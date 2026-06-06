@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Menu, X } from "lucide-react";
+import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
 import OverviewTab from "./tabs/Overview";
 import MilestonesTab from "./tabs/Milestones";
 import ChecklistTab from "./tabs/Checklist";
