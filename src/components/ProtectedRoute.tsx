@@ -46,8 +46,11 @@ export function ProtectedRoute({
   }
 
   if (requiredRole && profile?.role !== requiredRole) {
-    // admins can always reach admin routes regardless of legacy role param
-    if (profile?.role === "admin") return <>{children}</>;
+    // Treat admin + GFH-internal roles as equivalent for legacy admin-gated routes.
+    const internal = ["admin", "event_director", "ceo_owner", "sales_manager", "marketing", "planner"];
+    if (requiredRole === "admin" && profile?.role && internal.includes(profile.role)) {
+      return <>{children}</>;
+    }
     return <Navigate to={defaultLandingFor(profile?.role)} replace />;
   }
 
