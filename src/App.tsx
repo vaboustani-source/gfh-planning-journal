@@ -117,7 +117,7 @@ const App = () => (
             <Route
               path="/admin/inbox"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute section="gmail_inbox">
                   <AdminInbox />
                 </ProtectedRoute>
               }
@@ -125,7 +125,7 @@ const App = () => (
             <Route
               path="/admin/marketing-roster"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute section="marketing_roster">
                   <MarketingRoster />
                 </ProtectedRoute>
               }
@@ -133,7 +133,7 @@ const App = () => (
             <Route
               path="/admin/sales-roster"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute section="sales_roster">
                   <SalesRoster />
                 </ProtectedRoute>
               }

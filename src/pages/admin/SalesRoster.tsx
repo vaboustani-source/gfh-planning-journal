@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermission";
 import { format, parseISO, isValid } from "date-fns";
 import { ArrowLeft, ArrowUpDown, DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 
-const ALLOWED_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"] as const;
 
 type SortKey = "date" | "budget_delta" | "catering_delta" | "stated_budget" | "final_total";
 
@@ -53,7 +53,8 @@ export default function SalesRoster() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [yearFilter, setYearFilter] = useState<string>("all");
 
-  const allowed = profile?.role && (ALLOWED_ROLES as readonly string[]).includes(profile.role);
+  const access = usePermission("sales_roster");
+  const allowed = access !== "none";
 
   useEffect(() => {
     if (!allowed) { setLoading(false); return; }

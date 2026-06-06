@@ -2,10 +2,10 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermission";
 import { X, Loader2, UserPlus, CalendarDays, TrendingUp } from "lucide-react";
 import { addDays, subDays, format, parseISO } from "date-fns";
 
-const SALES_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"];
 
 interface Props {
   onClose: () => void;
@@ -43,7 +43,8 @@ function Field({ label, type = "text", placeholder, value, onChange }: FieldProp
 export default function CreateEventModal({ onClose }: Props) {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const canSeeSales = profile?.role && SALES_ROLES.includes(profile.role);
+  const { canView: canSection } = usePermissions();
+  const canSeeSales = canSection("sales_roster");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -6,8 +6,7 @@ import {
   Calendar, CalendarClock, MessageCircle, Clock, ChevronRight, LogOut, Plus,
   AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles, TrendingUp,
 } from "lucide-react";
-
-const SALES_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"];
+import { usePermissions } from "@/hooks/usePermission";
 import { Progress } from "@/components/ui/progress";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 import ActionQueue from "@/components/admin/ActionQueue";
@@ -84,6 +83,7 @@ const getDaysLabel = (days: number | null) => {
 /* ─── Component ─── */
 export default function AdminDashboard() {
   const { profile, signOut, user } = useAuth();
+  const { canView } = usePermissions();
   const currentUserId = user?.id ?? null;
   const navigate = useNavigate();
   const [events, setEvents] = useState<EventCard[]>([]);
@@ -354,15 +354,17 @@ export default function AdminDashboard() {
               <p className="font-body text-xs text-muted-foreground">Signed in as</p>
               <p className="font-body text-sm font-medium text-foreground">{profile?.first_name || "Brandon"}</p>
             </div>
-            <button
-              onClick={() => navigate("/admin/marketing-roster")}
-              title="Marketing Roster"
-              aria-label="Marketing Roster"
-              className="transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Sparkles size={20} />
-            </button>
-            {profile?.role && SALES_ROLES.includes(profile.role) && (
+            {canView("marketing_roster") && (
+              <button
+                onClick={() => navigate("/admin/marketing-roster")}
+                title="Marketing Roster"
+                aria-label="Marketing Roster"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Sparkles size={20} />
+              </button>
+            )}
+            {canView("sales_roster") && (
               <button
                 onClick={() => navigate("/admin/sales-roster")}
                 title="Sales Roster"
@@ -372,25 +374,29 @@ export default function AdminDashboard() {
                 <TrendingUp size={20} />
               </button>
             )}
-            <button
-              onClick={() => navigate("/admin/inbox")}
-              title="Inbox"
-              aria-label="Inbox"
-              className="transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Inbox size={20} />
-            </button>
-            <button
-              onClick={() => navigate("/admin/settings")}
-              title="Settings"
-              aria-label="Settings"
-              className="transition-colors"
-              style={{ color: "#6B6B6B" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#2C3E2D")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#6B6B6B")}
-            >
-              <Settings size={20} />
-            </button>
+            {canView("gmail_inbox") && (
+              <button
+                onClick={() => navigate("/admin/inbox")}
+                title="Inbox"
+                aria-label="Inbox"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Inbox size={20} />
+              </button>
+            )}
+            {canView("settings") && (
+              <button
+                onClick={() => navigate("/admin/settings")}
+                title="Settings"
+                aria-label="Settings"
+                className="transition-colors"
+                style={{ color: "#6B6B6B" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#2C3E2D")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#6B6B6B")}
+              >
+                <Settings size={20} />
+              </button>
+            )}
             <button onClick={() => signOut().then(() => navigate("/login"))} className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors">
               <LogOut size={14} />Sign out
             </button>

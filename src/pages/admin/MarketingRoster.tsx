@@ -9,11 +9,11 @@ import {
   ChevronDown, ChevronRight, Instagram, Search,
 } from "lucide-react";
 
-// Roles allowed to view the Marketing Roster.
+// Marketing Roster access comes from the central permission matrix.
 // TODO (future): "design shortlist" per wedding (aesthetic / palette / vision) — placement TBD.
 // TODO (future): auto-flag "⭐ Marketing Opportunity" badge when floral budget > threshold,
 // notable photographer is booked, or 3+ activations are booked.
-const ALLOWED_ROLES = ["admin", "marketing", "planner", "event_director", "ceo_owner"] as const;
+import { usePermission } from "@/hooks/usePermission";
 
 type SortKey = "date" | "guests" | "floral" | "total" | "activations";
 type ViewMode = "table" | "cards";
@@ -129,7 +129,8 @@ export default function MarketingRoster() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const allowed = !!profile?.role && (ALLOWED_ROLES as readonly string[]).includes(profile.role);
+  const access = usePermission("marketing_roster");
+  const allowed = access !== "none";
 
   useEffect(() => {
     if (authLoading) return;
