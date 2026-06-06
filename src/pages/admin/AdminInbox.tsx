@@ -17,7 +17,7 @@ interface InboxItem {
 
 interface EventOpt { id: string; title: string; couple: string | null }
 
-interface Suggestion { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low" }
+interface Suggestion { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low"; vendor_id?: string | null; vendor_name?: string | null; vendor_category?: string | null }
 
 interface FullMessage { body_text: string | null; body_html: string | null; attachments: any[] }
 
@@ -286,7 +286,7 @@ export default function AdminInbox() {
                               }
                               title={`${sug.confidence} confidence`}
                             >
-                              <Sparkles size={10} /> → {sug.suggested_couple_name}
+                              <Sparkles size={10} /> {sug.vendor_name ? <>{sug.vendor_name}{sug.vendor_category ? ` (${sug.vendor_category})` : ""} → {sug.suggested_couple_name}</> : <>→ {sug.suggested_couple_name}</>}
                             </span>
                             <button
                               onClick={() => fileTo(m, sug.suggested_event_id)}

@@ -51,12 +51,30 @@ Deno.serve(async (req) => {
       }
     }
 
-    // vendors
-    const { data: vendors } = await admin.from("vendors").select("event_id, email").not("email", "is", null);
-    const vendorBySender: Record<string, string> = {};
+    // vendors (per event) — full row so we can return vendor role context
+    const { data: vendors } = await admin.from("vendors").select("id, event_id, email, business_name, contact_name, category").not("email", "is", null);
+    const vendorBySender: Record<string, { event_id: string; vendor_id: string; vendor_name: string; vendor_category: string | null }> = {};
+    const vendorByDomain: Record<string, { event_id: string; vendor_id: string; vendor_name: string; vendor_category: string | null }> = {};
+    const GENERIC = new Set(["gmail.com","yahoo.com","outlook.com","hotmail.com","icloud.com","aol.com","me.com","msn.com","live.com","comcast.net","proton.me","protonmail.com","mac.com"]);
+    const domOf = (a: string) => { const p = a.split("@"); return p.length===2 ? p[1] : ""; };
     for (const v of vendors ?? []) {
       const k = (v.email || "").toLowerCase().trim();
-      if (k) vendorBySender[k] = v.event_id;
+      if (!k) continue;
+      const meta = { event_id: v.event_id, vendor_id: v.id, vendor_name: v.business_name || v.contact_name || "Vendor", vendor_category: v.category };
+      vendorBySender[k] = meta;
+      const d = domOf(k);
+      if (d && !GENERIC.has(d) && !vendorByDomain[d]) vendorByDomain[d] = meta;
+    }
+
+    // Learned vendor mapping (manual assigns from sender_map)
+    const { data: senderVendor } = await admin
+      .from("email_sender_map")
+      .select("sender_address, event_id, vendor_id, vendor_name, vendor_category")
+      .not("vendor_id", "is", null);
+    const learnedVendorBySender: Record<string, { event_id: string; vendor_id: string; vendor_name: string; vendor_category: string | null }> = {};
+    for (const r of senderVendor ?? []) {
+      const k = (r.sender_address || "").toLowerCase();
+      if (k && r.vendor_id) learnedVendorBySender[k] = { event_id: r.event_id, vendor_id: r.vendor_id, vendor_name: r.vendor_name || "Vendor", vendor_category: r.vendor_category };
     }
 
     // event_users (couples) - join users for email
@@ -78,15 +96,27 @@ Deno.serve(async (req) => {
         .filter(n => n && n.length >= 3),
     }));
 
-    const out: Record<string, { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low" } | null> = {};
+    const out: Record<string, { suggested_event_id: string; suggested_couple_name: string; confidence: "high" | "medium" | "low"; vendor_id?: string | null; vendor_name?: string | null; vendor_category?: string | null } | null> = {};
     for (const e of emails) {
       const addr = parseAddress(e.from || "");
+      const dom = addr.split("@")[1] || "";
       let pick: { event_id: string; confidence: "high" | "medium" | "low" } | null = null;
+      let vendor: { vendor_id: string | null; vendor_name: string | null; vendor_category: string | null } | null = null;
 
-      if (addr && mapBySender[addr]) {
-        pick = { event_id: mapBySender[addr].event_id, confidence: "high" };
+      if (addr && learnedVendorBySender[addr]) {
+        const v = learnedVendorBySender[addr];
+        pick = { event_id: v.event_id, confidence: "high" };
+        vendor = { vendor_id: v.vendor_id, vendor_name: v.vendor_name, vendor_category: v.vendor_category };
       } else if (addr && vendorBySender[addr]) {
-        pick = { event_id: vendorBySender[addr], confidence: "high" };
+        const v = vendorBySender[addr];
+        pick = { event_id: v.event_id, confidence: "high" };
+        vendor = { vendor_id: v.vendor_id, vendor_name: v.vendor_name, vendor_category: v.vendor_category };
+      } else if (dom && vendorByDomain[dom]) {
+        const v = vendorByDomain[dom];
+        pick = { event_id: v.event_id, confidence: "high" };
+        vendor = { vendor_id: v.vendor_id, vendor_name: v.vendor_name, vendor_category: v.vendor_category };
+      } else if (addr && mapBySender[addr]) {
+        pick = { event_id: mapBySender[addr].event_id, confidence: "high" };
       } else if (addr && coupleBySender[addr]) {
         pick = { event_id: coupleBySender[addr], confidence: "high" };
       } else {
@@ -100,7 +130,14 @@ Deno.serve(async (req) => {
       }
 
       out[e.id] = pick
-        ? { suggested_event_id: pick.event_id, suggested_couple_name: eventLabel[pick.event_id] || "Event", confidence: pick.confidence }
+        ? {
+            suggested_event_id: pick.event_id,
+            suggested_couple_name: eventLabel[pick.event_id] || "Event",
+            confidence: pick.confidence,
+            vendor_id: vendor?.vendor_id ?? null,
+            vendor_name: vendor?.vendor_name ?? null,
+            vendor_category: vendor?.vendor_category ?? null,
+          }
         : null;
     }
 
