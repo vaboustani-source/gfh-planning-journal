@@ -21,7 +21,9 @@ const EMPTY: SalesFields = {
 
 export default function SalesDetailsCard({ eventId }: { eventId: string }) {
   const { profile } = useAuth();
-  const allowed = profile?.role && ALLOWED_ROLES.includes(profile.role);
+  const access = usePermission("sales_roster");
+  const allowed = access !== "none";
+  const canEditCard = access === "full";
   const [fields, setFields] = useState<SalesFields>(EMPTY);
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
