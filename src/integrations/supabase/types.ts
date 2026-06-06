@@ -3666,6 +3666,7 @@ export type Database = {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
       }
+      is_marketing_viewer: { Args: { _user_id: string }; Returns: boolean }
       lb_ensure_block_for_event: {
         Args: { _event_id: string }
         Returns: string
