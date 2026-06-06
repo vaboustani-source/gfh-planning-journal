@@ -129,7 +129,8 @@ export default function MarketingRoster() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const allowed = !!profile?.role && (ALLOWED_ROLES as readonly string[]).includes(profile.role);
+  const access = usePermission("marketing_roster");
+  const allowed = access !== "none";
 
   useEffect(() => {
     if (authLoading) return;

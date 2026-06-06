@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermission";
 import { TrendingUp, Lock } from "lucide-react";
 
-const ALLOWED_ROLES = ["sales_manager", "event_director", "ceo_owner", "admin"];
 
 interface SalesFields {
   stated_budget: string;
