@@ -120,50 +120,47 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
     let cancelled = false;
     (async () => {
       if (contentEventId) {
-        const [g, v, ex, dc, tl] = await Promise.all([
+        const [g, v, ex, dc] = await Promise.all([
           supabase.from("guests").select("id, first_name, last_name").eq("event_id", contentEventId).limit(200),
-          supabase.from("vendors").select("id, name, role").eq("event_id", contentEventId).limit(200),
-          supabase.from("experience_requests").select("id, title").eq("event_id", contentEventId).limit(100),
-          supabase.from("decor_selections").select("id, item_name").eq("event_id", contentEventId).limit(100),
-          supabase.from("working_timeline").select("id, title").eq("event_id", contentEventId).limit(100),
+          supabase.from("vendors").select("id, business_name, category").eq("event_id", contentEventId).limit(200),
+          supabase.from("experience_requests").select("id, experience_catalog(title)").eq("event_id", contentEventId).limit(100),
+          supabase.from("decor_selections").select("id, decor_catalog(title)").eq("event_id", contentEventId).limit(100),
         ]);
         if (cancelled) return;
         setGuests(g.data ?? []);
-        setVendors(v.data ?? []);
-        setExperiences(ex.data ?? []);
-        setDecor(dc.data ?? []);
-        setTimelineBlocks(tl.data ?? []);
+        setVendors((v.data ?? []).map((x: any) => ({ id: x.id, name: x.business_name, role: x.category })));
+        setExperiences((ex.data ?? []).map((x: any) => ({ id: x.id, title: x.experience_catalog?.title })));
+        setDecor((dc.data ?? []).map((x: any) => ({ id: x.id, item_name: x.decor_catalog?.title })));
+        setTimelineBlocks([]);
         if (scope !== "couple") setEvents([]);
       }
       // Admin all-events search
       if (scope !== "couple" && (scope === "admin-dashboard" || adminMode === "all")) {
         const { data: evs } = await supabase
           .from("events")
-          .select("id, title, wedding_date, arrival_date, couples(partner1_first_name, partner1_last_name, partner2_first_name, partner2_last_name)")
+          .select("id, title, wedding_date, arrival_date, partner1_name, partner2_name")
           .order("wedding_date", { ascending: false })
           .limit(500);
         if (cancelled) return;
         const mapped = (evs ?? []).map((e: any) => {
-          const c = Array.isArray(e.couples) ? e.couples[0] : e.couples;
-          const p1 = [c?.partner1_first_name, c?.partner1_last_name].filter(Boolean).join(" ");
-          const p2 = [c?.partner2_first_name, c?.partner2_last_name].filter(Boolean).join(" ");
-          const coupleNames = [p1, p2].filter(Boolean).join(" & ") || e.title;
+          const coupleNames = [e.partner1_name, e.partner2_name].filter(Boolean).join(" & ") || e.title;
           return { id: e.id, title: e.title, wedding_date: e.wedding_date, arrival_date: e.arrival_date, coupleNames };
         });
         setEvents(mapped);
 
         const [allGuests, allVendors] = await Promise.all([
           supabase.from("guests").select("id, first_name, last_name, event_id").limit(2000),
-          supabase.from("vendors").select("id, name, role, event_id").limit(2000),
+          supabase.from("vendors").select("id, business_name, category, event_id").limit(2000),
         ]);
         if (cancelled) return;
         setGuests(allGuests.data ?? []);
-        setVendors(allVendors.data ?? []);
+        setVendors((allVendors.data ?? []).map((x: any) => ({ id: x.id, name: x.business_name, role: x.category, event_id: x.event_id })));
         setExperiences([]); setDecor([]); setTimelineBlocks([]);
       }
     })();
     return () => { cancelled = true; };
   }, [open, scope, contentEventId, adminMode]);
+
 
   const eventTitleMap = useMemo(() => {
     const m: Record<string, string> = {};
