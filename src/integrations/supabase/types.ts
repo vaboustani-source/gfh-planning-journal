@@ -3706,6 +3706,20 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: boolean
       }
+      can_edit_section: {
+        Args: {
+          _section: Database["public"]["Enums"]["app_section"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      can_view_section: {
+        Args: {
+          _section: Database["public"]["Enums"]["app_section"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       cleanup_stale_session_locks: { Args: never; Returns: number }
       ensure_standard_vendor_roles: {
         Args: { p_event_id: string }
@@ -3716,8 +3730,6 @@ export type Database = {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
       }
-      is_marketing_viewer: { Args: { _user_id: string }; Returns: boolean }
-      is_sales_viewer: { Args: { _user_id: string }; Returns: boolean }
       lb_ensure_block_for_event: {
         Args: { _event_id: string }
         Returns: string
@@ -3852,8 +3864,28 @@ export type Database = {
         }
         Returns: string
       }
+      user_access_level: {
+        Args: {
+          _section: Database["public"]["Enums"]["app_section"]
+          _user_id: string
+        }
+        Returns: Database["public"]["Enums"]["access_level"]
+      }
     }
     Enums: {
+      access_level: "full" | "view" | "none"
+      app_section:
+        | "event_planning"
+        | "vendors_experiences_decor"
+        | "our_people"
+        | "financials"
+        | "sales_roster"
+        | "marketing_roster"
+        | "preferred_vendors_catalog"
+        | "other_catalogs"
+        | "settings"
+        | "tasting_notes"
+        | "gmail_inbox"
       notification_status: "pending" | "sent" | "failed" | "permanent_failure"
     }
     CompositeTypes: {
@@ -3982,6 +4014,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      access_level: ["full", "view", "none"],
+      app_section: [
+        "event_planning",
+        "vendors_experiences_decor",
+        "our_people",
+        "financials",
+        "sales_roster",
+        "marketing_roster",
+        "preferred_vendors_catalog",
+        "other_catalogs",
+        "settings",
+        "tasting_notes",
+        "gmail_inbox",
+      ],
       notification_status: ["pending", "sent", "failed", "permanent_failure"],
     },
   },
