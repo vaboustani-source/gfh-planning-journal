@@ -131,6 +131,14 @@ const App = () => (
               }
             />
             <Route
+              path="/admin/sales-roster"
+              element={
+                <ProtectedRoute>
+                  <SalesRoster />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/preferred-vendors"
               element={
                 <ProtectedRoute requiredRole="admin">
