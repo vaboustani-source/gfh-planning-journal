@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const LIBRARIES = [
   { slug: "journal", label: "Journal" },
@@ -11,6 +12,10 @@ const LIBRARIES = [
   { slug: "resources", label: "Resources" },
   { slug: "forms", label: "Forms" },
   { slug: "integrations", label: "Integrations" },
+];
+
+const ADMIN_ONLY = [
+  { slug: "team", label: "Team & Roles" },
 ];
 
 export default function SettingsLayout() {
