@@ -42,6 +42,8 @@ function Field({ label, type = "text", placeholder, value, onChange }: FieldProp
 
 export default function CreateEventModal({ onClose }: Props) {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const canSeeSales = profile?.role && SALES_ROLES.includes(profile.role);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
