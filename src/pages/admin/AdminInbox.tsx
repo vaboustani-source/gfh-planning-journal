@@ -286,7 +286,7 @@ export default function AdminInbox() {
                               }
                               title={`${sug.confidence} confidence`}
                             >
-                              <Sparkles size={10} /> → {sug.suggested_couple_name}
+                              <Sparkles size={10} /> {sug.vendor_name ? <>{sug.vendor_name}{sug.vendor_category ? ` (${sug.vendor_category})` : ""} → {sug.suggested_couple_name}</> : <>→ {sug.suggested_couple_name}</>}
                             </span>
                             <button
                               onClick={() => fileTo(m, sug.suggested_event_id)}
