@@ -227,8 +227,27 @@ export default function Financials() {
                   <p className="font-display text-2xl font-light tabular-nums">{currency(grandRemaining)}</p>
                 </div>
               </div>
+              {/* Grand total bar */}
+              <div className="rounded-xl bg-forest text-white px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-3 shadow-soft">
+                <div>
+                  <p className="font-body text-[10px] uppercase tracking-widest text-white/70">Total Contract Value</p>
+                  <p className="font-display text-2xl font-light tabular-nums">{currency(grandSubtotal)}</p>
+                </div>
+                <div>
+                  <p className="font-body text-[10px] uppercase tracking-widest text-white/70">Total Paid</p>
+                  <p className="font-display text-2xl font-light tabular-nums">{currency(grandPaid)}</p>
+                </div>
+                <div>
+                  <p className="font-body text-[10px] uppercase tracking-widest text-white/70">Balance Remaining</p>
+                  <p className="font-display text-2xl font-light tabular-nums">{currency(grandRemaining)}</p>
+                </div>
+              </div>
             </>
           )}
+
+          <div className="mt-8">
+            <WireInstructions />
+          </div>
         </div>
       </div>
       <PortalStickyFooter onContinue={() => navigate("/portal/messages")} nextOnly />
