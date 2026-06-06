@@ -345,6 +345,8 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <GlobalSearchTrigger scope="admin-dashboard" variant="bar" />
+
             <div className="text-right hidden sm:block">
               <p className="font-body text-xs text-muted-foreground">Signed in as</p>
               <p className="font-body text-sm font-medium text-foreground">{profile?.first_name || "Brandon"}</p>
