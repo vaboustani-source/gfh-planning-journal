@@ -221,6 +221,9 @@ export default function EventDetail() {
         <p className="font-display text-base font-medium text-foreground leading-tight truncate">
           {coupleNames || event.title}
         </p>
+        <div className="mt-1.5">
+          <LifecycleBadge stage={(event.lifecycle_stage ?? "portal_open") as any} />
+        </div>
         {days !== null && (
           <p className="font-body text-[11px] text-muted-foreground mt-1">
             {days > 0 ? `${days} days until arrival` : days === 0 ? "Arrival is today" : `${Math.abs(days)} days since arrival`}
