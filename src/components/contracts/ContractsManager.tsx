@@ -196,9 +196,11 @@ export default function ContractsManager({ eventId }: Props) {
                     {docTypeLabel(c.document_type)}
                   </span>
                   <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(c.status)}`}>
-                    {statusLabel(c.status)}
+                    {c.status === "fully_signed" && c.requires_countersignature
+                      ? "Awaiting Countersignature"
+                      : statusLabel(c.status)}
                   </span>
-                  {c.status === "fully_signed" && <Lock size={12} className="text-sage" />}
+                  {(c.status === "fully_signed" || c.status === "executed") && <Lock size={12} className="text-sage" />}
                 </div>
                 <p className="font-body text-xs text-muted-foreground mt-1">
                   {sigCounts[c.id] ?? 0} signature{(sigCounts[c.id] ?? 0) === 1 ? "" : "s"}
@@ -211,7 +213,7 @@ export default function ContractsManager({ eventId }: Props) {
                   className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
                   <Eye size={13} /> View
                 </button>
-                {c.status !== "fully_signed" && c.status !== "voided" && (
+                {c.status !== "fully_signed" && c.status !== "executed" && c.status !== "voided" && (
                   <button onClick={() => openEdit(c)}
                     className="rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
                     Edit
