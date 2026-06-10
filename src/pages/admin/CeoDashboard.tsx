@@ -355,11 +355,11 @@ export default function CeoDashboard() {
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <td className="py-3 pr-4">
-                          <div className="font-medium">{ev ? coupleName(ev) : "—"}</div>
+                          <div className="font-medium">{ev ? coupleName(ev) : "Not set"}</div>
                           {p.label && <div className="text-xs" style={{ color: COLORS.muted }}>{p.label}</div>}
                         </td>
                         <td className="py-3 px-4 text-right tabular-nums">{usd(Number(p.amount || 0))}</td>
-                        <td className="py-3 px-4">{p.due_date ? format(parseISO(p.due_date), "MMM d, yyyy") : "—"}</td>
+                        <td className="py-3 px-4">{p.due_date ? format(parseISO(p.due_date), "MMM d, yyyy") : "Not set"}</td>
                         <td className="py-3 pl-4 text-right tabular-nums" style={{ color: (p.days as number) < 0 ? COLORS.accent : COLORS.text }}>
                           {(p.days as number) < 0 ? `${Math.abs(p.days as number)} overdue` : p.days}
                         </td>
@@ -371,6 +371,8 @@ export default function CeoDashboard() {
             </div>
           )}
         </Card>
+        </>
+        )}
       </main>
     </div>
   );
