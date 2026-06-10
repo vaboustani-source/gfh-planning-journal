@@ -17,6 +17,7 @@ type Contract = {
   content_hash: string | null;
   status: string;
   requires_both_partners: boolean;
+  requires_countersignature: boolean;
   sent_at: string | null;
   created_at: string;
 };
@@ -24,6 +25,7 @@ type Contract = {
 type Signature = {
   id: string;
   contract_id: string;
+  signer_role: string;
   signer_name: string;
   signer_email: string;
   signer_user_id: string | null;
@@ -45,6 +47,7 @@ type Template = {
   document_type: string;
   body: string;
   requires_both_partners: boolean;
+  requires_countersignature: boolean;
 };
 
 export default function ContractsManager({ eventId }: Props) {
