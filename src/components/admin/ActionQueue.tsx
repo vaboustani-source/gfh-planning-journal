@@ -440,6 +440,11 @@ function ActionCard({ item, eventName, onSent }: { item: QueueItem; eventName: s
                 Go to Conversation <ChevronRight size={12} />
               </button>
             )}
+            {item.kind === "handoff" && (
+              <button onClick={() => navigate(`/admin/events/${item.event_id}`)} className="px-3 py-1.5 rounded-md bg-sage text-white text-xs hover:bg-sage-dark inline-flex items-center gap-1">
+                Open Wedding <ChevronRight size={12} />
+              </button>
+            )}
           </div>
 
           {/* Draft editor */}
