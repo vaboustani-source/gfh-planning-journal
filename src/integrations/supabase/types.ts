@@ -448,6 +448,7 @@ export type Database = {
           signed_at: string
           signer_email: string
           signer_name: string
+          signer_role: string
           signer_user_id: string | null
           typed_name: string
           user_agent: string | null
@@ -462,6 +463,7 @@ export type Database = {
           signed_at?: string
           signer_email: string
           signer_name: string
+          signer_role?: string
           signer_user_id?: string | null
           typed_name: string
           user_agent?: string | null
@@ -476,6 +478,7 @@ export type Database = {
           signed_at?: string
           signer_email?: string
           signer_name?: string
+          signer_role?: string
           signer_user_id?: string | null
           typed_name?: string
           user_agent?: string | null
@@ -500,6 +503,7 @@ export type Database = {
           is_active: boolean
           name: string
           requires_both_partners: boolean
+          requires_countersignature: boolean
           updated_at: string
         }
         Insert: {
@@ -511,6 +515,7 @@ export type Database = {
           is_active?: boolean
           name: string
           requires_both_partners?: boolean
+          requires_countersignature?: boolean
           updated_at?: string
         }
         Update: {
@@ -522,6 +527,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           requires_both_partners?: boolean
+          requires_countersignature?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -537,6 +543,7 @@ export type Database = {
           id: string
           rendered_content: string | null
           requires_both_partners: boolean | null
+          requires_countersignature: boolean
           sent_at: string | null
           status: string | null
           title: string
@@ -551,6 +558,7 @@ export type Database = {
           id?: string
           rendered_content?: string | null
           requires_both_partners?: boolean | null
+          requires_countersignature?: boolean
           sent_at?: string | null
           status?: string | null
           title: string
@@ -565,6 +573,7 @@ export type Database = {
           id?: string
           rendered_content?: string | null
           requires_both_partners?: boolean | null
+          requires_countersignature?: boolean
           sent_at?: string | null
           status?: string | null
           title?: string
