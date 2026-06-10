@@ -13,6 +13,7 @@ type Contract = {
   title: string;
   document_type: string;
   content: string;
+  rendered_content: string | null;
   content_hash: string | null;
   status: string;
   requires_both_partners: boolean;
