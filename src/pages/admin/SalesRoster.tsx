@@ -278,7 +278,10 @@ export default function SalesRoster() {
                       className="border-b border-border hover:bg-sage/5 cursor-pointer transition-colors"
                     >
                       <td className="p-3 align-top">
-                        <p className="font-display text-base text-foreground">{r.couple_names}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-display text-base text-foreground">{r.couple_names}</p>
+                          <MidweekBadge weddingDate={r.wedding_date} />
+                        </div>
                         <p className="font-body text-xs text-muted-foreground">
                           {r.wedding_date && isValid(parseISO(r.wedding_date)) ? format(parseISO(r.wedding_date), "MMM d, yyyy") : "Date TBD"}
                         </p>
