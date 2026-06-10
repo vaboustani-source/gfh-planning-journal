@@ -143,6 +143,7 @@ function TemplateEditor({
   const [docType, setDocType] = useState(template.document_type);
   const [body, setBody] = useState(template.body);
   const [both, setBoth] = useState(template.requires_both_partners);
+  const [counter, setCounter] = useState(template.requires_countersignature);
   const [active, setActive] = useState(template.is_active);
   const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
