@@ -556,7 +556,10 @@ export default function MarketingRoster() {
                             {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                           </td>
                           <td className="px-3 py-3">
-                            <p className="font-body text-sm font-medium text-foreground">{r.couple_names}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-body text-sm font-medium text-foreground">{r.couple_names}</p>
+                              <MidweekBadge weddingDate={r.wedding_date} />
+                            </div>
                             <p className="font-body text-[11px] text-muted-foreground">
                               {daysLabel(r.days_away)}
                             </p>
