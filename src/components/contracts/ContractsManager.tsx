@@ -546,6 +546,68 @@ function ContractViewer({ contract, ctx, onClose }: {
             </div>
           </section>
 
+          {isExecuted && (
+            <section
+              className="rounded-lg border p-5 flex items-start gap-3"
+              style={{ borderColor: "#C9A84C", backgroundColor: "#FAF8F4" }}
+            >
+              <Lock size={18} className="mt-0.5" style={{ color: "#2C3E2D" }} />
+              <div>
+                <p className="font-display text-base" style={{ color: "#2C3E2D" }}>Fully executed</p>
+                <p className="font-body text-sm" style={{ color: "#6B6B6B" }}>
+                  Both parties have signed. This contract is locked and on file.
+                </p>
+              </div>
+            </section>
+          )}
+
+          {awaitingCountersig && (
+            <section
+              className="rounded-lg border p-5 space-y-4"
+              style={{ borderColor: "#C9A84C", backgroundColor: "#FAF8F4" }}
+            >
+              <div>
+                <p className="font-display text-base" style={{ color: "#2C3E2D" }}>Countersign as Venue</p>
+                <p className="font-body text-sm" style={{ color: "#6B6B6B" }}>
+                  The couple has signed. Add your venue countersignature to fully execute this contract.
+                </p>
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox" checked={csAgreed}
+                  onChange={e => setCsAgreed(e.target.checked)}
+                  className="mt-1 rounded border-border"
+                />
+                <span className="font-body text-sm text-foreground">
+                  I confirm I am authorized to countersign on behalf of Gilbertsville Farmhouse.
+                </span>
+              </label>
+              <div>
+                <label className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Type your full legal name
+                </label>
+                <input
+                  value={csTyped}
+                  onChange={e => setCsTyped(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full mt-1 border-b-2 border-border bg-transparent py-2 px-1 text-2xl italic focus:outline-none focus:border-sage"
+                  style={{ fontFamily: "Cormorant Garamond, serif" }}
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={countersign}
+                  disabled={!csAgreed || csTyped.trim().length < 3 || csBusy}
+                  className="inline-flex items-center gap-2 rounded-md px-5 py-2.5 font-body text-sm text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: "#2C3E2D" }}
+                >
+                  <ShieldCheck size={15} /> {csBusy ? "Recording..." : "Countersign"}
+                </button>
+              </div>
+            </section>
+          )}
+
+
           <section>
             <div className="flex items-center gap-2 mb-3">
               <ShieldCheck size={16} className="text-sage" />
