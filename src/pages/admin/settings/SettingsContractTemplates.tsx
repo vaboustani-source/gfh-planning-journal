@@ -175,6 +175,7 @@ function TemplateEditor({
         document_type: docType,
         body,
         requires_both_partners: both,
+        requires_countersignature: counter,
         is_active: active,
         updated_at: new Date().toISOString(),
       };
