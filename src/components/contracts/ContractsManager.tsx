@@ -97,7 +97,7 @@ export default function ContractsManager({ eventId }: Props) {
   const openNew = () => {
     setEditor({
       id: "", event_id: eventId, title: "", document_type: "contract",
-      content: "", content_hash: null, status: "draft",
+      content: "", rendered_content: null, content_hash: null, status: "draft",
       requires_both_partners: false, sent_at: null, created_at: "",
     });
     setEditorOpen(true);
