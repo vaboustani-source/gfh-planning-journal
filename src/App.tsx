@@ -77,6 +77,14 @@ const App = () => (
               }
             />
             <Route
+              path="/admin/ceo-dashboard"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <CeoDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/events/:eventId"
               element={
                 <ProtectedRoute requiredRole="admin">
