@@ -311,6 +311,22 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
           )}
         </div>
       </article>
+
+      {allSigs.length > 0 && (
+        <SignedCertificate
+          contract={{
+            id: contract.id,
+            title: contract.title,
+            document_type: contract.document_type,
+            status: contractStatus,
+            content: contract.content,
+            rendered_content: contract.rendered_content,
+            content_hash: contract.content_hash,
+          }}
+          renderedText={rendered}
+          signatures={allSigs}
+        />
+      )}
     </div>
   );
 }
