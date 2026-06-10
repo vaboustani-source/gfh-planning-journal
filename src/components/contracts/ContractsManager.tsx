@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Plus, Send, Eye, X, Lock, AlertTriangle, ShieldCheck, Ban } from "lucide-react";
+import { FileText, Plus, Send, Eye, X, Lock, AlertTriangle, ShieldCheck, Ban, Download } from "lucide-react";
 import {
   renderContract, sha256Hex, statusLabel, statusPillClass, docTypeLabel,
   PLACEHOLDER_TOKENS, type ContractContext,
 } from "@/lib/contractTemplate";
+import SignedCertificate from "@/components/contracts/SignedCertificate";
 
 type Contract = {
   id: string;
@@ -535,7 +536,15 @@ function ContractViewer({ contract, ctx, onClose }: {
               {docTypeLabel(contract.document_type)} · {statusDisplay}
             </p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+          <div className="flex items-center gap-2">
+            {sigs.length > 0 && (
+              <button onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
+                <Download size={13} /> Download Signed PDF
+              </button>
+            )}
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
@@ -667,6 +676,22 @@ function ContractViewer({ contract, ctx, onClose }: {
           </section>
         </div>
       </div>
+
+      {sigs.length > 0 && (
+        <SignedCertificate
+          contract={{
+            id: contract.id,
+            title: contract.title,
+            document_type: contract.document_type,
+            status,
+            content: contract.content,
+            rendered_content: contract.rendered_content,
+            content_hash: contract.content_hash,
+          }}
+          renderedText={rendered}
+          signatures={sigs}
+        />
+      )}
     </div>
   );
 }
