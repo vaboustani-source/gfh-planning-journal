@@ -536,7 +536,15 @@ function ContractViewer({ contract, ctx, onClose }: {
               {docTypeLabel(contract.document_type)} · {statusDisplay}
             </p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+          <div className="flex items-center gap-2">
+            {sigs.length > 0 && (
+              <button onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
+                <Download size={13} /> Download Signed PDF
+              </button>
+            )}
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
