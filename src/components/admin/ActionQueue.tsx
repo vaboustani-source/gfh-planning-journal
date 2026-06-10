@@ -48,7 +48,12 @@ interface MentionItem extends BaseItem {
   who: string;
   snippet: string;
 }
-type QueueItem = MessageItem | ContractItem | FormItem | MilestoneItem | MentionItem;
+interface HandoffItem extends BaseItem {
+  kind: "handoff";
+  package_tier: string | null;
+  handed_off_at: string;
+}
+type QueueItem = MessageItem | ContractItem | FormItem | MilestoneItem | MentionItem | HandoffItem;
 
 const HARD_CAP = 10;
 const STALE_DAYS = 14;
