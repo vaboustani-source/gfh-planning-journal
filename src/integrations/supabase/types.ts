@@ -401,6 +401,42 @@ export type Database = {
           },
         ]
       }
+      contract_audit_log: {
+        Row: {
+          action: string
+          actor_label: string | null
+          actor_user_id: string | null
+          contract_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_label?: string | null
+          actor_user_id?: string | null
+          contract_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_label?: string | null
+          actor_user_id?: string | null
+          contract_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       contract_signatures: {
         Row: {
           agreed_to_terms: boolean
@@ -463,6 +499,7 @@ export type Database = {
           document_type: string | null
           event_id: string | null
           id: string
+          rendered_content: string | null
           requires_both_partners: boolean | null
           sent_at: string | null
           status: string | null
@@ -476,6 +513,7 @@ export type Database = {
           document_type?: string | null
           event_id?: string | null
           id?: string
+          rendered_content?: string | null
           requires_both_partners?: boolean | null
           sent_at?: string | null
           status?: string | null
@@ -489,6 +527,7 @@ export type Database = {
           document_type?: string | null
           event_id?: string | null
           id?: string
+          rendered_content?: string | null
           requires_both_partners?: boolean | null
           sent_at?: string | null
           status?: string | null
