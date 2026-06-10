@@ -626,7 +626,10 @@ export default function MarketingRoster() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="font-display text-lg text-foreground">{r.couple_names}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-display text-lg text-foreground">{r.couple_names}</p>
+                      <MidweekBadge weddingDate={r.wedding_date} />
+                    </div>
                     <p className="font-body text-xs text-muted-foreground">
                       {r.wedding_date && isValid(parseISO(r.wedding_date))
                         ? format(parseISO(r.wedding_date), "EEE MMM d, yyyy")
