@@ -115,6 +115,8 @@ export default function AcceptInvite() {
     if (password.length < 8) { setError("Please choose a password with at least 8 characters."); return; }
     setError(null);
     setSubmitting(true);
+    // Make sure no other session interferes with the password flow
+    await supabase.auth.signOut();
     const { data, error } = await supabase.functions.invoke("accept-invitation", {
       body: { token, password, first_name: firstName, last_name: lastName },
     });
