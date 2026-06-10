@@ -399,6 +399,12 @@ function ActionCard({ item, eventName, onSent }: { item: QueueItem; eventName: s
               <span className="font-medium">{item.who}</span> mentioned you: <span className="text-muted-foreground">"{item.snippet}"</span>
             </p>
           )}
+          {item.kind === "handoff" && (
+            <p className="font-body text-sm text-foreground">
+              New client ready to onboard — <span className="capitalize">{item.package_tier ?? "base"}</span> package.
+              Configure the wedding, then open the portal for them.
+            </p>
+          )}
 
           {/* Actions */}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
