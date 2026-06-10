@@ -237,15 +237,23 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
       </button>
 
       <article className="bg-white rounded-xl border border-border p-8 md:p-12 shadow-sm">
-        <header className="border-b border-border pb-6 mb-6">
-          <p className="font-body text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{docTypeLabel(contract.document_type)}</p>
-          <h1 className="font-display text-3xl text-foreground mt-2">{contract.title}</h1>
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(contractStatus)}`}>{statusLabel(contractStatus)}</span>
-            {(contractStatus === "fully_signed" || contractStatus === "executed") && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-sage-dark"><Lock size={11} /> Signed & Locked</span>
-            )}
+        <header className="border-b border-border pb-6 mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-body text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{docTypeLabel(contract.document_type)}</p>
+            <h1 className="font-display text-3xl text-foreground mt-2">{contract.title}</h1>
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(contractStatus)}`}>{statusLabel(contractStatus)}</span>
+              {(contractStatus === "fully_signed" || contractStatus === "executed") && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-sage-dark"><Lock size={11} /> Signed & Locked</span>
+              )}
+            </div>
           </div>
+          {allSigs.length > 0 && (
+            <button onClick={() => window.print()}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 font-body text-xs hover:border-sage/40">
+              <Download size={13} /> Download Signed PDF
+            </button>
+          )}
         </header>
 
         <div className="font-body text-[15px] text-foreground whitespace-pre-wrap leading-[1.75]">
