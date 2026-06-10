@@ -64,6 +64,7 @@ export default function CeoDashboard() {
   const { profile, loading: authLoading } = useAuth();
   const [year, setYear] = useState<YearFilter>("this");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -79,15 +80,21 @@ export default function CeoDashboard() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: ev }, { data: li }, { data: pm }] = await Promise.all([
+      setLoadError(false);
+      const [evRes, liRes, pmRes] = await Promise.all([
         supabase.from("events").select("id,title,partner1_name,partner2_name,wedding_date,lifecycle_stage"),
         supabase.from("financial_line_items").select("event_id,total"),
         supabase.from("payment_schedule").select("id,event_id,amount,due_date,paid,label"),
       ]);
       if (cancelled) return;
-      setEvents((ev || []) as EventRow[]);
-      setLineItems((li || []) as LineItem[]);
-      setPayments((pm || []) as PaymentRow[]);
+      if (evRes.error || liRes.error || pmRes.error) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      setEvents((evRes.data || []) as EventRow[]);
+      setLineItems((liRes.data || []) as LineItem[]);
+      setPayments((pmRes.data || []) as PaymentRow[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
