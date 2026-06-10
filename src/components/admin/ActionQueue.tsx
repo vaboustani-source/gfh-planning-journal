@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, parseISO, differenceInDays, format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 
 type ItemKind = "message" | "contract" | "form" | "milestone" | "mention" | "handoff";
 
