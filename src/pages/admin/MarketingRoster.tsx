@@ -14,6 +14,7 @@ import {
 // TODO (future): auto-flag "⭐ Marketing Opportunity" badge when floral budget > threshold,
 // notable photographer is booked, or 3+ activations are booked.
 import { usePermission } from "@/hooks/usePermission";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 
 type SortKey = "date" | "guests" | "floral" | "total" | "activations";
 type ViewMode = "table" | "cards";
