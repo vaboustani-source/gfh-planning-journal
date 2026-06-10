@@ -506,5 +506,6 @@ function KindIcon({ kind }: { kind: ItemKind }) {
   if (kind === "contract") return <div className={`${base} bg-amber-100 text-amber-700`}><FileSignature size={15} /></div>;
   if (kind === "form") return <div className={`${base} bg-blue-100 text-blue-700`}><ClipboardList size={15} /></div>;
   if (kind === "milestone") return <div className={`${base} bg-red-100 text-red-700`}><AlertCircle size={15} /></div>;
+  if (kind === "handoff") return <div className={`${base} bg-sage/15 text-sage-dark`}><UserPlus size={15} /></div>;
   return <div className={`${base} bg-purple-100 text-purple-700`}><AtSign size={15} /></div>;
 }
