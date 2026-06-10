@@ -676,7 +676,10 @@ export default function AdminDashboard() {
                         className={`w-full text-left px-5 py-3.5 flex items-center gap-4 hover:bg-muted/15 transition-colors group ${!isLast ? "border-b border-border/30" : ""}`}
                       >
                         <div className="flex-1 min-w-0">
-                          <span className="font-body text-sm font-medium text-foreground truncate block">{e.couple_names}</span>
+                          <span className="font-body text-sm font-medium text-foreground truncate inline-flex items-center gap-2">
+                            {e.couple_names}
+                            <MidweekBadge weddingDate={e.wedding_date} />
+                          </span>
                           <span className="font-body text-[11px] text-muted-foreground mt-0.5 block">
                             {(e.arrival_date || e.wedding_date) ? format(parseISO(e.arrival_date || e.wedding_date!), "MMMM d, yyyy") : "Date TBD"}
                           </span>
