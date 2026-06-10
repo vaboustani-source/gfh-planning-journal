@@ -102,6 +102,7 @@ export interface EventData {
   arrival_date_note: string | null;
   departure_date_note: string | null;
   tasting_date_note: string | null;
+  lifecycle_stage?: string | null;
 }
 
 export default function EventDetail() {
