@@ -624,7 +624,9 @@ function ContractViewer({ contract, ctx, onClose }: {
                   return (
                     <div key={s.id} className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 font-body text-sm">
                       <div>
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Signer</p>
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                          Signer {s.signer_role === "venue" ? "(Venue)" : "(Couple)"}
+                        </p>
                         <p className="text-foreground">{s.signer_name}</p>
                         <p className="text-muted-foreground text-xs">{s.signer_email}</p>
                       </div>
