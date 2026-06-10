@@ -229,8 +229,24 @@ export default function ActionQueue() {
         });
       });
 
+      // === 6. Handoff notifications (admin / event_director) ===
+      const handoffItems: HandoffItem[] = [];
+      if (canSeeHandoff) {
+        (events ?? []).forEach(e => {
+          if (e.lifecycle_stage === "handed_off" && e.handed_off_at) {
+            handoffItems.push({
+              id: `handoff-${e.id}`, kind: "handoff", event_id: e.id,
+              event_name: eventName(e.id), wedding_date: eventWedding(e.id),
+              package_tier: (e as any).package_tier ?? null,
+              handed_off_at: e.handed_off_at as string,
+              urgency: 0, created_at: e.handed_off_at as string,
+            });
+          }
+        });
+      }
+
       // Combine + sort by group: messages, overdue, reminders
-      const all: QueueItem[] = [...messageItems, ...mentionItems, ...milestoneItems, ...contractItems, ...formItems];
+      const all: QueueItem[] = [...handoffItems, ...messageItems, ...mentionItems, ...milestoneItems, ...contractItems, ...formItems];
       all.sort((a, b) => {
         if (a.urgency !== b.urgency) return a.urgency - b.urgency;
         return b.created_at.localeCompare(a.created_at);
