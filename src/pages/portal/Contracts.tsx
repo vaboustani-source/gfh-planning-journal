@@ -268,7 +268,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
                 <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
                   className="mt-1 rounded border-border" />
                 <span className="font-body text-sm text-foreground">
-                  I have read and agree to the terms of this agreement.
+                  {ELECTRONIC_SIGNATURE_CONSENT}
                 </span>
               </label>
 
