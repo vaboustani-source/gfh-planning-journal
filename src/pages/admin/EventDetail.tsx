@@ -301,8 +301,9 @@ export default function EventDetail() {
             <Menu size={20} strokeWidth={1.75} />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="font-display text-base font-light text-foreground truncate">
-              {coupleNames || event.title}
+            <p className="font-display text-base font-light text-foreground truncate inline-flex items-center gap-2">
+              <span className="truncate">{coupleNames || event.title}</span>
+              <MidweekBadge weddingDate={event.wedding_date} />
             </p>
             <p className="font-body text-[10px] text-muted-foreground leading-none">{activeLabel}</p>
           </div>
