@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import { differenceInDays, format, parseISO } from "date-fns";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 
 /* ── Design tokens ── */
 const COLORS = {
