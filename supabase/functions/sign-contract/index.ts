@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     // Verify event membership
     const { data: membership } = await admin
       .from("event_users")
-      .select("user_id, display_name")
+      .select("user_id")
       .eq("event_id", contract.event_id)
       .eq("user_id", userId)
       .maybeSingle();
@@ -109,7 +109,6 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const accountName = [u?.first_name, u?.last_name].filter(Boolean).join(" ").trim();
     if (accountName) signerName = accountName;
-    else if (membership.display_name) signerName = membership.display_name;
 
     // Hash the frozen rendered_content (fallback to content if missing for legacy rows)
     const frozen = contract.rendered_content ?? contract.content ?? "";
