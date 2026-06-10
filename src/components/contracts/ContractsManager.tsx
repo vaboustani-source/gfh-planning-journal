@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Plus, Send, Eye, X, Lock, AlertTriangle, ShieldCheck, Ban } from "lucide-react";
+import { FileText, Plus, Send, Eye, X, Lock, AlertTriangle, ShieldCheck, Ban, Download } from "lucide-react";
 import {
   renderContract, sha256Hex, statusLabel, statusPillClass, docTypeLabel,
   PLACEHOLDER_TOKENS, type ContractContext,
 } from "@/lib/contractTemplate";
+import SignedCertificate from "@/components/contracts/SignedCertificate";
 
 type Contract = {
   id: string;
