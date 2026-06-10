@@ -10,6 +10,7 @@ type Template = {
   document_type: string;
   body: string;
   requires_both_partners: boolean;
+  requires_countersignature: boolean;
   is_active: boolean;
   created_by: string | null;
   created_at: string;
@@ -22,6 +23,7 @@ const emptyTemplate = (): Template => ({
   document_type: "contract",
   body: "",
   requires_both_partners: false,
+  requires_countersignature: false,
   is_active: true,
   created_by: null,
   created_at: "",
