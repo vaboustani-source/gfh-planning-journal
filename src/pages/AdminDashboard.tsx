@@ -384,6 +384,16 @@ export default function AdminDashboard() {
                 <Inbox size={20} />
               </button>
             )}
+            {profile?.role === "admin" && (
+              <button
+                onClick={() => navigate("/admin/ceo-dashboard")}
+                title="CEO Dashboard"
+                aria-label="CEO Dashboard"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <BarChart3 size={20} />
+              </button>
+            )}
             {canView("settings") && (
               <button
                 onClick={() => navigate("/admin/settings")}
