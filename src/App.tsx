@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import SetPassword from "./pages/SetPassword";
+import AcceptInvite from "./pages/AcceptInvite";
 import AdminDashboard from "./pages/AdminDashboard";
 import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
