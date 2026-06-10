@@ -232,12 +232,14 @@ export default function CeoDashboard() {
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
         {loadError ? (
-          <p
-            className="py-16 text-center"
-            style={{ color: COLORS.muted, fontFamily: "'Cormorant Garamond', serif", fontSize: "1.5rem" }}
-          >
-            We could not load the numbers right now. Try again shortly.
-          </p>
+          <div className="py-20 text-center space-y-3">
+            <p style={{ color: COLORS.primary, fontFamily: "'Cormorant Garamond', serif", fontSize: "1.75rem", fontWeight: 300 }}>
+              We could not load the dashboard data.
+            </p>
+            <p className="text-sm" style={{ color: COLORS.muted }}>
+              Refresh to try again.
+            </p>
+          </div>
         ) : (
         <>
         {/* KPI row */}
