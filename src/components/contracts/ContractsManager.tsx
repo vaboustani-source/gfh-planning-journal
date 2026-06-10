@@ -420,11 +420,17 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <label className="inline-flex items-center gap-2 font-body text-sm text-foreground cursor-pointer">
-              <input type="checkbox" checked={both} onChange={e => setBoth(e.target.checked)} className="rounded border-border" />
-              Requires both partners to sign
-            </label>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-5 flex-wrap">
+              <label className="inline-flex items-center gap-2 font-body text-sm text-foreground cursor-pointer">
+                <input type="checkbox" checked={both} onChange={e => setBoth(e.target.checked)} className="rounded border-border" />
+                Requires both partners to sign
+              </label>
+              <label className="inline-flex items-center gap-2 font-body text-sm text-foreground cursor-pointer">
+                <input type="checkbox" checked={counter} onChange={e => setCounter(e.target.checked)} className="rounded border-border" />
+                Requires venue countersignature
+              </label>
+            </div>
             <button type="button" onClick={() => setShowPreview(p => !p)}
               className="font-body text-xs text-sage hover:underline">
               {showPreview ? "Hide preview" : "Show preview"}
