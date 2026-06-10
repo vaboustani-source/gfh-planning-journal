@@ -48,6 +48,9 @@ const STAGES: { key: string; label: string }[] = [
   { key: "complete", label: "Complete" },
 ];
 
+const BOOKED_STAGES = new Set(["handed_off", "in_setup", "portal_open", "complete"]);
+const isBooked = (e: { lifecycle_stage: string | null }) => BOOKED_STAGES.has(e.lifecycle_stage || "");
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const usd = (n: number) =>
