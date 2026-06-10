@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ParticipantsPanel from "@/components/admin/ParticipantsPanel";
+import HandoffPanel from "@/components/admin/HandoffPanel";
 import { EventData } from "../EventDetail";
 import { Check, Edit2 } from "lucide-react";
 import { addDays, subDays, format } from "date-fns";
