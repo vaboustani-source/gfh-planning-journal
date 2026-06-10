@@ -260,6 +260,13 @@ function TemplateEditor({
             </label>
             <label className="inline-flex items-center gap-2 font-body text-sm cursor-pointer" style={{ color: "#1A1A1A" }}>
               <input
+                type="checkbox" checked={counter} onChange={e => setCounter(e.target.checked)}
+                className="rounded"
+              />
+              Requires venue countersignature
+            </label>
+            <label className="inline-flex items-center gap-2 font-body text-sm cursor-pointer" style={{ color: "#1A1A1A" }}>
+              <input
                 type="checkbox" checked={active} onChange={e => setActive(e.target.checked)}
                 className="rounded"
               />
