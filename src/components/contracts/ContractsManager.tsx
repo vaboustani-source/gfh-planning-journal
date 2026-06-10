@@ -39,6 +39,14 @@ interface Props {
   eventId: string;
 }
 
+type Template = {
+  id: string;
+  name: string;
+  document_type: string;
+  body: string;
+  requires_both_partners: boolean;
+};
+
 export default function ContractsManager({ eventId }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [sigCounts, setSigCounts] = useState<Record<string, number>>({});
@@ -47,6 +55,8 @@ export default function ContractsManager({ eventId }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [viewer, setViewer] = useState<Contract | null>(null);
   const [ctx, setCtx] = useState<ContractContext>({});
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,7 +104,18 @@ export default function ContractsManager({ eventId }: Props) {
     })();
   }, [eventId, load]);
 
-  const openNew = () => {
+  const openNew = async () => {
+    const { data } = await (supabase as any)
+      .from("contract_templates")
+      .select("id, name, document_type, body, requires_both_partners")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+    setTemplates((data ?? []) as Template[]);
+    setTemplatePickerOpen(true);
+  };
+
+  const startFromBlank = () => {
+    setTemplatePickerOpen(false);
     setEditor({
       id: "", event_id: eventId, title: "", document_type: "contract",
       content: "", rendered_content: null, content_hash: null, status: "draft",
@@ -102,6 +123,17 @@ export default function ContractsManager({ eventId }: Props) {
     });
     setEditorOpen(true);
   };
+
+  const startFromTemplate = (t: Template) => {
+    setTemplatePickerOpen(false);
+    setEditor({
+      id: "", event_id: eventId, title: t.name, document_type: t.document_type,
+      content: t.body, rendered_content: null, content_hash: null, status: "draft",
+      requires_both_partners: t.requires_both_partners, sent_at: null, created_at: "",
+    });
+    setEditorOpen(true);
+  };
+
 
   const openEdit = (c: Contract) => {
     if (c.status === "fully_signed") {
