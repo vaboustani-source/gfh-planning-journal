@@ -79,10 +79,15 @@ export default function ActionQueue() {
       // Fetch active events + couple display names
       const { data: events } = await supabase
         .from("events")
-        .select("id, title, wedding_date, partner1_name, partner2_name, status")
+        .select("id, title, wedding_date, partner1_name, partner2_name, status, lifecycle_stage, handed_off_at, package_tier")
         .in("status", ["onboarding", "active", "planning"]);
       const eventIds = (events ?? []).map(e => e.id);
       if (eventIds.length === 0) { setItems([]); setHiddenCount(0); return; }
+
+      // Fetch current user role for handoff visibility
+      const { data: myProfile } = await supabase.from("users").select("role").eq("id", user.id).maybeSingle();
+      const myRole = (myProfile?.role ?? "") as string;
+      const canSeeHandoff = ["admin", "event_director"].includes(myRole);
 
       const { data: eus } = await supabase
         .from("event_users")
