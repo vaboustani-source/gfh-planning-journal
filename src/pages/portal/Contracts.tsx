@@ -168,7 +168,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
   const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const alreadySigned = allSigs.some(s => s.signer_user_id === user?.id);
-  const locked = contractStatus === "fully_signed" || contractStatus === "voided";
+  const locked = contractStatus === "fully_signed" || contractStatus === "executed" || contractStatus === "voided";
 
   useEffect(() => {
     (async () => {
