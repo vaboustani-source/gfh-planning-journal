@@ -141,7 +141,7 @@ export default function ContractsManager({ eventId }: Props) {
 
 
   const openEdit = (c: Contract) => {
-    if (c.status === "fully_signed") {
+    if (c.status === "fully_signed" || c.status === "executed") {
       toast.error("This contract is signed and locked. Create an addendum instead.");
       return;
     }
