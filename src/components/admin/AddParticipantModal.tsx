@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { getSetPasswordUrl } from "@/lib/authUrls";
+
 import { defaultsForRole } from "@/lib/tabAccess";
 
 const ROLES = [
