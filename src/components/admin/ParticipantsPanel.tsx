@@ -6,6 +6,7 @@ import AddParticipantModal from "./AddParticipantModal";
 import TabAccessDrawer from "./TabAccessDrawer";
 import { getSetPasswordUrl } from "@/lib/authUrls";
 import { TabAccess, FULL_ACCESS_ROLES } from "@/lib/tabAccess";
+import PendingInvitesList from "./PendingInvitesList";
 
 interface Participant {
   id: string;
@@ -247,6 +248,16 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
         <Plus size={14} />
         Add Participant
       </button>
+
+      <div className="pt-4 border-t" style={{ borderColor: "#E8E2D9" }}>
+        <p className="font-display text-sm font-light text-foreground mb-2">Outstanding invitations</p>
+        <PendingInvitesList
+          eventId={eventId}
+          inviteTypes={["couple", "participant"]}
+          compact
+        />
+      </div>
+
 
       {modalOpen && (
         <AddParticipantModal

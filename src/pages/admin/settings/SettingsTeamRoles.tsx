@@ -11,6 +11,7 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown, Loader2, Plus, Shield, Trash2, X } from "lucide-react";
+import PendingInvitesList from "@/components/admin/PendingInvitesList";
 
 const ASSIGNABLE_ROLES: { value: Role; label: string; tagline: string }[] = [
   { value: "admin", label: "Admin (Owner)", tagline: "Full control, including this role screen" },
@@ -226,6 +227,14 @@ export default function SettingsTeamRoles() {
           </table>
         )}
       </div>
+
+      <PendingInvitesList
+        inviteType="staff"
+        title="Pending team invitations"
+        subtitle="Outstanding invites for staff members. Resend to refresh the link, or revoke to invalidate it."
+      />
+
+
 
       {/* Role reference */}
       <section>
