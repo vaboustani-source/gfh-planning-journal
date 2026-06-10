@@ -254,9 +254,9 @@ export default function CeoDashboard() {
           />
         </section>
 
-        {!loading && datelessBooked > 0 && (
+        {!loading && targetYear !== null && datelessBooked > 0 && (
           <p className="text-sm" style={{ color: COLORS.muted }}>
-            {datelessBooked} booked {datelessBooked === 1 ? "event has" : "events have"} no date set and {datelessBooked === 1 ? "is" : "are"} not shown for this year.
+            {datelessBooked} booked {datelessBooked === 1 ? "event has" : "events have"} no date set and {datelessBooked === 1 ? "is" : "are"} not shown in year views.
           </p>
         )}
 
