@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, CalendarClock, MessageCircle, Clock, ChevronRight, LogOut, Plus,
-  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles, TrendingUp,
+  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles, TrendingUp, BarChart3,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermission";
 import { Progress } from "@/components/ui/progress";
