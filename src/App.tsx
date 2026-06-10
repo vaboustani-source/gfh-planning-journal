@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import SetPassword from "./pages/SetPassword";
+import AcceptInvite from "./pages/AcceptInvite";
 import AdminDashboard from "./pages/AdminDashboard";
 import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
+            <Route path="/accept-invite/:token" element={<AcceptInvite />} />
 
             {/* Public RSVP — no auth */}
             <Route path="/rsvp/:token" element={<PublicRsvp />} />

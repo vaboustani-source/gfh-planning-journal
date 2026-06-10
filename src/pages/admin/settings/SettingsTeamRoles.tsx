@@ -331,12 +331,21 @@ function InviteModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
     e.preventDefault();
     if (!email) return;
     setSubmitting(true);
-    const { error } = await supabase.functions.invoke("invite-admin-user", {
-      body: { first_name: firstName, last_name: lastName, email, role },
+    const { data, error } = await supabase.functions.invoke("send-invitation", {
+      body: {
+        invite_type: "staff",
+        email: email.trim().toLowerCase(),
+        assigned_role: role,
+        invited_name: [firstName, lastName].filter(Boolean).join(" ") || null,
+      },
     });
     setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Invitation sent to ${email}`);
+    if (error || data?.error) { toast.error(data?.error || error?.message || "Failed"); return; }
+    if (data?.emailDelivery?.sent === false) {
+      toast.warning(`Invitation created. Email could not be sent: ${data.emailDelivery.reason ?? "unknown"}`);
+    } else {
+      toast.success(`Invitation sent to ${email}`);
+    }
     onDone();
   };
 
