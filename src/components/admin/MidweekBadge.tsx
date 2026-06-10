@@ -5,7 +5,8 @@
  */
 export function isMidweek(weddingDate: string | null | undefined): boolean {
   if (!weddingDate) return false;
-  const d = new Date(weddingDate + "T12:00:00");
+  const datePart = String(weddingDate).slice(0, 10);
+  const d = new Date(datePart + "T12:00:00");
   if (isNaN(d.getTime())) return false;
   const day = d.getDay(); // 0=Sun ... 6=Sat
   return day >= 1 && day <= 4;
