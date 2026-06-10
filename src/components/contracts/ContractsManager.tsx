@@ -480,21 +480,50 @@ function ContractViewer({ contract, ctx, onClose }: {
 }) {
   const [sigs, setSigs] = useState<Signature[]>([]);
   const [currentHash, setCurrentHash] = useState<string | null>(null);
+  const [status, setStatus] = useState(contract.status);
+  const [csTyped, setCsTyped] = useState("");
+  const [csAgreed, setCsAgreed] = useState(false);
+  const [csBusy, setCsBusy] = useState(false);
+
+  const reloadSigs = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("contract_signatures").select("*").eq("contract_id", contract.id)
+      .order("signed_at", { ascending: true });
+    setSigs((data ?? []) as Signature[]);
+  }, [contract.id]);
 
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase as any)
-        .from("contract_signatures").select("*").eq("contract_id", contract.id)
-        .order("signed_at", { ascending: true });
-      setSigs((data ?? []) as Signature[]);
+      await reloadSigs();
       const frozen = contract.rendered_content ?? contract.content;
       setCurrentHash(await sha256Hex(frozen));
     })();
-  }, [contract.id, contract.content, contract.rendered_content]);
+  }, [contract.id, contract.content, contract.rendered_content, reloadSigs]);
 
-  // If the contract has frozen rendered_content (sent or later), show that verbatim.
-  // Drafts fall back to live token substitution for preview only.
   const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
+  const hasVenueSig = sigs.some(s => s.signer_role === "venue");
+  const awaitingCountersig = status === "fully_signed" && contract.requires_countersignature && !hasVenueSig;
+  const isExecuted = status === "executed";
+
+  const statusDisplay = awaitingCountersig ? "Awaiting Countersignature" : statusLabel(status);
+
+  const countersign = async () => {
+    if (!csAgreed || csTyped.trim().length < 3) return;
+    setCsBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("countersign-contract", {
+        body: { contract_id: contract.id, typed_name: csTyped.trim(), agreed_to_terms: true },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.status) setStatus(data.status);
+      await reloadSigs();
+      toast.success("Countersigned. Contract executed.");
+      setCsTyped(""); setCsAgreed(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setCsBusy(false); }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-stretch justify-center p-4 overflow-y-auto">
@@ -503,7 +532,7 @@ function ContractViewer({ contract, ctx, onClose }: {
           <div>
             <p className="font-display text-xl text-foreground">{contract.title}</p>
             <p className="font-body text-xs text-muted-foreground">
-              {docTypeLabel(contract.document_type)} · {statusLabel(contract.status)}
+              {docTypeLabel(contract.document_type)} · {statusDisplay}
             </p>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
