@@ -162,7 +162,9 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
   const [allSigs, setAllSigs] = useState<Signature[]>(mySigs);
-  const rendered = renderContract(contract.content, ctx);
+  // Show the frozen rendered_content verbatim when present (sent or later).
+  // Drafts have no rendered_content, but couples never see drafts.
+  const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const alreadySigned = allSigs.some(s => s.signer_user_id === user?.id);
   const locked = contract.status === "fully_signed" || contract.status === "voided";
