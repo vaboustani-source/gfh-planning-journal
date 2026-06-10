@@ -162,12 +162,13 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
   const [allSigs, setAllSigs] = useState<Signature[]>(mySigs);
+  const [contractStatus, setContractStatus] = useState(contract.status);
   // Show the frozen rendered_content verbatim when present (sent or later).
   // Drafts have no rendered_content, but couples never see drafts.
   const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const alreadySigned = allSigs.some(s => s.signer_user_id === user?.id);
-  const locked = contract.status === "fully_signed" || contract.status === "voided";
+  const locked = contractStatus === "fully_signed" || contractStatus === "voided";
 
   useEffect(() => {
     (async () => {
@@ -215,6 +216,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (data?.status) setContractStatus(data.status);
 
       // Refetch signatures to update the receipt UI
       const { data: latestSigs } = await (supabase as any)
@@ -238,8 +240,8 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
           <p className="font-body text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{docTypeLabel(contract.document_type)}</p>
           <h1 className="font-display text-3xl text-foreground mt-2">{contract.title}</h1>
           <div className="flex items-center gap-2 mt-3 flex-wrap">
-            <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(contract.status)}`}>{statusLabel(contract.status)}</span>
-            {contract.status === "fully_signed" && (
+            <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(contractStatus)}`}>{statusLabel(contractStatus)}</span>
+            {contractStatus === "fully_signed" && (
               <span className="inline-flex items-center gap-1 text-[11px] text-sage-dark"><Lock size={11} /> Signed & Locked</span>
             )}
           </div>
