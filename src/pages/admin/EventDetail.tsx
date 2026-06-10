@@ -222,8 +222,9 @@ export default function EventDetail() {
         <p className="font-display text-base font-medium text-foreground leading-tight truncate">
           {coupleNames || event.title}
         </p>
-        <div className="mt-1.5">
+        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <LifecycleBadge stage={(event.lifecycle_stage ?? "portal_open") as any} />
+          <MidweekBadge weddingDate={event.wedding_date} />
         </div>
         {days !== null && (
           <p className="font-body text-[11px] text-muted-foreground mt-1">
