@@ -13,6 +13,7 @@ type Contract = {
   title: string;
   document_type: string;
   content: string;
+  rendered_content: string | null;
   content_hash: string | null;
   status: string;
   requires_both_partners: boolean;
@@ -96,7 +97,7 @@ export default function ContractsManager({ eventId }: Props) {
   const openNew = () => {
     setEditor({
       id: "", event_id: eventId, title: "", document_type: "contract",
-      content: "", content_hash: null, status: "draft",
+      content: "", rendered_content: null, content_hash: null, status: "draft",
       requires_both_partners: false, sent_at: null, created_at: "",
     });
     setEditorOpen(true);
@@ -115,6 +116,10 @@ export default function ContractsManager({ eventId }: Props) {
     if (!confirm(`Void "${c.title}"? Signatures remain on file but the contract becomes inactive.`)) return;
     const { error } = await (supabase as any).from("contracts").update({ status: "voided" }).eq("id", c.id);
     if (error) return toast.error(error.message);
+    const { data: { user } } = await supabase.auth.getUser();
+    await (supabase as any).from("contract_audit_log").insert({
+      contract_id: c.id, action: "voided", actor_user_id: user?.id, actor_label: user?.email ?? null,
+    });
     toast.success("Contract voided");
     void load();
   };
@@ -233,9 +238,11 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
       };
       if (!contract.id) payload.created_by = user?.id;
       if (send) {
+        const frozen = renderContract(content, ctx);
         payload.status = "sent";
         payload.sent_at = new Date().toISOString();
-        payload.content_hash = await sha256Hex(content);
+        payload.rendered_content = frozen;
+        payload.content_hash = await sha256Hex(frozen);
       }
       let res;
       if (contract.id) {
@@ -244,6 +251,25 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
         res = await (supabase as any).from("contracts").insert(payload).select().maybeSingle();
       }
       if (res.error) throw res.error;
+      const savedId = res.data?.id ?? contract.id;
+      if (savedId) {
+        const auditRows: Array<Record<string, unknown>> = [];
+        if (!contract.id) {
+          auditRows.push({
+            contract_id: savedId, action: "created",
+            actor_user_id: user?.id, actor_label: user?.email ?? null,
+          });
+        }
+        if (send) {
+          auditRows.push({
+            contract_id: savedId, action: "sent",
+            actor_user_id: user?.id, actor_label: user?.email ?? null,
+          });
+        }
+        if (auditRows.length) {
+          await (supabase as any).from("contract_audit_log").insert(auditRows);
+        }
+      }
       toast.success(send ? "Contract sent to couple" : "Draft saved");
       onSaved();
     } catch (e) {
@@ -343,11 +369,14 @@ function ContractViewer({ contract, ctx, onClose }: {
         .from("contract_signatures").select("*").eq("contract_id", contract.id)
         .order("signed_at", { ascending: true });
       setSigs((data ?? []) as Signature[]);
-      setCurrentHash(await sha256Hex(contract.content));
+      const frozen = contract.rendered_content ?? contract.content;
+      setCurrentHash(await sha256Hex(frozen));
     })();
-  }, [contract.id, contract.content]);
+  }, [contract.id, contract.content, contract.rendered_content]);
 
-  const rendered = renderContract(contract.content, ctx);
+  // If the contract has frozen rendered_content (sent or later), show that verbatim.
+  // Drafts fall back to live token substitution for preview only.
+  const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-stretch justify-center p-4 overflow-y-auto">
