@@ -116,6 +116,10 @@ export default function ContractsManager({ eventId }: Props) {
     if (!confirm(`Void "${c.title}"? Signatures remain on file but the contract becomes inactive.`)) return;
     const { error } = await (supabase as any).from("contracts").update({ status: "voided" }).eq("id", c.id);
     if (error) return toast.error(error.message);
+    const { data: { user } } = await supabase.auth.getUser();
+    await (supabase as any).from("contract_audit_log").insert({
+      contract_id: c.id, action: "voided", actor_user_id: user?.id, actor_label: user?.email ?? null,
+    });
     toast.success("Contract voided");
     void load();
   };
