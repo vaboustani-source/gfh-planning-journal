@@ -206,58 +206,20 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
     if (!user) return;
     setBusy(true);
     try {
-      // Best-effort IP capture
-      let ip: string | null = null;
-      try {
-        const r = await fetch("https://api.ipify.org?format=json");
-        if (r.ok) ip = (await r.json()).ip ?? null;
-      } catch { /* ignore */ }
-
-      const hash = await sha256Hex(contract.content);
-
-      const authMethod = (user.app_metadata as any)?.provider === "google" ? "google" : "password";
-
-      const insertRow = {
-        contract_id: contract.id,
-        signer_name: accountName || (user.email ?? "Signer"),
-        signer_email: user.email ?? "",
-        signer_user_id: user.id,
-        typed_name: typed.trim(),
-        agreed_to_terms: true,
-        ip_address: ip,
-        user_agent: navigator.userAgent,
-        content_version_hash: hash,
-        auth_method: authMethod,
-      };
-
-      const { error } = await (supabase as any).from("contract_signatures").insert(insertRow);
+      const { data, error } = await supabase.functions.invoke("sign-contract", {
+        body: {
+          contract_id: contract.id,
+          typed_name: typed.trim(),
+          agreed_to_terms: true,
+        },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      // Refetch sigs to update status (admin updates status via separate logic; here we update if appropriate)
+      // Refetch signatures to update the receipt UI
       const { data: latestSigs } = await (supabase as any)
         .from("contract_signatures").select("*").eq("contract_id", contract.id);
-      const sigList = (latestSigs ?? []) as Signature[];
-      setAllSigs(sigList);
-
-      // Compute new status
-      const uniqueSigners = new Set(sigList.map(s => s.signer_user_id || s.signer_email.toLowerCase()));
-      const newStatus = contract.requires_both_partners
-        ? (uniqueSigners.size >= 2 ? "fully_signed" : "partially_signed")
-        : "fully_signed";
-      await (supabase as any).from("contracts").update({ status: newStatus }).eq("id", contract.id);
-
-      // Fire confirmation email (best-effort)
-      try {
-        await supabase.functions.invoke("send-contract-signed-receipt", {
-          body: {
-            contract_id: contract.id,
-            signer_email: user.email,
-            signer_name: insertRow.signer_name,
-            contract_title: contract.title,
-            signed_at: new Date().toISOString(),
-          },
-        });
-      } catch { /* email is best-effort */ }
+      setAllSigs((latestSigs ?? []) as Signature[]);
 
       toast.success("Signed. A confirmation has been sent to your email.");
     } catch (e) {
