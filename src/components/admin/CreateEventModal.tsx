@@ -297,7 +297,7 @@ export default function CreateEventModal({ onClose }: Props) {
               {submitting ? (
                 <><Loader2 size={15} className="animate-spin" /> Creating…</>
               ) : (
-                "Create Event & Invite Couple"
+                "Create Event"
               )}
             </button>
           </div>
