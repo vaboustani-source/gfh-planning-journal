@@ -5,7 +5,7 @@ import { usePortalData } from "@/hooks/usePortalData";
 import { toast } from "sonner";
 import { FileText, ShieldCheck, Lock, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
 import {
-  renderContract, sha256Hex, statusLabel, statusPillClass, docTypeLabel,
+  renderContract, statusLabel, statusPillClass, docTypeLabel,
   type ContractContext,
 } from "@/lib/contractTemplate";
 
