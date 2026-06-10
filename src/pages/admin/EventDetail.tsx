@@ -25,6 +25,7 @@ import OurPeopleTab from "./tabs/OurPeopleTab";
 import EmailsTab from "./tabs/EmailsTab";
 import Rsvp from "../portal/Rsvp";
 import { LifecycleBadge } from "@/components/admin/HandoffPanel";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 
 type NavItem = { id: string; label: string };
 type NavGroup = { label: string; items: NavItem[] };
