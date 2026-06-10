@@ -358,7 +358,10 @@ export default function CeoDashboard() {
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <td className="py-3 pr-4">
-                          <div className="font-medium">{ev ? coupleName(ev) : "Not set"}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            <span>{ev ? coupleName(ev) : "Not set"}</span>
+                            <MidweekBadge weddingDate={ev?.wedding_date} />
+                          </div>
                           {p.label && <div className="text-xs" style={{ color: COLORS.muted }}>{p.label}</div>}
                         </td>
                         <td className="py-3 px-4 text-right tabular-nums">{usd(Number(p.amount || 0))}</td>
