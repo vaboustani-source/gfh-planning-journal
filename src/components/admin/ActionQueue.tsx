@@ -4,12 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   MessageCircle, FileSignature, ClipboardList, AlertCircle, AtSign,
-  Sparkles, Send, RefreshCw, ChevronRight, Loader2,
+  Sparkles, Send, RefreshCw, ChevronRight, Loader2, UserPlus,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO, differenceInDays, format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
-type ItemKind = "message" | "contract" | "form" | "milestone" | "mention";
+type ItemKind = "message" | "contract" | "form" | "milestone" | "mention" | "handoff";
 
 interface BaseItem {
   id: string;
@@ -48,7 +48,12 @@ interface MentionItem extends BaseItem {
   who: string;
   snippet: string;
 }
-type QueueItem = MessageItem | ContractItem | FormItem | MilestoneItem | MentionItem;
+interface HandoffItem extends BaseItem {
+  kind: "handoff";
+  package_tier: string | null;
+  handed_off_at: string;
+}
+type QueueItem = MessageItem | ContractItem | FormItem | MilestoneItem | MentionItem | HandoffItem;
 
 const HARD_CAP = 10;
 const STALE_DAYS = 14;
@@ -74,10 +79,15 @@ export default function ActionQueue() {
       // Fetch active events + couple display names
       const { data: events } = await supabase
         .from("events")
-        .select("id, title, wedding_date, partner1_name, partner2_name, status")
+        .select("id, title, wedding_date, partner1_name, partner2_name, status, lifecycle_stage, handed_off_at, package_tier")
         .in("status", ["onboarding", "active", "planning"]);
       const eventIds = (events ?? []).map(e => e.id);
       if (eventIds.length === 0) { setItems([]); setHiddenCount(0); return; }
+
+      // Fetch current user role for handoff visibility
+      const { data: myProfile } = await supabase.from("users").select("role").eq("id", user.id).maybeSingle();
+      const myRole = (myProfile?.role ?? "") as string;
+      const canSeeHandoff = ["admin", "event_director"].includes(myRole);
 
       const { data: eus } = await supabase
         .from("event_users")
@@ -219,8 +229,24 @@ export default function ActionQueue() {
         });
       });
 
+      // === 6. Handoff notifications (admin / event_director) ===
+      const handoffItems: HandoffItem[] = [];
+      if (canSeeHandoff) {
+        (events ?? []).forEach(e => {
+          if (e.lifecycle_stage === "handed_off" && e.handed_off_at) {
+            handoffItems.push({
+              id: `handoff-${e.id}`, kind: "handoff", event_id: e.id,
+              event_name: eventName(e.id), wedding_date: eventWedding(e.id),
+              package_tier: (e as any).package_tier ?? null,
+              handed_off_at: e.handed_off_at as string,
+              urgency: 0, created_at: e.handed_off_at as string,
+            });
+          }
+        });
+      }
+
       // Combine + sort by group: messages, overdue, reminders
-      const all: QueueItem[] = [...messageItems, ...mentionItems, ...milestoneItems, ...contractItems, ...formItems];
+      const all: QueueItem[] = [...handoffItems, ...messageItems, ...mentionItems, ...milestoneItems, ...contractItems, ...formItems];
       all.sort((a, b) => {
         if (a.urgency !== b.urgency) return a.urgency - b.urgency;
         return b.created_at.localeCompare(a.created_at);
@@ -373,6 +399,12 @@ function ActionCard({ item, eventName, onSent }: { item: QueueItem; eventName: s
               <span className="font-medium">{item.who}</span> mentioned you: <span className="text-muted-foreground">"{item.snippet}"</span>
             </p>
           )}
+          {item.kind === "handoff" && (
+            <p className="font-body text-sm text-foreground">
+              New client ready to onboard — <span className="capitalize">{item.package_tier ?? "base"}</span> package.
+              Configure the wedding, then open the portal for them.
+            </p>
+          )}
 
           {/* Actions */}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
@@ -406,6 +438,11 @@ function ActionCard({ item, eventName, onSent }: { item: QueueItem; eventName: s
             {item.kind === "mention" && (
               <button onClick={() => eventLink("messages")} className="px-3 py-1.5 rounded-md bg-sage text-white text-xs hover:bg-sage-dark inline-flex items-center gap-1">
                 Go to Conversation <ChevronRight size={12} />
+              </button>
+            )}
+            {item.kind === "handoff" && (
+              <button onClick={() => navigate(`/admin/events/${item.event_id}`)} className="px-3 py-1.5 rounded-md bg-sage text-white text-xs hover:bg-sage-dark inline-flex items-center gap-1">
+                Open Wedding <ChevronRight size={12} />
               </button>
             )}
           </div>
@@ -469,5 +506,6 @@ function KindIcon({ kind }: { kind: ItemKind }) {
   if (kind === "contract") return <div className={`${base} bg-amber-100 text-amber-700`}><FileSignature size={15} /></div>;
   if (kind === "form") return <div className={`${base} bg-blue-100 text-blue-700`}><ClipboardList size={15} /></div>;
   if (kind === "milestone") return <div className={`${base} bg-red-100 text-red-700`}><AlertCircle size={15} /></div>;
+  if (kind === "handoff") return <div className={`${base} bg-sage/15 text-sage-dark`}><UserPlus size={15} /></div>;
   return <div className={`${base} bg-purple-100 text-purple-700`}><AtSign size={15} /></div>;
 }

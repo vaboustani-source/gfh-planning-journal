@@ -145,7 +145,7 @@ export default function CreateEventModal({ onClose }: Props) {
             </div>
             <div>
               <p className="font-display text-xl font-light text-foreground">New Wedding Event</p>
-              <p className="font-body text-xs text-muted-foreground">Partners will receive a login link by email</p>
+              <p className="font-body text-xs text-muted-foreground">Sales setup — the couple won't be invited until you open the portal</p>
             </div>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -297,7 +297,7 @@ export default function CreateEventModal({ onClose }: Props) {
               {submitting ? (
                 <><Loader2 size={15} className="animate-spin" /> Creating…</>
               ) : (
-                "Create Event & Invite Couple"
+                "Create Event"
               )}
             </button>
           </div>

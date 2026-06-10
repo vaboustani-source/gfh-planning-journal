@@ -24,6 +24,7 @@ import ExperiencesTab from "./tabs/ExperiencesTab";
 import OurPeopleTab from "./tabs/OurPeopleTab";
 import EmailsTab from "./tabs/EmailsTab";
 import Rsvp from "../portal/Rsvp";
+import { LifecycleBadge } from "@/components/admin/HandoffPanel";
 
 type NavItem = { id: string; label: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -102,6 +103,7 @@ export interface EventData {
   arrival_date_note: string | null;
   departure_date_note: string | null;
   tasting_date_note: string | null;
+  lifecycle_stage?: string | null;
 }
 
 export default function EventDetail() {
@@ -219,6 +221,9 @@ export default function EventDetail() {
         <p className="font-display text-base font-medium text-foreground leading-tight truncate">
           {coupleNames || event.title}
         </p>
+        <div className="mt-1.5">
+          <LifecycleBadge stage={(event.lifecycle_stage ?? "portal_open") as any} />
+        </div>
         {days !== null && (
           <p className="font-body text-[11px] text-muted-foreground mt-1">
             {days > 0 ? `${days} days until arrival` : days === 0 ? "Arrival is today" : `${Math.abs(days)} days since arrival`}

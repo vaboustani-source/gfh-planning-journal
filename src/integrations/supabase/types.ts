@@ -990,6 +990,7 @@ export type Database = {
         Row: {
           arrival_date: string | null
           arrival_date_note: string | null
+          assigned_planner: string | null
           ceremony_location: string | null
           cocktail_hour_location: string | null
           count_at_30_days: number | null
@@ -1001,11 +1002,20 @@ export type Database = {
           departure_date_note: string | null
           estimated_guest_count: number | null
           event_type: string
+          handed_off_at: string | null
+          handed_off_by: string | null
           how_heard: string | null
           id: string
+          lifecycle_stage: string | null
           package_tier: string | null
           partner1_name: string | null
           partner2_name: string | null
+          pending_partner1_email: string | null
+          pending_partner1_name: string | null
+          pending_partner2_email: string | null
+          pending_partner2_name: string | null
+          portal_opened_at: string | null
+          portal_opened_by: string | null
           rehearsal_dinner_location: string | null
           status: string
           tasting_date: string | null
@@ -1018,6 +1028,7 @@ export type Database = {
         Insert: {
           arrival_date?: string | null
           arrival_date_note?: string | null
+          assigned_planner?: string | null
           ceremony_location?: string | null
           cocktail_hour_location?: string | null
           count_at_30_days?: number | null
@@ -1029,11 +1040,20 @@ export type Database = {
           departure_date_note?: string | null
           estimated_guest_count?: number | null
           event_type?: string
+          handed_off_at?: string | null
+          handed_off_by?: string | null
           how_heard?: string | null
           id?: string
+          lifecycle_stage?: string | null
           package_tier?: string | null
           partner1_name?: string | null
           partner2_name?: string | null
+          pending_partner1_email?: string | null
+          pending_partner1_name?: string | null
+          pending_partner2_email?: string | null
+          pending_partner2_name?: string | null
+          portal_opened_at?: string | null
+          portal_opened_by?: string | null
           rehearsal_dinner_location?: string | null
           status?: string
           tasting_date?: string | null
@@ -1046,6 +1066,7 @@ export type Database = {
         Update: {
           arrival_date?: string | null
           arrival_date_note?: string | null
+          assigned_planner?: string | null
           ceremony_location?: string | null
           cocktail_hour_location?: string | null
           count_at_30_days?: number | null
@@ -1057,11 +1078,20 @@ export type Database = {
           departure_date_note?: string | null
           estimated_guest_count?: number | null
           event_type?: string
+          handed_off_at?: string | null
+          handed_off_by?: string | null
           how_heard?: string | null
           id?: string
+          lifecycle_stage?: string | null
           package_tier?: string | null
           partner1_name?: string | null
           partner2_name?: string | null
+          pending_partner1_email?: string | null
+          pending_partner1_name?: string | null
+          pending_partner2_email?: string | null
+          pending_partner2_name?: string | null
+          portal_opened_at?: string | null
+          portal_opened_by?: string | null
           rehearsal_dinner_location?: string | null
           status?: string
           tasting_date?: string | null

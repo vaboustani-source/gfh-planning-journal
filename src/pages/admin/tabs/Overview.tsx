@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ParticipantsPanel from "@/components/admin/ParticipantsPanel";
+import HandoffPanel from "@/components/admin/HandoffPanel";
 import { EventData } from "../EventDetail";
 import { Check, Edit2 } from "lucide-react";
 import { addDays, subDays, format } from "date-fns";
@@ -262,6 +263,9 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
 
   return (
     <div className="space-y-8 pb-24 animate-fade-up relative">
+      {/* Lifecycle / handoff */}
+      <HandoffPanel eventId={event.id} />
+
       {/* Countdown */}
       {daysUntil !== null && (
         <div className="rounded-2xl bg-card border border-sage/40 px-6 py-5 flex items-center gap-4">

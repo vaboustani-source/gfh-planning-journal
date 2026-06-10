@@ -1,7 +1,7 @@
-// Creates a wedding event, seeds it, and sends invitation tokens to both
-// partners through the unified send-invitation flow. Replaces the old
-// create-couple-accounts function. No partner auth account is pre-created —
-// the couple lands on /accept-invite/:token like every other invitee.
+// Creates a wedding event and seeds it. **Does NOT invite the couple.**
+// The couple invitation is now deferred until the event director explicitly
+// clicks "Open Portal for Client" (see open-client-portal). Partner contact
+// info is stashed on the event row so we can invite later.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -19,6 +19,11 @@ Deno.serve(async (req) => {
     )
 
     const authHeader = req.headers.get('Authorization') ?? ''
+    let createdBy: string | null = null
+    if (authHeader) {
+      const { data: u } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
+      createdBy = u?.user?.id ?? null
+    }
 
     const {
       partner1_first_name, partner1_last_name, partner1_email,
@@ -37,7 +42,7 @@ Deno.serve(async (req) => {
     const n2 = [partner2_first_name, partner2_last_name].filter(Boolean).join(' ') || p2Email
     const eventTitle = `${n1} & ${n2}`
 
-    // 1. Create event
+    // Create event in sales_setup stage. Couple receives NO email yet.
     const { data: event, error: eventError } = await supabase
       .from('events')
       .insert({
@@ -50,12 +55,18 @@ Deno.serve(async (req) => {
         partner2_name: n2,
         status: 'onboarding',
         event_type: 'wedding',
+        lifecycle_stage: 'sales_setup',
+        pending_partner1_email: p1Email,
+        pending_partner1_name: n1,
+        pending_partner2_email: p2Email,
+        pending_partner2_name: n2,
+        created_by: createdBy,
       })
       .select()
       .single()
     if (eventError) throw eventError
 
-    // 2. Seed the usual templates
+    // Seed the usual templates
     const milestoneDate = wedding_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     try {
       await supabase.rpc('seed_milestones', { p_event_id: event.id, p_wedding_date: milestoneDate })
@@ -67,48 +78,11 @@ Deno.serve(async (req) => {
       console.error('seeding error (non-fatal):', seedErr?.message ?? seedErr)
     }
 
-    // 3. Issue two couple invitations via the unified flow.
-    const fnUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-invitation`
-    const inviteHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    }
-    if (authHeader) inviteHeaders['Authorization'] = authHeader
-
-    const invitePartner = async (
-      email: string,
-      first: string,
-      last: string,
-      role_in_event: 'partner_1' | 'partner_2',
-    ) => {
-      const res = await fetch(fnUrl, {
-        method: 'POST',
-        headers: inviteHeaders,
-        body: JSON.stringify({
-          invite_type: 'couple',
-          email,
-          invited_name: [first, last].filter(Boolean).join(' ') || null,
-          event_id: event.id,
-          role_in_event,
-          access_tier: 3,
-        }),
-      })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok || json?.error) {
-        throw new Error(json?.error || `Failed to invite ${email}`)
-      }
-      return json
-    }
-
-    const inv1 = await invitePartner(p1Email, partner1_first_name || '', partner1_last_name || '', 'partner_1')
-    const inv2 = await invitePartner(p2Email, partner2_first_name || '', partner2_last_name || '', 'partner_2')
-
     return new Response(
       JSON.stringify({
         event_id: event.id,
         event_title: eventTitle,
-        invitations: [inv1?.invitation, inv2?.invitation],
-        emailDelivery: { partner1: inv1?.emailDelivery, partner2: inv2?.emailDelivery },
+        lifecycle_stage: 'sales_setup',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
