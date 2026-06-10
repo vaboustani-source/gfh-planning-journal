@@ -60,6 +60,7 @@ const App = () => (
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
+            <Route path="/accept-invite/:token" element={<AcceptInvite />} />
 
             {/* Public RSVP — no auth */}
             <Route path="/rsvp/:token" element={<PublicRsvp />} />
