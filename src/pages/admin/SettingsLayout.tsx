@@ -11,6 +11,7 @@ const LIBRARIES = [
   { slug: "layouts", label: "Table Layouts" },
   { slug: "resources", label: "Resources" },
   { slug: "forms", label: "Forms" },
+  { slug: "contract-templates", label: "Contract Templates" },
   { slug: "integrations", label: "Integrations" },
 ];
 
