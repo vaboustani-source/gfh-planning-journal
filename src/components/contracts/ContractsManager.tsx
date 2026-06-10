@@ -331,6 +331,7 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
   const [docType, setDocType] = useState(contract.document_type);
   const [content, setContent] = useState(contract.content);
   const [both, setBoth] = useState(contract.requires_both_partners);
+  const [counter, setCounter] = useState(contract.requires_countersignature);
   const [busy, setBusy] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -345,6 +346,7 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
         document_type: docType,
         content,
         requires_both_partners: both,
+        requires_countersignature: counter,
       };
       if (!contract.id) payload.created_by = user?.id;
       if (send) {
