@@ -118,6 +118,7 @@ Deno.serve(async (req) => {
 
     const { error: insErr } = await admin.from("contract_signatures").insert({
       contract_id: contract.id,
+      signer_role: "couple",
       signer_name: signerName || userEmail || "Signer",
       signer_email: userEmail,
       signer_user_id: userId,
@@ -131,11 +132,12 @@ Deno.serve(async (req) => {
     });
     if (insErr) return json({ error: insErr.message }, 500);
 
-    // Recompute status
+    // Recompute status (count only distinct couple signers; venue signatures never count toward couple completion)
     const { data: allSigs } = await admin
       .from("contract_signatures")
-      .select("signer_user_id")
-      .eq("contract_id", contract.id);
+      .select("signer_user_id, signer_role")
+      .eq("contract_id", contract.id)
+      .eq("signer_role", "couple");
     const uniqueSigners = new Set(
       (allSigs ?? []).map((s: { signer_user_id: string | null }) => s.signer_user_id).filter(Boolean),
     );
