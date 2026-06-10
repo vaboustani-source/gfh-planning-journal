@@ -11,6 +11,7 @@ import AcceptInvite from "./pages/AcceptInvite";
 import AdminDashboard from "./pages/AdminDashboard";
 import EventDetail from "./pages/admin/EventDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
+import CeoDashboard from "./pages/admin/CeoDashboard";
 import AdminAllMessages from "./pages/admin/AdminAllMessages";
 import AdminInbox from "./pages/admin/AdminInbox";
 import MarketingRoster from "./pages/admin/MarketingRoster";
@@ -72,6 +73,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/ceo-dashboard"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <CeoDashboard />
                 </ProtectedRoute>
               }
             />

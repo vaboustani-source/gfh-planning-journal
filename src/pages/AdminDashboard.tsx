@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, CalendarClock, MessageCircle, Clock, ChevronRight, LogOut, Plus,
-  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles, TrendingUp,
+  AlertCircle, CreditCard, Settings, Eye, FileText, Users, Inbox, Sparkles, TrendingUp, BarChart3,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermission";
 import { Progress } from "@/components/ui/progress";
@@ -382,6 +382,16 @@ export default function AdminDashboard() {
                 className="transition-colors text-muted-foreground hover:text-foreground"
               >
                 <Inbox size={20} />
+              </button>
+            )}
+            {profile?.role === "admin" && (
+              <button
+                onClick={() => navigate("/admin/ceo-dashboard")}
+                title="CEO Dashboard"
+                aria-label="CEO Dashboard"
+                className="transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <BarChart3 size={20} />
               </button>
             )}
             {canView("settings") && (
