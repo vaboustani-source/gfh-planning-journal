@@ -369,11 +369,14 @@ function ContractViewer({ contract, ctx, onClose }: {
         .from("contract_signatures").select("*").eq("contract_id", contract.id)
         .order("signed_at", { ascending: true });
       setSigs((data ?? []) as Signature[]);
-      setCurrentHash(await sha256Hex(contract.content));
+      const frozen = contract.rendered_content ?? contract.content;
+      setCurrentHash(await sha256Hex(frozen));
     })();
-  }, [contract.id, contract.content]);
+  }, [contract.id, contract.content, contract.rendered_content]);
 
-  const rendered = renderContract(contract.content, ctx);
+  // If the contract has frozen rendered_content (sent or later), show that verbatim.
+  // Drafts fall back to live token substitution for preview only.
+  const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-stretch justify-center p-4 overflow-y-auto">
