@@ -241,7 +241,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
           <h1 className="font-display text-3xl text-foreground mt-2">{contract.title}</h1>
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(contractStatus)}`}>{statusLabel(contractStatus)}</span>
-            {contractStatus === "fully_signed" && (
+            {(contractStatus === "fully_signed" || contractStatus === "executed") && (
               <span className="inline-flex items-center gap-1 text-[11px] text-sage-dark"><Lock size={11} /> Signed & Locked</span>
             )}
           </div>
