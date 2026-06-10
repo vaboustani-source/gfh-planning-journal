@@ -1712,6 +1712,71 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          access_tier: number | null
+          assigned_role: string | null
+          created_at: string
+          email: string
+          event_id: string | null
+          expires_at: string
+          id: string
+          invite_type: string
+          invited_by: string | null
+          invited_name: string | null
+          role_in_event: string | null
+          status: string
+          tab_access: Json | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          access_tier?: number | null
+          assigned_role?: string | null
+          created_at?: string
+          email: string
+          event_id?: string | null
+          expires_at?: string
+          id?: string
+          invite_type: string
+          invited_by?: string | null
+          invited_name?: string | null
+          role_in_event?: string | null
+          status?: string
+          tab_access?: Json | null
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          access_tier?: number | null
+          assigned_role?: string | null
+          created_at?: string
+          email?: string
+          event_id?: string | null
+          expires_at?: string
+          id?: string
+          invite_type?: string
+          invited_by?: string | null
+          invited_name?: string | null
+          role_in_event?: string | null
+          status?: string
+          tab_access?: Json | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       layout_library: {
         Row: {
           created_at: string | null
