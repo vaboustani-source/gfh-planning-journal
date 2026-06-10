@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 import ActionQueue from "@/components/admin/ActionQueue";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 import { format, differenceInDays, parseISO, isValid } from "date-fns";
 
 /* ─── Types ─── */
