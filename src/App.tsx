@@ -24,6 +24,7 @@ import SettingsLayout from "./pages/admin/SettingsLayout";
 import SettingsJournal from "./pages/admin/settings/SettingsJournal";
 import SettingsIntegrations from "./pages/admin/settings/SettingsIntegrations";
 import SettingsTeamRoles from "./pages/admin/settings/SettingsTeamRoles";
+import SettingsContractTemplates from "./pages/admin/settings/SettingsContractTemplates";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
@@ -108,6 +109,7 @@ const App = () => (
               <Route path="layouts" element={<LayoutLibrary />} />
               <Route path="resources" element={<Resources />} />
               <Route path="forms" element={<AdminForms />} />
+              <Route path="contract-templates" element={<SettingsContractTemplates />} />
               <Route path="integrations" element={<SettingsIntegrations />} />
               <Route path="team" element={<SettingsTeamRoles />} />
             </Route>
