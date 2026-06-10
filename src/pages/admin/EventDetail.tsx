@@ -25,6 +25,7 @@ import OurPeopleTab from "./tabs/OurPeopleTab";
 import EmailsTab from "./tabs/EmailsTab";
 import Rsvp from "../portal/Rsvp";
 import { LifecycleBadge } from "@/components/admin/HandoffPanel";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 
 type NavItem = { id: string; label: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -221,8 +222,9 @@ export default function EventDetail() {
         <p className="font-display text-base font-medium text-foreground leading-tight truncate">
           {coupleNames || event.title}
         </p>
-        <div className="mt-1.5">
+        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <LifecycleBadge stage={(event.lifecycle_stage ?? "portal_open") as any} />
+          <MidweekBadge weddingDate={event.wedding_date} />
         </div>
         {days !== null && (
           <p className="font-body text-[11px] text-muted-foreground mt-1">
@@ -299,8 +301,9 @@ export default function EventDetail() {
             <Menu size={20} strokeWidth={1.75} />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="font-display text-base font-light text-foreground truncate">
-              {coupleNames || event.title}
+            <p className="font-display text-base font-light text-foreground truncate inline-flex items-center gap-2">
+              <span className="truncate">{coupleNames || event.title}</span>
+              <MidweekBadge weddingDate={event.wedding_date} />
             </p>
             <p className="font-body text-[10px] text-muted-foreground leading-none">{activeLabel}</p>
           </div>

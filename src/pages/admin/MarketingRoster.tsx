@@ -14,6 +14,7 @@ import {
 // TODO (future): auto-flag "⭐ Marketing Opportunity" badge when floral budget > threshold,
 // notable photographer is booked, or 3+ activations are booked.
 import { usePermission } from "@/hooks/usePermission";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 
 type SortKey = "date" | "guests" | "floral" | "total" | "activations";
 type ViewMode = "table" | "cards";
@@ -555,7 +556,10 @@ export default function MarketingRoster() {
                             {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                           </td>
                           <td className="px-3 py-3">
-                            <p className="font-body text-sm font-medium text-foreground">{r.couple_names}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-body text-sm font-medium text-foreground">{r.couple_names}</p>
+                              <MidweekBadge weddingDate={r.wedding_date} />
+                            </div>
                             <p className="font-body text-[11px] text-muted-foreground">
                               {daysLabel(r.days_away)}
                             </p>
@@ -622,7 +626,10 @@ export default function MarketingRoster() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="font-display text-lg text-foreground">{r.couple_names}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-display text-lg text-foreground">{r.couple_names}</p>
+                      <MidweekBadge weddingDate={r.wedding_date} />
+                    </div>
                     <p className="font-body text-xs text-muted-foreground">
                       {r.wedding_date && isValid(parseISO(r.wedding_date))
                         ? format(parseISO(r.wedding_date), "EEE MMM d, yyyy")
