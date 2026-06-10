@@ -240,6 +240,77 @@ export default function ContractsManager({ eventId }: Props) {
           onClose={() => setViewer(null)}
         />
       )}
+
+      {templatePickerOpen && (
+        <TemplatePicker
+          templates={templates}
+          onClose={() => setTemplatePickerOpen(false)}
+          onBlank={startFromBlank}
+          onPick={startFromTemplate}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ============== Template Picker ============== */
+function TemplatePicker({ templates, onClose, onBlank, onPick }: {
+  templates: Template[];
+  onClose: () => void;
+  onBlank: () => void;
+  onPick: (t: Template) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-stretch justify-center p-4 overflow-y-auto">
+      <div className="bg-card rounded-xl border border-border w-full max-w-xl my-auto flex flex-col max-h-[95vh]">
+        <header className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <p className="font-display text-xl text-foreground">Start a New Contract</p>
+            <p className="font-body text-xs text-muted-foreground">
+              Choose a template or start from a blank document. You can edit everything before sending.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+        </header>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-2">
+          <button
+            onClick={onBlank}
+            className="w-full text-left rounded-lg border border-border bg-background hover:border-primary/40 px-4 py-3 transition"
+          >
+            <p className="font-display text-base text-foreground">Blank</p>
+            <p className="font-body text-xs text-muted-foreground mt-0.5">Start from an empty document.</p>
+          </button>
+          {templates.length === 0 ? (
+            <p className="font-body text-xs text-muted-foreground px-1 pt-2">
+              No active templates yet. Add some in Settings, GFH Libraries, Contract Templates.
+            </p>
+          ) : (
+            templates.map(t => (
+              <button
+                key={t.id}
+                onClick={() => onPick(t)}
+                className="w-full text-left rounded-lg border border-border bg-background hover:border-primary/40 px-4 py-3 transition"
+              >
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-display text-base text-foreground">{t.name}</p>
+                  <span className="font-body text-[10px] uppercase tracking-wider text-muted-foreground border border-border rounded px-1.5 py-0.5">
+                    {docTypeLabel(t.document_type)}
+                  </span>
+                  {t.requires_both_partners && (
+                    <span className="font-body text-[10px] uppercase tracking-wider text-sage-dark border border-sage/30 bg-sage/10 rounded px-1.5 py-0.5">
+                      Both partners
+                    </span>
+                  )}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+        <footer className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
+          <button onClick={onClose}
+            className="rounded-md border border-border bg-background px-4 py-2 font-body text-sm">Cancel</button>
+        </footer>
+      </div>
     </div>
   );
 }
