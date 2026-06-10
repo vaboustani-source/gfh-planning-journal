@@ -43,49 +43,30 @@ export default function AddParticipantModal({ eventId, onClose, onAdded }: Props
     setSaving(true);
 
     try {
-      // Use service role via edge function to create user
-      const { data, error } = await supabase.functions.invoke("invite-participant", {
+      const tabAccess = defaultsForRole(role);
+      const { data, error } = await supabase.functions.invoke("send-invitation", {
         body: {
-          event_id: eventId,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
+          invite_type: "participant",
           email: email.trim().toLowerCase(),
+          invited_name: [firstName.trim(), lastName.trim()].filter(Boolean).join(" "),
+          event_id: eventId,
           role_in_event: role,
           access_tier: tier,
-          redirect_to: getSetPasswordUrl(),
+          tab_access: tabAccess,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.emailDelivery?.sent === false) {
-        throw new Error(
-          data.emailDelivery.rateLimited
-            ? "Email wasn't sent because Supabase hit its rate limit. Wait a few minutes, then try again."
-            : data.emailDelivery.reason || "Invite email was not sent."
-        );
+        toast.warning(`Invitation created. Email could not be sent: ${data.emailDelivery.reason ?? "unknown"}`);
+      } else {
+        toast.success("Invitation sent — they'll get an email to set up their access");
       }
-
-      // Apply role-based default tab access (best-effort, won't block success)
-      try {
-        await supabase
-          .from("event_users")
-          .update({ tab_access: defaultsForRole(role) })
-          .eq("event_id", eventId)
-          .eq("user_id", data?.user_id ?? data?.userId ?? null);
-      } catch (e) {
-        console.warn("Failed to set default tab_access", e);
-      }
-
-      toast.success(
-        data?.invited
-          ? "Invite sent — they'll get an email to set their password"
-          : "Added to event — they can sign in with their existing password"
-      );
       onAdded();
       onClose();
     } catch (err: any) {
-      toast.error(err.message || "Failed to add participant");
+      toast.error(err.message || "Failed to send invitation");
     } finally {
       setSaving(false);
     }
