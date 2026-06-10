@@ -48,6 +48,9 @@ const STAGES: { key: string; label: string }[] = [
   { key: "complete", label: "Complete" },
 ];
 
+const BOOKED_STAGES = new Set(["handed_off", "in_setup", "portal_open", "complete"]);
+const isBooked = (e: { lifecycle_stage: string | null }) => BOOKED_STAGES.has(e.lifecycle_stage || "");
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const usd = (n: number) =>
@@ -61,6 +64,7 @@ export default function CeoDashboard() {
   const { profile, loading: authLoading } = useAuth();
   const [year, setYear] = useState<YearFilter>("this");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -76,82 +80,103 @@ export default function CeoDashboard() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: ev }, { data: li }, { data: pm }] = await Promise.all([
+      setLoadError(false);
+      const [evRes, liRes, pmRes] = await Promise.all([
         supabase.from("events").select("id,title,partner1_name,partner2_name,wedding_date,lifecycle_stage"),
         supabase.from("financial_line_items").select("event_id,total"),
         supabase.from("payment_schedule").select("id,event_id,amount,due_date,paid,label"),
       ]);
       if (cancelled) return;
-      setEvents((ev || []) as EventRow[]);
-      setLineItems((li || []) as LineItem[]);
-      setPayments((pm || []) as PaymentRow[]);
+      if (evRes.error || liRes.error || pmRes.error) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      setEvents((evRes.data || []) as EventRow[]);
+      setLineItems((liRes.data || []) as LineItem[]);
+      setPayments((pmRes.data || []) as PaymentRow[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [isAdmin]);
 
-  /* ── Year scoping ── */
+  /* ── Year scoping ──
+     scopedEvents: events constrained to the selected year (used for the stage chart and
+     for counting booked events with/without dates). All Years includes everything. */
   const now = new Date();
   const thisYear = now.getFullYear();
   const targetYear = year === "this" ? thisYear : year === "next" ? thisYear + 1 : null;
 
   const scopedEvents = useMemo(() => {
     if (targetYear === null) return events;
+    // For year filters, include events whose wedding_date falls in the year, AND booked
+    // events without a date so we can count them for the "dateless" notice.
     return events.filter((e) => {
-      if (!e.wedding_date) return false;
-      const y = parseISO(e.wedding_date).getFullYear();
-      return y === targetYear;
+      if (!e.wedding_date) return isBooked(e);
+      return parseISO(e.wedding_date).getFullYear() === targetYear;
     });
   }, [events, targetYear]);
 
-  const scopedEventIds = useMemo(() => new Set(scopedEvents.map((e) => e.id)), [scopedEvents]);
+  /* Events that contribute to financial figures: booked AND in-year-with-date. */
+  const financialEvents = useMemo(
+    () => scopedEvents.filter((e) => isBooked(e) && !!e.wedding_date),
+    [scopedEvents],
+  );
+  const financialEventIds = useMemo(
+    () => new Set(financialEvents.map((e) => e.id)),
+    [financialEvents],
+  );
   const eventById = useMemo(() => {
     const m = new Map<string, EventRow>();
-    scopedEvents.forEach((e) => m.set(e.id, e));
+    events.forEach((e) => m.set(e.id, e));
     return m;
-  }, [scopedEvents]);
+  }, [events]);
 
-  const scopedLineItems = useMemo(
-    () => lineItems.filter((l) => scopedEventIds.has(l.event_id)),
-    [lineItems, scopedEventIds],
+  const bookedLineItems = useMemo(
+    () => lineItems.filter((l) => financialEventIds.has(l.event_id)),
+    [lineItems, financialEventIds],
   );
-  const scopedPayments = useMemo(
-    () => payments.filter((p) => scopedEventIds.has(p.event_id)),
-    [payments, scopedEventIds],
+  const bookedPayments = useMemo(
+    () => payments.filter((p) => financialEventIds.has(p.event_id)),
+    [payments, financialEventIds],
   );
 
   /* ── KPIs ── */
-  const bookedRevenue = scopedLineItems.reduce((s, l) => s + Number(l.total || 0), 0);
-  const collected = scopedPayments
+  const bookedRevenue = bookedLineItems.reduce((s, l) => s + Number(l.total || 0), 0);
+  const collected = bookedPayments
     .filter((p) => p.paid)
     .reduce((s, p) => s + Number(p.amount || 0), 0);
   const outstanding = bookedRevenue - collected;
 
-  const bookedStages = new Set(["handed_off", "in_setup", "portal_open", "complete"]);
-  const weekendsBooked = scopedEvents.filter((e) => bookedStages.has(e.lifecycle_stage || "")).length;
+  const weekendsBooked = financialEvents.length;
 
-  /* ── Missing financials count ── */
+  /* ── Missing financials count (booked, in scope, no line items) ── */
   const lineItemsByEvent = useMemo(() => {
     const m = new Map<string, number>();
-    scopedLineItems.forEach((l) => m.set(l.event_id, (m.get(l.event_id) || 0) + 1));
+    bookedLineItems.forEach((l) => m.set(l.event_id, (m.get(l.event_id) || 0) + 1));
     return m;
-  }, [scopedLineItems]);
-  const missingFinancials = scopedEvents.filter(
-    (e) => bookedStages.has(e.lifecycle_stage || "") && !lineItemsByEvent.has(e.id),
-  ).length;
+  }, [bookedLineItems]);
+  const missingFinancials = financialEvents.filter((e) => !lineItemsByEvent.has(e.id)).length;
+
+  /* ── Dateless booked events (only meaningful under year filters) ── */
+  const datelessBooked =
+    targetYear === null
+      ? 0
+      : scopedEvents.filter((e) => isBooked(e) && !e.wedding_date).length;
 
   /* ── Charts ── */
   const monthlyRevenue = useMemo(() => {
     const buckets = MONTHS.map((m, i) => ({ month: m, idx: i, value: 0 }));
-    scopedLineItems.forEach((l) => {
+    bookedLineItems.forEach((l) => {
       const ev = eventById.get(l.event_id);
       if (!ev?.wedding_date) return;
       const m = parseISO(ev.wedding_date).getMonth();
       buckets[m].value += Number(l.total || 0);
     });
     return buckets;
-  }, [scopedLineItems, eventById]);
+  }, [bookedLineItems, eventById]);
 
+  /* Stage chart: unchanged behavior, shows ALL stages including sales setup. */
   const stageBreakdown = useMemo(() => {
     return STAGES.map((s) => ({
       label: s.label,
@@ -159,14 +184,14 @@ export default function CeoDashboard() {
     }));
   }, [scopedEvents]);
 
-  /* ── Cash flow & upcoming ── */
+  /* ── Cash flow & upcoming (booked events only) ── */
   const today = new Date();
   const unpaidUpcoming = useMemo(() => {
-    return scopedPayments
+    return bookedPayments
       .filter((p) => !p.paid && p.due_date)
       .map((p) => ({ ...p, days: differenceInDays(parseISO(p.due_date as string), today) }))
       .sort((a, b) => (a.days as number) - (b.days as number));
-  }, [scopedPayments]);
+  }, [bookedPayments]);
 
   const sumWithin = (days: number) =>
     unpaidUpcoming
@@ -206,6 +231,15 @@ export default function CeoDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+        {loadError ? (
+          <p
+            className="py-16 text-center"
+            style={{ color: COLORS.muted, fontFamily: "'Cormorant Garamond', serif", fontSize: "1.5rem" }}
+          >
+            We could not load the numbers right now. Try again shortly.
+          </p>
+        ) : (
+        <>
         {/* KPI row */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Kpi label="Booked Revenue" value={loading ? null : usd(bookedRevenue)} />
@@ -217,6 +251,12 @@ export default function CeoDashboard() {
             sub="Annual target"
           />
         </section>
+
+        {!loading && datelessBooked > 0 && (
+          <p className="text-sm" style={{ color: COLORS.muted }}>
+            {datelessBooked} booked {datelessBooked === 1 ? "event has" : "events have"} no date set and {datelessBooked === 1 ? "is" : "are"} not shown for this year.
+          </p>
+        )}
 
         {!loading && missingFinancials > 0 && (
           <p className="text-sm" style={{ color: COLORS.muted }}>
@@ -315,11 +355,11 @@ export default function CeoDashboard() {
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <td className="py-3 pr-4">
-                          <div className="font-medium">{ev ? coupleName(ev) : "—"}</div>
+                          <div className="font-medium">{ev ? coupleName(ev) : "Not set"}</div>
                           {p.label && <div className="text-xs" style={{ color: COLORS.muted }}>{p.label}</div>}
                         </td>
                         <td className="py-3 px-4 text-right tabular-nums">{usd(Number(p.amount || 0))}</td>
-                        <td className="py-3 px-4">{p.due_date ? format(parseISO(p.due_date), "MMM d, yyyy") : "—"}</td>
+                        <td className="py-3 px-4">{p.due_date ? format(parseISO(p.due_date), "MMM d, yyyy") : "Not set"}</td>
                         <td className="py-3 pl-4 text-right tabular-nums" style={{ color: (p.days as number) < 0 ? COLORS.accent : COLORS.text }}>
                           {(p.days as number) < 0 ? `${Math.abs(p.days as number)} overdue` : p.days}
                         </td>
@@ -331,6 +371,8 @@ export default function CeoDashboard() {
             </div>
           )}
         </Card>
+        </>
+        )}
       </main>
     </div>
   );
