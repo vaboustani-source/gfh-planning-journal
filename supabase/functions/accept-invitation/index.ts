@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
       await supabase.from('event_users').upsert({
         event_id: inv.event_id,
         user_id: userId!,
-        role_in_event: 'couple',
-        access_tier: 3,
+        role_in_event: inv.role_in_event ?? 'couple',
+        access_tier: inv.access_tier ?? 3,
       }, { onConflict: 'event_id,user_id' })
       landing = '/portal'
     } else if (inv.invite_type === 'participant' && inv.event_id) {
