@@ -4,12 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   MessageCircle, FileSignature, ClipboardList, AlertCircle, AtSign,
-  Sparkles, Send, RefreshCw, ChevronRight, Loader2,
+  Sparkles, Send, RefreshCw, ChevronRight, Loader2, UserPlus,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO, differenceInDays, format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
-type ItemKind = "message" | "contract" | "form" | "milestone" | "mention";
+type ItemKind = "message" | "contract" | "form" | "milestone" | "mention" | "handoff";
 
 interface BaseItem {
   id: string;
