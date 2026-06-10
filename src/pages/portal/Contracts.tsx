@@ -118,7 +118,7 @@ export default function PortalContracts() {
         <div className="space-y-3">
           {contracts.map(c => {
             const signed = signedByMe(c.id);
-            const needsAction = !signed && c.status !== "fully_signed" && c.status !== "voided";
+            const needsAction = !signed && c.status !== "fully_signed" && c.status !== "executed" && c.status !== "voided";
             return (
               <button key={c.id} onClick={() => setActive(c)}
                 className={`w-full text-left rounded-xl border bg-white p-5 transition hover:border-sage/40 ${needsAction ? "border-amber-300 ring-1 ring-amber-100" : "border-border"}`}>
@@ -128,7 +128,7 @@ export default function PortalContracts() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-display text-lg text-foreground">{c.title}</p>
                       <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(c.status)}`}>{statusLabel(c.status)}</span>
-                      {c.status === "fully_signed" && <Lock size={12} className="text-sage" />}
+                      {(c.status === "fully_signed" || c.status === "executed") && <Lock size={12} className="text-sage" />}
                     </div>
                     {needsAction ? (
                       <p className="font-body text-sm text-amber-800 mt-1">
@@ -168,7 +168,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
   const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const alreadySigned = allSigs.some(s => s.signer_user_id === user?.id);
-  const locked = contractStatus === "fully_signed" || contractStatus === "voided";
+  const locked = contractStatus === "fully_signed" || contractStatus === "executed" || contractStatus === "voided";
 
   useEffect(() => {
     (async () => {
@@ -241,7 +241,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
           <h1 className="font-display text-3xl text-foreground mt-2">{contract.title}</h1>
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(contractStatus)}`}>{statusLabel(contractStatus)}</span>
-            {contractStatus === "fully_signed" && (
+            {(contractStatus === "fully_signed" || contractStatus === "executed") && (
               <span className="inline-flex items-center gap-1 text-[11px] text-sage-dark"><Lock size={11} /> Signed & Locked</span>
             )}
           </div>

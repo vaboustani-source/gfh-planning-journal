@@ -10,6 +10,7 @@ type Template = {
   document_type: string;
   body: string;
   requires_both_partners: boolean;
+  requires_countersignature: boolean;
   is_active: boolean;
   created_by: string | null;
   created_at: string;
@@ -22,6 +23,7 @@ const emptyTemplate = (): Template => ({
   document_type: "contract",
   body: "",
   requires_both_partners: false,
+  requires_countersignature: false,
   is_active: true,
   created_by: null,
   created_at: "",
@@ -141,6 +143,7 @@ function TemplateEditor({
   const [docType, setDocType] = useState(template.document_type);
   const [body, setBody] = useState(template.body);
   const [both, setBoth] = useState(template.requires_both_partners);
+  const [counter, setCounter] = useState(template.requires_countersignature);
   const [active, setActive] = useState(template.is_active);
   const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -172,6 +175,7 @@ function TemplateEditor({
         document_type: docType,
         body,
         requires_both_partners: both,
+        requires_countersignature: counter,
         is_active: active,
         updated_at: new Date().toISOString(),
       };
@@ -253,6 +257,13 @@ function TemplateEditor({
                 className="rounded"
               />
               Requires both partners to sign
+            </label>
+            <label className="inline-flex items-center gap-2 font-body text-sm cursor-pointer" style={{ color: "#1A1A1A" }}>
+              <input
+                type="checkbox" checked={counter} onChange={e => setCounter(e.target.checked)}
+                className="rounded"
+              />
+              Requires venue countersignature
             </label>
             <label className="inline-flex items-center gap-2 font-body text-sm cursor-pointer" style={{ color: "#1A1A1A" }}>
               <input

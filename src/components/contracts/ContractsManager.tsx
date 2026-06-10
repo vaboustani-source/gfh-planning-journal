@@ -17,6 +17,7 @@ type Contract = {
   content_hash: string | null;
   status: string;
   requires_both_partners: boolean;
+  requires_countersignature: boolean;
   sent_at: string | null;
   created_at: string;
 };
@@ -24,6 +25,7 @@ type Contract = {
 type Signature = {
   id: string;
   contract_id: string;
+  signer_role: string;
   signer_name: string;
   signer_email: string;
   signer_user_id: string | null;
@@ -45,6 +47,7 @@ type Template = {
   document_type: string;
   body: string;
   requires_both_partners: boolean;
+  requires_countersignature: boolean;
 };
 
 export default function ContractsManager({ eventId }: Props) {
@@ -107,7 +110,7 @@ export default function ContractsManager({ eventId }: Props) {
   const openNew = async () => {
     const { data } = await (supabase as any)
       .from("contract_templates")
-      .select("id, name, document_type, body, requires_both_partners")
+      .select("id, name, document_type, body, requires_both_partners, requires_countersignature")
       .eq("is_active", true)
       .order("name", { ascending: true });
     setTemplates((data ?? []) as Template[]);
@@ -119,7 +122,7 @@ export default function ContractsManager({ eventId }: Props) {
     setEditor({
       id: "", event_id: eventId, title: "", document_type: "contract",
       content: "", rendered_content: null, content_hash: null, status: "draft",
-      requires_both_partners: false, sent_at: null, created_at: "",
+      requires_both_partners: false, requires_countersignature: false, sent_at: null, created_at: "",
     });
     setEditorOpen(true);
   };
@@ -129,14 +132,16 @@ export default function ContractsManager({ eventId }: Props) {
     setEditor({
       id: "", event_id: eventId, title: t.name, document_type: t.document_type,
       content: t.body, rendered_content: null, content_hash: null, status: "draft",
-      requires_both_partners: t.requires_both_partners, sent_at: null, created_at: "",
+      requires_both_partners: t.requires_both_partners,
+      requires_countersignature: t.requires_countersignature,
+      sent_at: null, created_at: "",
     });
     setEditorOpen(true);
   };
 
 
   const openEdit = (c: Contract) => {
-    if (c.status === "fully_signed") {
+    if (c.status === "fully_signed" || c.status === "executed") {
       toast.error("This contract is signed and locked. Create an addendum instead.");
       return;
     }
@@ -191,9 +196,11 @@ export default function ContractsManager({ eventId }: Props) {
                     {docTypeLabel(c.document_type)}
                   </span>
                   <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(c.status)}`}>
-                    {statusLabel(c.status)}
+                    {c.status === "fully_signed" && c.requires_countersignature
+                      ? "Awaiting Countersignature"
+                      : statusLabel(c.status)}
                   </span>
-                  {c.status === "fully_signed" && <Lock size={12} className="text-sage" />}
+                  {(c.status === "fully_signed" || c.status === "executed") && <Lock size={12} className="text-sage" />}
                 </div>
                 <p className="font-body text-xs text-muted-foreground mt-1">
                   {sigCounts[c.id] ?? 0} signature{(sigCounts[c.id] ?? 0) === 1 ? "" : "s"}
@@ -206,7 +213,7 @@ export default function ContractsManager({ eventId }: Props) {
                   className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
                   <Eye size={13} /> View
                 </button>
-                {c.status !== "fully_signed" && c.status !== "voided" && (
+                {c.status !== "fully_signed" && c.status !== "executed" && c.status !== "voided" && (
                   <button onClick={() => openEdit(c)}
                     className="rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
                     Edit
@@ -324,6 +331,7 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
   const [docType, setDocType] = useState(contract.document_type);
   const [content, setContent] = useState(contract.content);
   const [both, setBoth] = useState(contract.requires_both_partners);
+  const [counter, setCounter] = useState(contract.requires_countersignature);
   const [busy, setBusy] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -338,6 +346,7 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
         document_type: docType,
         content,
         requires_both_partners: both,
+        requires_countersignature: counter,
       };
       if (!contract.id) payload.created_by = user?.id;
       if (send) {
@@ -411,11 +420,17 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <label className="inline-flex items-center gap-2 font-body text-sm text-foreground cursor-pointer">
-              <input type="checkbox" checked={both} onChange={e => setBoth(e.target.checked)} className="rounded border-border" />
-              Requires both partners to sign
-            </label>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-5 flex-wrap">
+              <label className="inline-flex items-center gap-2 font-body text-sm text-foreground cursor-pointer">
+                <input type="checkbox" checked={both} onChange={e => setBoth(e.target.checked)} className="rounded border-border" />
+                Requires both partners to sign
+              </label>
+              <label className="inline-flex items-center gap-2 font-body text-sm text-foreground cursor-pointer">
+                <input type="checkbox" checked={counter} onChange={e => setCounter(e.target.checked)} className="rounded border-border" />
+                Requires venue countersignature
+              </label>
+            </div>
             <button type="button" onClick={() => setShowPreview(p => !p)}
               className="font-body text-xs text-sage hover:underline">
               {showPreview ? "Hide preview" : "Show preview"}
@@ -465,21 +480,50 @@ function ContractViewer({ contract, ctx, onClose }: {
 }) {
   const [sigs, setSigs] = useState<Signature[]>([]);
   const [currentHash, setCurrentHash] = useState<string | null>(null);
+  const [status, setStatus] = useState(contract.status);
+  const [csTyped, setCsTyped] = useState("");
+  const [csAgreed, setCsAgreed] = useState(false);
+  const [csBusy, setCsBusy] = useState(false);
+
+  const reloadSigs = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("contract_signatures").select("*").eq("contract_id", contract.id)
+      .order("signed_at", { ascending: true });
+    setSigs((data ?? []) as Signature[]);
+  }, [contract.id]);
 
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase as any)
-        .from("contract_signatures").select("*").eq("contract_id", contract.id)
-        .order("signed_at", { ascending: true });
-      setSigs((data ?? []) as Signature[]);
+      await reloadSigs();
       const frozen = contract.rendered_content ?? contract.content;
       setCurrentHash(await sha256Hex(frozen));
     })();
-  }, [contract.id, contract.content, contract.rendered_content]);
+  }, [contract.id, contract.content, contract.rendered_content, reloadSigs]);
 
-  // If the contract has frozen rendered_content (sent or later), show that verbatim.
-  // Drafts fall back to live token substitution for preview only.
   const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
+  const hasVenueSig = sigs.some(s => s.signer_role === "venue");
+  const awaitingCountersig = status === "fully_signed" && contract.requires_countersignature && !hasVenueSig;
+  const isExecuted = status === "executed";
+
+  const statusDisplay = awaitingCountersig ? "Awaiting Countersignature" : statusLabel(status);
+
+  const countersign = async () => {
+    if (!csAgreed || csTyped.trim().length < 3) return;
+    setCsBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("countersign-contract", {
+        body: { contract_id: contract.id, typed_name: csTyped.trim(), agreed_to_terms: true },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.status) setStatus(data.status);
+      await reloadSigs();
+      toast.success("Countersigned. Contract executed.");
+      setCsTyped(""); setCsAgreed(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setCsBusy(false); }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-stretch justify-center p-4 overflow-y-auto">
@@ -488,7 +532,7 @@ function ContractViewer({ contract, ctx, onClose }: {
           <div>
             <p className="font-display text-xl text-foreground">{contract.title}</p>
             <p className="font-body text-xs text-muted-foreground">
-              {docTypeLabel(contract.document_type)} · {statusLabel(contract.status)}
+              {docTypeLabel(contract.document_type)} · {statusDisplay}
             </p>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
@@ -501,6 +545,68 @@ function ContractViewer({ contract, ctx, onClose }: {
               {rendered}
             </div>
           </section>
+
+          {isExecuted && (
+            <section
+              className="rounded-lg border p-5 flex items-start gap-3"
+              style={{ borderColor: "#C9A84C", backgroundColor: "#FAF8F4" }}
+            >
+              <Lock size={18} className="mt-0.5" style={{ color: "#2C3E2D" }} />
+              <div>
+                <p className="font-display text-base" style={{ color: "#2C3E2D" }}>Fully executed</p>
+                <p className="font-body text-sm" style={{ color: "#6B6B6B" }}>
+                  Both parties have signed. This contract is locked and on file.
+                </p>
+              </div>
+            </section>
+          )}
+
+          {awaitingCountersig && (
+            <section
+              className="rounded-lg border p-5 space-y-4"
+              style={{ borderColor: "#C9A84C", backgroundColor: "#FAF8F4" }}
+            >
+              <div>
+                <p className="font-display text-base" style={{ color: "#2C3E2D" }}>Countersign as Venue</p>
+                <p className="font-body text-sm" style={{ color: "#6B6B6B" }}>
+                  The couple has signed. Add your venue countersignature to fully execute this contract.
+                </p>
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox" checked={csAgreed}
+                  onChange={e => setCsAgreed(e.target.checked)}
+                  className="mt-1 rounded border-border"
+                />
+                <span className="font-body text-sm text-foreground">
+                  I confirm I am authorized to countersign on behalf of Gilbertsville Farmhouse.
+                </span>
+              </label>
+              <div>
+                <label className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Type your full legal name
+                </label>
+                <input
+                  value={csTyped}
+                  onChange={e => setCsTyped(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full mt-1 border-b-2 border-border bg-transparent py-2 px-1 text-2xl italic focus:outline-none focus:border-sage"
+                  style={{ fontFamily: "Cormorant Garamond, serif" }}
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={countersign}
+                  disabled={!csAgreed || csTyped.trim().length < 3 || csBusy}
+                  className="inline-flex items-center gap-2 rounded-md px-5 py-2.5 font-body text-sm text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: "#2C3E2D" }}
+                >
+                  <ShieldCheck size={15} /> {csBusy ? "Recording..." : "Countersign"}
+                </button>
+              </div>
+            </section>
+          )}
+
 
           <section>
             <div className="flex items-center gap-2 mb-3">
@@ -518,7 +624,9 @@ function ContractViewer({ contract, ctx, onClose }: {
                   return (
                     <div key={s.id} className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 font-body text-sm">
                       <div>
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Signer</p>
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                          Signer {s.signer_role === "venue" ? "(Venue)" : "(Couple)"}
+                        </p>
                         <p className="text-foreground">{s.signer_name}</p>
                         <p className="text-muted-foreground text-xs">{s.signer_email}</p>
                       </div>

@@ -67,6 +67,7 @@ export function statusLabel(s: string): string {
     case "sent": return "Sent";
     case "partially_signed": return "Partially Signed";
     case "fully_signed": return "Fully Signed";
+    case "executed": return "Executed";
     case "voided": return "Voided";
     default: return s;
   }
@@ -78,6 +79,7 @@ export function statusPillClass(s: string): string {
     case "sent": return "bg-amber-50 text-amber-800 border-amber-200";
     case "partially_signed": return "bg-blue-50 text-blue-800 border-blue-200";
     case "fully_signed": return "bg-sage/15 text-sage-dark border-sage/30";
+    case "executed": return "bg-sage/20 text-sage-dark border-[#C9A84C]";
     case "voided": return "bg-red-50 text-red-700 border-red-200";
     default: return "bg-muted text-muted-foreground border-border";
   }
