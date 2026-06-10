@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePortalData } from "@/hooks/usePortalData";
 import { toast } from "sonner";
-import { FileText, ShieldCheck, Lock, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
+import { FileText, ShieldCheck, Lock, CheckCircle2, AlertTriangle, ArrowLeft, Download } from "lucide-react";
 import {
   renderContract, statusLabel, statusPillClass, docTypeLabel,
   type ContractContext,
 } from "@/lib/contractTemplate";
+import SignedCertificate, { ELECTRONIC_SIGNATURE_CONSENT } from "@/components/contracts/SignedCertificate";
 
 type Contract = {
   id: string;
