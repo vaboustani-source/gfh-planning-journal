@@ -249,6 +249,16 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
         Add Participant
       </button>
 
+      <div className="pt-4 border-t" style={{ borderColor: "#E8E2D9" }}>
+        <p className="font-display text-sm font-light text-foreground mb-2">Outstanding invitations</p>
+        <PendingInvitesList
+          eventId={eventId}
+          inviteTypes={["couple", "participant"]}
+          compact
+        />
+      </div>
+
+
       {modalOpen && (
         <AddParticipantModal
           eventId={eventId}
