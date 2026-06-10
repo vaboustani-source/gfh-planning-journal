@@ -231,6 +231,15 @@ export default function CeoDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+        {loadError ? (
+          <p
+            className="py-16 text-center"
+            style={{ color: COLORS.muted, fontFamily: "'Cormorant Garamond', serif", fontSize: "1.5rem" }}
+          >
+            We could not load the numbers right now. Try again shortly.
+          </p>
+        ) : (
+        <>
         {/* KPI row */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Kpi label="Booked Revenue" value={loading ? null : usd(bookedRevenue)} />
@@ -242,6 +251,12 @@ export default function CeoDashboard() {
             sub="Annual target"
           />
         </section>
+
+        {!loading && datelessBooked > 0 && (
+          <p className="text-sm" style={{ color: COLORS.muted }}>
+            {datelessBooked} booked {datelessBooked === 1 ? "event has" : "events have"} no date set and {datelessBooked === 1 ? "is" : "are"} not shown for this year.
+          </p>
+        )}
 
         {!loading && missingFinancials > 0 && (
           <p className="text-sm" style={{ color: COLORS.muted }}>
