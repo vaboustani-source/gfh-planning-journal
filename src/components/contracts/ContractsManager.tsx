@@ -122,7 +122,7 @@ export default function ContractsManager({ eventId }: Props) {
     setEditor({
       id: "", event_id: eventId, title: "", document_type: "contract",
       content: "", rendered_content: null, content_hash: null, status: "draft",
-      requires_both_partners: false, sent_at: null, created_at: "",
+      requires_both_partners: false, requires_countersignature: false, sent_at: null, created_at: "",
     });
     setEditorOpen(true);
   };
@@ -132,7 +132,9 @@ export default function ContractsManager({ eventId }: Props) {
     setEditor({
       id: "", event_id: eventId, title: t.name, document_type: t.document_type,
       content: t.body, rendered_content: null, content_hash: null, status: "draft",
-      requires_both_partners: t.requires_both_partners, sent_at: null, created_at: "",
+      requires_both_partners: t.requires_both_partners,
+      requires_countersignature: t.requires_countersignature,
+      sent_at: null, created_at: "",
     });
     setEditorOpen(true);
   };
