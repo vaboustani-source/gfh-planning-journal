@@ -232,12 +232,14 @@ export default function CeoDashboard() {
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
         {loadError ? (
-          <p
-            className="py-16 text-center"
-            style={{ color: COLORS.muted, fontFamily: "'Cormorant Garamond', serif", fontSize: "1.5rem" }}
-          >
-            We could not load the numbers right now. Try again shortly.
-          </p>
+          <div className="py-20 text-center space-y-3">
+            <p style={{ color: COLORS.primary, fontFamily: "'Cormorant Garamond', serif", fontSize: "1.75rem", fontWeight: 300 }}>
+              We could not load the dashboard data.
+            </p>
+            <p className="text-sm" style={{ color: COLORS.muted }}>
+              Refresh to try again.
+            </p>
+          </div>
         ) : (
         <>
         {/* KPI row */}
@@ -252,9 +254,9 @@ export default function CeoDashboard() {
           />
         </section>
 
-        {!loading && datelessBooked > 0 && (
+        {!loading && targetYear !== null && datelessBooked > 0 && (
           <p className="text-sm" style={{ color: COLORS.muted }}>
-            {datelessBooked} booked {datelessBooked === 1 ? "event has" : "events have"} no date set and {datelessBooked === 1 ? "is" : "are"} not shown for this year.
+            {datelessBooked} booked {datelessBooked === 1 ? "event has" : "events have"} no date set and {datelessBooked === 1 ? "is" : "are"} not shown in year views.
           </p>
         )}
 
