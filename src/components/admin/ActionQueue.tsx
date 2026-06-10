@@ -376,6 +376,7 @@ function ActionCard({ item, eventName, onSent }: { item: QueueItem; eventName: s
             >
               {eventName}
             </button>
+            <MidweekBadge weddingDate={item.wedding_date} />
             {weddingLabel && <span className="font-body text-[11px] text-muted-foreground">· {weddingLabel}</span>}
           </div>
 
