@@ -228,6 +228,14 @@ export default function SettingsTeamRoles() {
         )}
       </div>
 
+      <PendingInvitesList
+        inviteType="staff"
+        title="Pending team invitations"
+        subtitle="Outstanding invites for staff members. Resend to refresh the link, or revoke to invalidate it."
+      />
+
+
+
       {/* Role reference */}
       <section>
         <h2 className="font-display text-xl font-light text-foreground mb-3">Role reference</h2>
