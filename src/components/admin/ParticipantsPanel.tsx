@@ -6,6 +6,7 @@ import AddParticipantModal from "./AddParticipantModal";
 import TabAccessDrawer from "./TabAccessDrawer";
 import { getSetPasswordUrl } from "@/lib/authUrls";
 import { TabAccess, FULL_ACCESS_ROLES } from "@/lib/tabAccess";
+import PendingInvitesList from "./PendingInvitesList";
 
 interface Participant {
   id: string;
