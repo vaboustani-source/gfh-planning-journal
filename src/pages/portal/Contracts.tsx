@@ -118,7 +118,7 @@ export default function PortalContracts() {
         <div className="space-y-3">
           {contracts.map(c => {
             const signed = signedByMe(c.id);
-            const needsAction = !signed && c.status !== "fully_signed" && c.status !== "voided";
+            const needsAction = !signed && c.status !== "fully_signed" && c.status !== "executed" && c.status !== "voided";
             return (
               <button key={c.id} onClick={() => setActive(c)}
                 className={`w-full text-left rounded-xl border bg-white p-5 transition hover:border-sage/40 ${needsAction ? "border-amber-300 ring-1 ring-amber-100" : "border-border"}`}>
@@ -128,7 +128,7 @@ export default function PortalContracts() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-display text-lg text-foreground">{c.title}</p>
                       <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(c.status)}`}>{statusLabel(c.status)}</span>
-                      {c.status === "fully_signed" && <Lock size={12} className="text-sage" />}
+                      {(c.status === "fully_signed" || c.status === "executed") && <Lock size={12} className="text-sage" />}
                     </div>
                     {needsAction ? (
                       <p className="font-body text-sm text-amber-800 mt-1">
