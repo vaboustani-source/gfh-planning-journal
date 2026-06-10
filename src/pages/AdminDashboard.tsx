@@ -511,7 +511,10 @@ export default function AdminDashboard() {
                         {/* Header */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="min-w-0">
-                            <h3 className="font-display text-xl font-light text-foreground group-hover:text-sage-dark transition-colors leading-tight truncate">{event.couple_names}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-display text-xl font-light text-foreground group-hover:text-sage-dark transition-colors leading-tight truncate">{event.couple_names}</h3>
+                              <MidweekBadge weddingDate={event.wedding_date} />
+                            </div>
                             <p className="font-body text-[11px] text-muted-foreground mt-0.5">{formatDate(event.wedding_date)}</p>
                           </div>
                           <div className="flex items-center gap-2 mt-1 shrink-0">
