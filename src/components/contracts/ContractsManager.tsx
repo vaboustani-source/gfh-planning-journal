@@ -110,7 +110,7 @@ export default function ContractsManager({ eventId }: Props) {
   const openNew = async () => {
     const { data } = await (supabase as any)
       .from("contract_templates")
-      .select("id, name, document_type, body, requires_both_partners")
+      .select("id, name, document_type, body, requires_both_partners, requires_countersignature")
       .eq("is_active", true)
       .order("name", { ascending: true });
     setTemplates((data ?? []) as Template[]);
