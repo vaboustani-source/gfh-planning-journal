@@ -676,6 +676,22 @@ function ContractViewer({ contract, ctx, onClose }: {
           </section>
         </div>
       </div>
+
+      {sigs.length > 0 && (
+        <SignedCertificate
+          contract={{
+            id: contract.id,
+            title: contract.title,
+            document_type: contract.document_type,
+            status,
+            content: contract.content,
+            rendered_content: contract.rendered_content,
+            content_hash: contract.content_hash,
+          }}
+          renderedText={rendered}
+          signatures={sigs}
+        />
+      )}
     </div>
   );
 }
