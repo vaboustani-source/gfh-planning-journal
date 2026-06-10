@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
 import { format, parseISO, isValid } from "date-fns";
 import { ArrowLeft, ArrowUpDown, DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
+import { MidweekBadge } from "@/components/admin/MidweekBadge";
 
 
 type SortKey = "date" | "budget_delta" | "catering_delta" | "stated_budget" | "final_total";
