@@ -238,9 +238,11 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
       };
       if (!contract.id) payload.created_by = user?.id;
       if (send) {
+        const frozen = renderContract(content, ctx);
         payload.status = "sent";
         payload.sent_at = new Date().toISOString();
-        payload.content_hash = await sha256Hex(content);
+        payload.rendered_content = frozen;
+        payload.content_hash = await sha256Hex(frozen);
       }
       let res;
       if (contract.id) {
@@ -249,6 +251,25 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
         res = await (supabase as any).from("contracts").insert(payload).select().maybeSingle();
       }
       if (res.error) throw res.error;
+      const savedId = res.data?.id ?? contract.id;
+      if (savedId) {
+        const auditRows: Array<Record<string, unknown>> = [];
+        if (!contract.id) {
+          auditRows.push({
+            contract_id: savedId, action: "created",
+            actor_user_id: user?.id, actor_label: user?.email ?? null,
+          });
+        }
+        if (send) {
+          auditRows.push({
+            contract_id: savedId, action: "sent",
+            actor_user_id: user?.id, actor_label: user?.email ?? null,
+          });
+        }
+        if (auditRows.length) {
+          await (supabase as any).from("contract_audit_log").insert(auditRows);
+        }
+      }
       toast.success(send ? "Contract sent to couple" : "Draft saved");
       onSaved();
     } catch (e) {
