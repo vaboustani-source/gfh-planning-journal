@@ -399,3 +399,127 @@ function Stat({
     </div>
   );
 }
+
+function InviteCollaboratorButton({ eventId }: { eventId: string }) {
+  const [open, setOpen] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!firstName.trim() || !email.trim()) return;
+    setSaving(true);
+    try {
+      const tabAccess = defaultsForRole("planner");
+      const { data, error } = await supabase.functions.invoke("send-invitation", {
+        body: {
+          invite_type: "participant",
+          email: email.trim().toLowerCase(),
+          invited_name: [firstName.trim(), lastName.trim()].filter(Boolean).join(" "),
+          event_id: eventId,
+          role_in_event: "planner",
+          access_tier: 3,
+          tab_access: tabAccess,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.emailDelivery?.sent === false) {
+        toast.warning(`Invitation created. Email could not be sent: ${data.emailDelivery.reason ?? "unknown"}`);
+      } else {
+        toast.success("Invitation sent. They will get an email to set up access.");
+      }
+      setFirstName(""); setLastName(""); setEmail("");
+      setOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Could not send invitation");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 font-body text-xs font-medium text-white transition-colors"
+        style={{ backgroundColor: "#2C3E2D" }}
+      >
+        <UserPlus size={14} /> Invite a collaborator
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-forest/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div
+            className="relative bg-white border border-border rounded-2xl shadow-elevated w-full max-w-md mx-4 p-6 animate-fade-up"
+            style={{ backgroundColor: "#FAF8F4" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-display text-xl font-light" style={{ color: "#2C3E2D" }}>Invite a collaborator</p>
+              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground p-1">
+                <X size={16} />
+              </button>
+            </div>
+            <p className="font-body text-[13px] text-muted-foreground leading-relaxed mb-5">
+              They will be added to your event and can see your planning portal, including this budget.
+              We will email them a link to set up their access.
+            </p>
+            <form onSubmit={submit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-body text-[11px] text-muted-foreground uppercase tracking-wider block mb-1">First name *</label>
+                  <input
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    required
+                    className="w-full border border-border rounded-md px-3 py-2 font-body text-sm bg-white focus:outline-none focus:border-sage"
+                  />
+                </div>
+                <div>
+                  <label className="font-body text-[11px] text-muted-foreground uppercase tracking-wider block mb-1">Last name</label>
+                  <input
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    className="w-full border border-border rounded-md px-3 py-2 font-body text-sm bg-white focus:outline-none focus:border-sage"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="font-body text-[11px] text-muted-foreground uppercase tracking-wider block mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="w-full border border-border rounded-md px-3 py-2 font-body text-sm bg-white focus:outline-none focus:border-sage"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-border font-body text-sm text-muted-foreground hover:text-foreground transition-colors bg-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving || !firstName.trim() || !email.trim()}
+                  className="flex-1 px-4 py-2.5 rounded-lg font-body text-sm text-white hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+                  style={{ backgroundColor: "#2C3E2D" }}
+                >
+                  {saving && <Loader2 size={14} className="animate-spin" />}
+                  Send invite
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
