@@ -690,6 +690,7 @@ function ContractViewer({ contract, ctx, onClose }: {
           }}
           renderedText={rendered}
           signatures={sigs}
+          showAuditTrail
         />
       )}
     </div>

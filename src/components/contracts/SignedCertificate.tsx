@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { statusLabel, docTypeLabel } from "@/lib/contractTemplate";
 
 export const ELECTRONIC_SIGNATURE_CONSENT =
-  "I agree to sign this document electronically. I understand that my typed name and electronic signature are legally binding, and that I may request a paper copy.";
+  "By typing my name and signing, I agree that I am signing this document electronically, that my electronic signature is the legal equivalent of my handwritten signature and is binding, and that I consent to conduct this transaction electronically. I understand I may request a paper copy of this agreement at any time.";
 
 export type CertificateSignature = {
   id: string;
@@ -31,6 +31,7 @@ type AuditEntry = {
   id: string;
   action: string;
   actor_label: string | null;
+  ip_address?: string | null;
   created_at: string;
 };
 
@@ -40,32 +41,38 @@ function roleLabel(role?: string | null): string {
 }
 
 function authMethod(): string {
-  return "Authenticated portal session, typed-name electronic signature";
+  return "Authenticated portal session with typed-name electronic signature";
 }
 
 /**
  * Shared, print-optimized Certificate of Signature.
- * Rendered hidden on screen and shown only via @media print.
- * Use the class "print-certificate" to drive print behavior (see index.css).
+ * Hidden on screen and revealed only via @media print (see index.css).
+ * Read-only: never writes to the database.
+ *
+ * showAuditTrail: include the contract_audit_log section. Only admins can
+ * read that table, so the portal (couple) certificate must leave this false.
  */
 export default function SignedCertificate({
   contract,
   renderedText,
   signatures,
+  showAuditTrail = false,
 }: {
   contract: CertificateContract;
   renderedText: string;
   signatures: CertificateSignature[];
+  showAuditTrail?: boolean;
 }) {
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
 
   useEffect(() => {
+    if (!showAuditTrail) { setAuditEntries([]); return; }
     let cancelled = false;
     (async () => {
       try {
         const { data, error } = await (supabase as any)
           .from("contract_audit_log")
-          .select("id, action, actor_label, created_at")
+          .select("id, action, actor_label, ip_address, created_at")
           .eq("contract_id", contract.id)
           .order("created_at", { ascending: true });
         if (cancelled) return;
@@ -76,7 +83,7 @@ export default function SignedCertificate({
       }
     })();
     return () => { cancelled = true; };
-  }, [contract.id]);
+  }, [contract.id, showAuditTrail]);
 
   const ordered = [...signatures].sort(
     (a, b) => new Date(a.signed_at).getTime() - new Date(b.signed_at).getTime()
@@ -119,7 +126,7 @@ export default function SignedCertificate({
                   })}</dd>
                   <dt>IP address</dt><dd>{s.ip_address || "Not recorded"}</dd>
                   <dt>Authentication method</dt><dd>{authMethod()}</dd>
-                  <dt>Verification hash</dt>
+                  <dt>Signature content hash</dt>
                   <dd className="cert-hash">{s.content_version_hash}</dd>
                 </dl>
               </li>
@@ -127,19 +134,20 @@ export default function SignedCertificate({
           </ol>
         )}
 
+        <h3 className="cert-section-subtitle">Document Integrity</h3>
         <div className="cert-fingerprint">
           <p className="cert-fingerprint-label">Document fingerprint (SHA-256)</p>
           <p className="cert-hash">{contract.content_hash || "Not recorded"}</p>
+          <p className="cert-paragraph" style={{ marginTop: 8 }}>
+            Each signature above is bound to a content hash. When a signature hash matches this
+            document fingerprint, it confirms the agreement text was not altered after that signature
+            was recorded.
+          </p>
         </div>
 
-        <div className="cert-consent">
-          <p className="cert-consent-label">Electronic Signature Consent (acknowledged at signing)</p>
-          <p className="cert-paragraph">{ELECTRONIC_SIGNATURE_CONSENT}</p>
-        </div>
-
-        {auditEntries.length > 0 && (
+        {showAuditTrail && auditEntries.length > 0 && (
           <div className="cert-audit">
-            <p className="cert-section-subtitle">Audit Trail</p>
+            <h3 className="cert-section-subtitle">Audit Trail</h3>
             <ul className="cert-audit-list">
               {auditEntries.map((a) => (
                 <li key={a.id}>
@@ -151,11 +159,19 @@ export default function SignedCertificate({
                   </span>
                   <span className="cert-audit-action">{a.action}</span>
                   <span className="cert-audit-actor">{a.actor_label || "system"}</span>
+                  {a.ip_address && (
+                    <span className="cert-audit-ip">IP: {a.ip_address}</span>
+                  )}
                 </li>
               ))}
             </ul>
           </div>
         )}
+
+        <div className="cert-consent">
+          <p className="cert-consent-label">Electronic Signature Consent (acknowledged at signing)</p>
+          <p className="cert-paragraph">{ELECTRONIC_SIGNATURE_CONSENT}</p>
+        </div>
 
         <footer className="cert-footer">
           <p>Gilbertsville Farmhouse &nbsp;&middot;&nbsp; gilbertsvillefarmhouse.com</p>
