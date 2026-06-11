@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Pencil, Loader2 } from "lucide-react";
+
+interface RunSummaryRow { sent: number; skipped: number; failed: number; enabled: boolean }
+
 
 interface ScheduledEmail {
   id: string;
@@ -25,6 +29,25 @@ export default function SettingsScheduledEmails() {
   const { toast } = useToast();
   const [rows, setRows] = useState<ScheduledEmail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [runSummary, setRunSummary] = useState<Record<string, RunSummaryRow> | null>(null);
+
+  async function runNow() {
+    setRunning(true);
+    setRunSummary(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("run-scheduled-emails");
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Run failed");
+      setRunSummary(data.summary || {});
+      toast({ title: "Run complete" });
+    } catch (e: any) {
+      toast({ title: "Run failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setRunning(false);
+    }
+  }
+
 
   useEffect(() => {
     (async () => {
@@ -80,6 +103,55 @@ export default function SettingsScheduledEmails() {
           set the relevant date so it qualifies, then run the function manually.
         </p>
       </div>
+
+      <div className="mt-6 flex items-center gap-4 flex-wrap">
+        <Button
+          onClick={runNow}
+          disabled={running}
+          style={{ backgroundColor: "#2C3E2D", color: "#FAF8F4" }}
+          className="hover:opacity-90"
+        >
+          {running ? (<><Loader2 className="animate-spin" /> Running...</>) : "Run now"}
+        </Button>
+        <p className="font-body" style={{ color: "#6B6B6B", fontSize: "13px" }}>
+          Runs the job immediately using the current on/off switches, exactly like the daily run does.
+        </p>
+      </div>
+
+      {runSummary && (
+        <div
+          className="mt-4 rounded-xl overflow-hidden"
+          style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8E2D9" }}
+        >
+          <div className="px-5 py-3" style={{ backgroundColor: "#FAF8F4", borderBottom: "1px solid #E8E2D9" }}>
+            <p className="font-body" style={{ color: "#2C3E2D", fontSize: "12px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Last run summary
+            </p>
+            <p className="font-body mt-1" style={{ color: "#6B6B6B", fontSize: "12px" }}>
+              Only enabled emails send. Disabled rows show zeroes.
+            </p>
+          </div>
+          {Object.entries(runSummary).map(([key, s], i) => (
+            <div
+              key={key}
+              className="px-5 py-3 flex items-center justify-between gap-4"
+              style={{ borderTop: i === 0 ? "none" : "1px solid #F0EDE6" }}
+            >
+              <div className="min-w-0">
+                <p className="font-body" style={{ color: "#1A1A1A", fontSize: "14px" }}>{key}</p>
+                <p className="font-body" style={{ color: s.enabled ? "#2C3E2D" : "#9aa097", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  {s.enabled ? "Enabled" : "Disabled"}
+                </p>
+              </div>
+              <div className="flex items-center gap-5 font-body" style={{ fontSize: "13px" }}>
+                <span style={{ color: "#2C3E2D" }}>Sent <strong>{s.sent}</strong></span>
+                <span style={{ color: "#6B6B6B" }}>Skipped <strong>{s.skipped}</strong></span>
+                <span style={{ color: s.failed > 0 ? "#a23b3b" : "#6B6B6B" }}>Failed <strong>{s.failed}</strong></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div
         className="mt-6 rounded-xl overflow-hidden"
