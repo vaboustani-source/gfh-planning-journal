@@ -176,22 +176,33 @@ Deno.serve(async (req) => {
         let html: string
 
         if (row.recipient_role === 'admin') {
-          subject = buildAdminSubject(partnerLabel, weddingDate)
-          html = buildAdminHtml({
-            partnerLabel,
-            eventDateFormatted,
-            daysOut,
-            messages,
-            portalUrl: `${PORTAL_BASE}/admin`,
+          const { prefix, suffix } = adminStatusParts(weddingDate)
+          const subline = daysOut === null
+            ? eventDateFormatted
+            : daysOut < 0
+              ? `${eventDateFormatted} · post-event`
+              : `${eventDateFormatted} · ${daysOut} days out`
+          const rendered = await renderTemplate('notify_admin_messages', {
+            variables: {
+              status_prefix: prefix,
+              partner_label: partnerLabel,
+              status_suffix: suffix,
+              subline,
+            },
+            contentHtml: buildAdminMessageBlocks(messages),
+            ctaUrl: `${PORTAL_BASE}/admin`,
           })
+          subject = rendered.subject
+          html = rendered.html
         } else {
-          subject = messages.length === 1
-            ? 'A note from Brandon at Gilbertsville'
-            : `${messages.length} new notes from Brandon at Gilbertsville`
-          html = buildCoupleHtml({
-            messages,
-            portalUrl: `${PORTAL_BASE}/portal/messages`,
+          const key = messages.length === 1 ? 'notify_couple_message' : 'notify_couple_messages_batch'
+          const rendered = await renderTemplate(key, {
+            variables: { count: String(messages.length) },
+            contentHtml: buildCoupleMessageBlocks(messages),
+            ctaUrl: `${PORTAL_BASE}/portal/messages`,
           })
+          subject = rendered.subject
+          html = rendered.html
         }
 
         await sendEmail({
