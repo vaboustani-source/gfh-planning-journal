@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ChevronDown, ChevronRight, User, Shield, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, ChevronDown, ChevronRight, User, Shield, Plus, Pencil, Trash2, Undo2, RotateCcw } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import {
   formatAuditField,
@@ -8,6 +8,19 @@ import {
   TABLE_LABELS,
   HIDDEN_AUDIT_FIELDS,
 } from "@/lib/auditLabels";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AuditEntry {
   id: string;
@@ -28,6 +41,19 @@ const ACTION_CONFIG = {
   UPDATE: { label: "Updated", Icon: Pencil, color: "text-amber-700 bg-amber-50 border-amber-200" },
   DELETE: { label: "Deleted", Icon: Trash2, color: "text-rose-700 bg-rose-50 border-rose-200" },
 } as const;
+
+const RESTORABLE_TABLES = new Set<string>([
+  "vendors", "checklist_items", "ceremony_details", "bar_selections",
+  "dietary_restrictions", "financials", "financial_line_items", "budget_items",
+  "event_budgets", "payment_schedule", "decor_selections", "experience_requests",
+  "milestones", "guests", "guest_dietary_entries", "documents",
+  "menu_finalization", "seating_tables", "seating_assignments", "working_timeline",
+]);
+
+type RestoreTarget = {
+  entry: AuditEntry;
+  mode: "revert_update" | "restore_delete";
+};
 
 interface Props {
   eventId: string;
