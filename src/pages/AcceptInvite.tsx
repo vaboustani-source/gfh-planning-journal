@@ -32,11 +32,9 @@ export default function AcceptInvite() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const { data, error } = await supabase
-        .from("invitations")
-        .select("id,email,invite_type,assigned_role,event_id,invited_name,status,expires_at")
-        .eq("token", token)
-        .maybeSingle();
+      const { data: rows, error } = await supabase
+        .rpc("get_invitation_by_token", { p_token: token });
+      const data = Array.isArray(rows) ? rows[0] : rows;
       if (error || !data) {
         setError("This invitation could not be found.");
       } else if (data.status === "accepted") {
