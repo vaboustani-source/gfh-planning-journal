@@ -237,6 +237,108 @@ async function runPostWeddingThankYou(supabase: any, offsets: number[]): Promise
   return stats
 }
 
+// ============================================================================
+// Nudge handlers: send a gentle reminder to couples whose wedding is `offset`
+// days away AND who still have a specific area incomplete. All three ship
+// disabled and only fire when their scheduled_emails row is enabled.
+//
+// Dedup marker is the offset (e.g. "45"), so a couple only ever gets one
+// nudge per (key, event, offset) regardless of how often the runner fires.
+// ============================================================================
+
+const NUDGE_GUESTLIST_PATH = '/portal/our-people'
+const NUDGE_FORMS_PATH = '/portal/forms'
+const NUDGE_TIMELINE_PATH = '/portal/ceremony'
+
+interface NudgeArea {
+  key: string
+  ctaPath: string
+  /** Returns true when the area is INCOMPLETE for this event (i.e. nudge-worthy). */
+  isIncomplete: (supabase: any, eventId: string) => Promise<boolean>
+}
+
+async function isGuestlistIncomplete(supabase: any, eventId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from('guests')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', eventId)
+  return (count ?? 0) === 0
+}
+
+async function isFormsIncomplete(supabase: any, eventId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from('form_assignments')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', eventId)
+    .neq('status', 'submitted')
+  return (count ?? 0) > 0
+}
+
+async function isCeremonyDetailsIncomplete(supabase: any, eventId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from('ceremony_details')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', eventId)
+    .eq('finalized', true)
+  return (count ?? 0) === 0
+}
+
+async function runNudge(supabase: any, area: NudgeArea, offsets: number[]): Promise<PerKeyCount> {
+  const stats: PerKeyCount = { sent: 0, skipped: 0, failed: 0 }
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+
+  for (const offset of offsets) {
+    const targetDate = dateOffset(today, offset, 'before')
+    const { data: events, error } = await supabase
+      .from('events')
+      .select('id, title, wedding_date, partner1_name, partner2_name')
+      .eq('wedding_date', targetDate)
+    if (error) { console.error(`[${area.key}] fetch error`, error); continue }
+
+    for (const evt of events || []) {
+      try {
+        if (await alreadyLogged(supabase, area.key, evt.id, String(offset))) {
+          stats.skipped++; continue
+        }
+        // Only nudge if the area is genuinely incomplete RIGHT NOW.
+        const incomplete = await area.isIncomplete(supabase, evt.id)
+        if (!incomplete) { stats.skipped++; continue }
+
+        const ctx = await getCoupleRecipients(supabase, evt.id)
+        if (ctx.emails.length === 0) { stats.skipped++; continue }
+        const names = coupleLabel(evt.partner1_name, evt.partner2_name, evt.title)
+        const ctaUrl = `${APP_BASE_URL}${area.ctaPath}`
+        const rendered = await renderTemplate(area.key, {
+          variables: {
+            couple_names: names,
+            days_out: String(offset),
+            wedding_date: formatDate(evt.wedding_date),
+            portal_link: ctaUrl,
+          },
+          ctaUrl,
+        })
+        for (const to of ctx.emails) {
+          await sendEmail({ to, subject: rendered.subject, html: rendered.html })
+        }
+        await logSent(supabase, area.key, evt.id, String(offset))
+        stats.sent++
+      } catch (e) {
+        console.error(`[${area.key}] failed for event`, evt.id, e)
+        stats.failed++
+      }
+    }
+  }
+  return stats
+}
+
+const NUDGE_AREAS: Record<string, NudgeArea> = {
+  nudge_guestlist: { key: 'nudge_guestlist', ctaPath: NUDGE_GUESTLIST_PATH, isIncomplete: isGuestlistIncomplete },
+  nudge_forms:     { key: 'nudge_forms',     ctaPath: NUDGE_FORMS_PATH,     isIncomplete: isFormsIncomplete },
+  nudge_timeline:  { key: 'nudge_timeline',  ctaPath: NUDGE_TIMELINE_PATH,  isIncomplete: isCeremonyDetailsIncomplete },
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
