@@ -397,6 +397,8 @@ Deno.serve(async (req) => {
           res = await runWeddingCountdown(supabase, cfg.offset_days as number[])
         } else if (cfg.key === 'post_wedding_thankyou') {
           res = await runPostWeddingThankYou(supabase, cfg.offset_days as number[])
+        } else if (NUDGE_AREAS[cfg.key]) {
+          res = await runNudge(supabase, NUDGE_AREAS[cfg.key], cfg.offset_days as number[])
         } else {
           console.warn('[run-scheduled-emails] no handler for key', cfg.key)
         }
