@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ChevronDown, ChevronRight, User, Shield, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, ChevronDown, ChevronRight, User, Shield, Plus, Pencil, Trash2, Undo2, RotateCcw } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import {
   formatAuditField,
@@ -8,6 +8,19 @@ import {
   TABLE_LABELS,
   HIDDEN_AUDIT_FIELDS,
 } from "@/lib/auditLabels";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AuditEntry {
   id: string;
@@ -29,18 +42,35 @@ const ACTION_CONFIG = {
   DELETE: { label: "Deleted", Icon: Trash2, color: "text-rose-700 bg-rose-50 border-rose-200" },
 } as const;
 
+const RESTORABLE_TABLES = new Set<string>([
+  "vendors", "checklist_items", "ceremony_details", "bar_selections",
+  "dietary_restrictions", "financials", "financial_line_items", "budget_items",
+  "event_budgets", "payment_schedule", "decor_selections", "experience_requests",
+  "milestones", "guests", "guest_dietary_entries", "documents",
+  "menu_finalization", "seating_tables", "seating_assignments", "working_timeline",
+]);
+
+type RestoreTarget = {
+  entry: AuditEntry;
+  mode: "revert_update" | "restore_delete";
+};
+
 interface Props {
   eventId: string;
 }
 
 export default function ActivityTab({ eventId }: Props) {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [tableFilter, setTableFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [restoreTarget, setRestoreTarget] = useState<RestoreTarget | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
-  useEffect(() => {
+  const loadEntries = () => {
     if (!eventId) return;
     setLoading(true);
     supabase
@@ -53,7 +83,9 @@ export default function ActivityTab({ eventId }: Props) {
         if (data) setEntries(data as unknown as AuditEntry[]);
         setLoading(false);
       });
-  }, [eventId]);
+  };
+
+  useEffect(loadEntries, [eventId]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -69,6 +101,44 @@ export default function ActivityTab({ eventId }: Props) {
     if (actionFilter !== "all" && e.action !== actionFilter) return false;
     return true;
   });
+
+  const handleConfirmRestore = async () => {
+    if (!restoreTarget || !isAdmin) return;
+    setRestoring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("restore-record", {
+        body: {
+          table_name: restoreTarget.entry.table_name,
+          record_id: restoreTarget.entry.record_id,
+          audit_id: restoreTarget.entry.id,
+          mode: restoreTarget.mode,
+        },
+      });
+      const result = (data ?? {}) as { success?: boolean; summary?: string; error?: string };
+      if (error || !result.success) {
+        toast({
+          title: "Restore did not complete",
+          description: result.error || error?.message || "Something went wrong.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: restoreTarget.mode === "revert_update" ? "Change reverted" : "Record restored",
+          description: result.summary || "Done.",
+        });
+        loadEntries();
+      }
+    } catch (err) {
+      toast({
+        title: "Restore failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setRestoring(false);
+      setRestoreTarget(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -128,16 +198,22 @@ export default function ActivityTab({ eventId }: Props) {
             const config = ACTION_CONFIG[entry.action];
             const ActionIcon = config.Icon;
             const isOpen = expanded.has(entry.id);
-            const isAdmin = entry.user_role === "admin";
+            const entryActorIsAdmin = entry.user_role === "admin";
             const userLabel = entry.user_email || "System";
             const tableLabel = TABLE_LABELS[entry.table_name] || entry.table_name;
 
             const visibleFields = (entry.changed_fields || []).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f));
+            const isRestorable = RESTORABLE_TABLES.has(entry.table_name) && !!entry.record_id;
+            const canRevert = isAdmin && isRestorable && entry.action === "UPDATE" && visibleFields.length > 0;
+            const canRestoreDelete = isAdmin && isRestorable && entry.action === "DELETE" && !!entry.old_values;
+            const isExpandable =
+              (entry.action === "UPDATE" && visibleFields.length > 0) ||
+              canRestoreDelete;
 
             return (
               <div key={entry.id} className="rounded-xl border border-border bg-card overflow-hidden">
                 <button
-                  onClick={() => toggleExpand(entry.id)}
+                  onClick={() => isExpandable && toggleExpand(entry.id)}
                   className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted/30 transition-colors text-left"
                 >
                   <span className={`shrink-0 mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-body text-[11px] font-medium ${config.color}`}>
@@ -158,7 +234,7 @@ export default function ActivityTab({ eventId }: Props) {
                     </p>
                     <p className="font-body text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                       <span className="inline-flex items-center gap-1">
-                        {isAdmin ? <Shield size={11} /> : <User size={11} />}
+                        {entryActorIsAdmin ? <Shield size={11} /> : <User size={11} />}
                         {userLabel}
                       </span>
                       <span>·</span>
@@ -168,7 +244,7 @@ export default function ActivityTab({ eventId }: Props) {
                     </p>
                   </div>
 
-                  {entry.action === "UPDATE" && visibleFields.length > 0 && (
+                  {isExpandable && (
                     isOpen ? <ChevronDown size={16} className="text-muted-foreground shrink-0 mt-1" />
                            : <ChevronRight size={16} className="text-muted-foreground shrink-0 mt-1" />
                   )}
@@ -189,6 +265,49 @@ export default function ActivityTab({ eventId }: Props) {
                         </div>
                       );
                     })}
+                    {canRevert && (
+                      <div className="pt-2 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRestoreTarget({ entry, mode: "revert_update" })}
+                        >
+                          <Undo2 size={14} />
+                          Revert this change
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {isOpen && canRestoreDelete && (
+                  <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-2">
+                    <p className="font-body text-xs text-muted-foreground">
+                      This record was deleted. Restoring will recreate it with these values:
+                    </p>
+                    <div className="space-y-1">
+                      {Object.keys(entry.old_values || {})
+                        .filter((f) => !HIDDEN_AUDIT_FIELDS.has(f))
+                        .slice(0, 8)
+                        .map((field) => (
+                          <div key={field} className="grid grid-cols-[160px_1fr] gap-3 font-body text-xs">
+                            <span className="text-muted-foreground">{formatAuditField(entry.table_name, field)}</span>
+                            <span className="text-foreground truncate">
+                              {formatAuditValue(entry.table_name, field, entry.old_values?.[field])}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRestoreTarget({ entry, mode: "restore_delete" })}
+                      >
+                        <RotateCcw size={14} />
+                        Restore this record
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -196,6 +315,52 @@ export default function ActivityTab({ eventId }: Props) {
           })}
         </div>
       )}
+
+      <AlertDialog open={!!restoreTarget} onOpenChange={(open) => { if (!open) setRestoreTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {restoreTarget?.mode === "revert_update" ? "Revert this change?" : "Restore this record?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  {restoreTarget?.mode === "revert_update"
+                    ? "The following fields will be set back to their previous values:"
+                    : "This deleted record will be recreated with the values shown below:"}
+                </p>
+                {restoreTarget && (
+                  <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1 max-h-64 overflow-auto">
+                    {(restoreTarget.mode === "revert_update"
+                      ? (restoreTarget.entry.changed_fields || []).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f))
+                      : Object.keys(restoreTarget.entry.old_values || {}).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f))
+                    ).map((field) => (
+                      <div key={field} className="grid grid-cols-[160px_1fr] gap-3 font-body text-xs">
+                        <span className="text-muted-foreground">
+                          {formatAuditField(restoreTarget.entry.table_name, field)}
+                        </span>
+                        <span className="text-foreground truncate" title={formatAuditValue(restoreTarget.entry.table_name, field, restoreTarget.entry.old_values?.[field])}>
+                          {formatAuditValue(restoreTarget.entry.table_name, field, restoreTarget.entry.old_values?.[field])}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  This restore is itself recorded as a new history entry and can be reverted the same way.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoring}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleConfirmRestore(); }} disabled={restoring}>
+              {restoring ? "Restoring..." : restoreTarget?.mode === "revert_update" ? "Revert change" : "Restore record"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
