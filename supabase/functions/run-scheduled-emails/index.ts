@@ -246,6 +246,35 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // ===== Auth gate: allow EITHER the cron secret header OR an authenticated admin =====
+    const cronSecret = Deno.env.get('CRON_SECRET') ?? ''
+    const providedSecret = req.headers.get('x-cron-secret') ?? ''
+    let authorized = false
+
+    if (cronSecret && providedSecret && providedSecret === cronSecret) {
+      authorized = true
+    } else {
+      const authHeader = req.headers.get('Authorization') ?? ''
+      if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.replace('Bearer ', '')
+        const { data: userData } = await supabase.auth.getUser(token)
+        const caller = userData?.user
+        if (caller) {
+          const { data: profile } = await supabase
+            .from('users').select('role').eq('id', caller.id).single()
+          if (profile?.role === 'admin') authorized = true
+        }
+      }
+    }
+
+    if (!authorized) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+
     const { data: configs, error } = await supabase
       .from('scheduled_emails')
       .select('*')
