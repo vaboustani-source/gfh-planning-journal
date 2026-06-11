@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Pencil, Loader2 } from "lucide-react";
+
+interface RunSummaryRow { sent: number; skipped: number; failed: number; enabled: boolean }
+
 
 interface ScheduledEmail {
   id: string;
