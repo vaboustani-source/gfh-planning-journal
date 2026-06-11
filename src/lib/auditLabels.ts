@@ -383,9 +383,24 @@ export const TABLE_LABELS: Record<string, string> = {
   bar_selections: "Bar selections",
   lodging_assignments: "Lodging assignment",
   decor_items: "Décor item",
+  decor_selections: "Décor selection",
   dietary_restrictions: "Dietary restriction",
   financials: "Financials",
   meal_events: "Meal event",
+  guests: "Guest",
+  guest_dietary_entries: "Guest dietary entry",
+  working_timeline: "Weekend timeline",
+  milestones: "Milestone",
+  experience_requests: "Experience",
+  budget_items: "Budget item",
+  event_budgets: "Budget",
+  seating_tables: "Seating table",
+  seating_assignments: "Seat assignment",
+  seating_config: "Seating layout",
+  menu_finalization: "Menus",
+  financial_line_items: "Financial line item",
+  payment_schedule: "Payment schedule",
+  documents: "Document",
 };
 
 /** Fields hidden from the audit log entirely (internal/noise). */
@@ -396,3 +411,39 @@ export const HIDDEN_AUDIT_FIELDS = new Set([
   "last_updated",
   "sort_order",
 ]);
+
+/**
+ * Tables whose changes are appropriate to surface in the couple-facing
+ * History view. Anything not in this set is hidden from couples.
+ * Admin views are unaffected.
+ */
+export const COUPLE_ALLOWED_TABLES = new Set<string>([
+  "guests",
+  "guest_dietary_entries",
+  "working_timeline",
+  "milestones",
+  "decor_selections",
+  "experience_requests",
+  "budget_items",
+  "event_budgets",
+  "seating_tables",
+  "seating_assignments",
+  "seating_config",
+  "menu_finalization",
+  "ceremony_details",
+  "bar_selections",
+  "dietary_restrictions",
+  "meal_events",
+  "financials",
+  "financial_line_items",
+  "payment_schedule",
+  "documents",
+]);
+
+/**
+ * Returns true only if a field has a friendly label defined for the table.
+ * Used by the couple-facing History view to "fail toward hiding" unmapped fields.
+ */
+export function hasFriendlyAuditField(table: string, field: string): boolean {
+  return Boolean(FIELD_LABELS[table]?.[field]);
+}
