@@ -61,6 +61,13 @@ export default function PortalHistory() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [tableFilter, setTableFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setCurrentUserId(data.user.id);
+    });
+  }, []);
 
   useEffect(() => {
     if (!eventId) return;
@@ -160,7 +167,7 @@ export default function PortalHistory() {
           <div className="text-center py-16 rounded-xl border border-dashed border-border bg-white">
             <p className="font-display text-lg italic text-muted-foreground">No changes yet</p>
             <p className="font-body text-sm text-muted-foreground mt-1">
-              As you and Brandon update planning details, they will show up here.
+              As planning details are updated, they will show up here.
             </p>
           </div>
         ) : (
@@ -169,8 +176,9 @@ export default function PortalHistory() {
               const config = ACTION_CONFIG[entry.action];
               const ActionIcon = config.Icon;
               const isOpen = expanded.has(entry.id);
-              const isAdmin = entry.user_role === "admin";
-              const userLabel = isAdmin ? "Brandon" : (entry.user_email || "You");
+              const isStaff = !!entry.user_role && entry.user_role !== "couple" && entry.user_role !== "participant";
+              const isSelf = entry.user_id === currentUserId;
+              const userLabel = isSelf ? "You" : isStaff ? "Gilbertsville Farmhouse team" : (entry.user_email || "Unknown");
               const tableLabel = TABLE_LABELS[entry.table_name] || entry.table_name;
               const canExpand = entry.action === "UPDATE" && visibleFields.length > 0;
 
@@ -198,7 +206,7 @@ export default function PortalHistory() {
                       </p>
                       <p className="font-body text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                         <span className="inline-flex items-center gap-1">
-                          {isAdmin ? <Shield size={11} /> : <User size={11} />}
+                          {isSelf ? <User size={11} /> : isStaff ? <Shield size={11} /> : <User size={11} />}
                           {userLabel}
                         </span>
                         <span>·</span>
