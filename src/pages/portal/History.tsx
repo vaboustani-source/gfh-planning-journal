@@ -68,6 +68,8 @@ export default function PortalHistory() {
       if (data.user) setCurrentUserId(data.user.id);
     });
   }, []);
+
+  useEffect(() => {
     if (!eventId) return;
     setLoading(true);
     supabase
