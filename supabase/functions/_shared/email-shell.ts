@@ -112,6 +112,24 @@ const FALLBACKS: Record<string, TemplateRow> = {
     body: 'Hello {{couple_names}},\n\nWe are still smiling from your weekend at Gilbertsville Farmhouse. Thank you for trusting us with such an important chapter, and for the care you brought to every detail.\n\nYour Planning Hub will stay open for a while so you can revisit notes, vendor contacts, and photos as they come in. If there is anything we can help wrap up, just reply to this note.',
     cta_label: 'Open Your Planning Hub',
   },
+  nudge_guestlist: {
+    subject: 'A gentle nudge about your guest list',
+    heading: 'Your guest list is waiting.',
+    body: 'Hello {{couple_names}},\n\nWe noticed your guest list at Gilbertsville Farmhouse has not been started yet. With {{days_out}} days until your wedding on {{wedding_date}}, this is a good moment to begin adding names.\n\nThere is no rush to have it perfect. Start with the people you know for certain, and you can add or adjust the rest over the coming weeks. Once your list is in, we can help you with seating, lodging, and meal counts.\n\nIf anything is making this feel difficult, reply to this note and we will work through it with you.',
+    cta_label: 'Open Your Guest List',
+  },
+  nudge_forms: {
+    subject: 'A friendly reminder about a few open forms',
+    heading: 'A few forms are still waiting.',
+    body: 'Hello {{couple_names}},\n\nA handful of the forms in your Planning Hub are still open with {{days_out}} days to go until your wedding on {{wedding_date}}.\n\nWhen you have a quiet moment, the Forms section will show you exactly what is left and how long each one takes. Most of them are short. Getting them in now means we can build the rest of your weekend around your answers.\n\nIf a question on any form is unclear, reply here and we will sort it out together.',
+    cta_label: 'Open Your Forms',
+  },
+  nudge_timeline: {
+    subject: 'A gentle nudge about your ceremony details',
+    heading: 'Your ceremony details are waiting.',
+    body: 'Hello {{couple_names}},\n\nYour ceremony and key day-of details at Gilbertsville Farmhouse are not finalized yet. With {{days_out}} days until your wedding on {{wedding_date}}, this is a good moment to walk through them.\n\nThe Ceremony section in your Planning Hub covers things like your officiant, processional order, first dance, and the small choices that shape the day. You can save as you go and finalize once it feels right.\n\nIf you want to talk anything through before locking it in, reply to this note and we will help.',
+    cta_label: 'Open Ceremony Details',
+  },
 }
 
 function escapeHtml(s: string): string {
