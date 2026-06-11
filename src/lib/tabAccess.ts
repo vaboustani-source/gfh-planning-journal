@@ -47,6 +47,7 @@ export const DEFAULT_TAB_ACCESS: TabAccess = {
 
 /** Map portal route paths -> tab keys for access checks. */
 export const PATH_TO_TAB: Record<string, TabKey> = {
+  "/portal/start": "overview",
   "/portal/today": "overview",
   "/portal/our-wedding": "overview",
   "/portal/vendors": "vendors",

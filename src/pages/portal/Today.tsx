@@ -1,9 +1,9 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { usePortalData } from "@/hooks/usePortalData";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MessageCircle, ArrowRight, CheckCircle2, Loader2, Circle,
-  ChevronRight, Sparkles
+  ChevronRight, Sparkles, Compass
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 
@@ -362,6 +362,25 @@ export default function Today() {
 
   return (
     <div className="max-w-5xl mx-auto px-5 py-8 lg:px-8 lg:py-10">
+      {/* Welcome banner */}
+      <div className="mb-6 animate-fade-up">
+        <Link
+          to="/portal/start"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:border-sage/40 hover:shadow-card transition-all duration-200 group"
+        >
+          <div className="w-8 h-8 rounded-full bg-sage/10 border border-sage/20 flex items-center justify-center shrink-0">
+            <Compass size={16} className="text-sage" strokeWidth={1.75} />
+          </div>
+          <p className="font-body text-sm text-foreground flex-1">
+            New here? Start with a quick tour
+          </p>
+          <ArrowRight
+            size={14}
+            className="text-muted-foreground group-hover:text-sage group-hover:translate-x-0.5 transition-all shrink-0"
+          />
+        </Link>
+      </div>
+
       {/* Hero countdown — full width */}
       <section className="animate-fade-up mb-10">
         <CountdownHero days={daysUntilArrival} />
