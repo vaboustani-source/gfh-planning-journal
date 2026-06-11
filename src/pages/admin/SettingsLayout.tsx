@@ -19,6 +19,7 @@ const LIBRARIES = [
 
 const ADMIN_ONLY = [
   { slug: "team", label: "Team & Roles" },
+  { slug: "email-test", label: "Email Test" },
 ];
 
 export default function SettingsLayout() {
