@@ -29,6 +29,25 @@ export default function SettingsScheduledEmails() {
   const { toast } = useToast();
   const [rows, setRows] = useState<ScheduledEmail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [runSummary, setRunSummary] = useState<Record<string, RunSummaryRow> | null>(null);
+
+  async function runNow() {
+    setRunning(true);
+    setRunSummary(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("run-scheduled-emails");
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Run failed");
+      setRunSummary(data.summary || {});
+      toast({ title: "Run complete" });
+    } catch (e: any) {
+      toast({ title: "Run failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setRunning(false);
+    }
+  }
+
 
   useEffect(() => {
     (async () => {
