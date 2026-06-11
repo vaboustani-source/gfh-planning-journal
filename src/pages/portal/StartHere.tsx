@@ -87,7 +87,7 @@ const COMPACT_LINKS: CompactLink[] = [
   { to: "/portal/ceremony", label: "Ceremony & Music", description: "ceremony details and music." },
   { to: "/portal/decor", label: "Decor", description: "the look and feel of your spaces." },
   { to: "/portal/experiences", label: "Experiences", description: "extras you can add to the weekend." },
-  { to: "/portal/rsvp", label: "RSVP", description: "collect replies from your guests." },
+  ...(RSVP_ENABLED ? [{ to: "/portal/rsvp", label: "RSVP", description: "collect replies from your guests." }] : []),
   { to: "/portal/budget", label: "Budget", description: "track your own spending alongside our costs." },
   { to: "/portal/forms", label: "Forms", description: "anything we need you to fill out." },
   { to: "/portal/documents", label: "Documents", description: "shared files and resources." },
