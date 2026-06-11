@@ -312,11 +312,55 @@ export default function ActivityTab({ eventId }: Props) {
                 )}
               </div>
             );
-              </div>
-            );
           })}
         </div>
       )}
+
+      <AlertDialog open={!!restoreTarget} onOpenChange={(open) => { if (!open) setRestoreTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {restoreTarget?.mode === "revert_update" ? "Revert this change?" : "Restore this record?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  {restoreTarget?.mode === "revert_update"
+                    ? "The following fields will be set back to their previous values:"
+                    : "This deleted record will be recreated with the values shown below:"}
+                </p>
+                {restoreTarget && (
+                  <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1 max-h-64 overflow-auto">
+                    {(restoreTarget.mode === "revert_update"
+                      ? (restoreTarget.entry.changed_fields || []).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f))
+                      : Object.keys(restoreTarget.entry.old_values || {}).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f))
+                    ).map((field) => (
+                      <div key={field} className="grid grid-cols-[160px_1fr] gap-3 font-body text-xs">
+                        <span className="text-muted-foreground">
+                          {formatAuditField(restoreTarget.entry.table_name, field)}
+                        </span>
+                        <span className="text-foreground truncate" title={formatAuditValue(restoreTarget.entry.table_name, field, restoreTarget.entry.old_values?.[field])}>
+                          {formatAuditValue(restoreTarget.entry.table_name, field, restoreTarget.entry.old_values?.[field])}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  This restore is itself recorded as a new history entry and can be reverted the same way.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoring}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleConfirmRestore(); }} disabled={restoring}>
+              {restoring ? "Restoring..." : restoreTarget?.mode === "revert_update" ? "Revert change" : "Restore record"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
