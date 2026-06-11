@@ -85,12 +85,43 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization') ?? ''
     const callerToken = authHeader.replace('Bearer ', '')
     let invited_by: string | null = null
+    let callerRole: string | null = null
     if (callerToken) {
       const { data: u } = await supabase.auth.getUser(callerToken)
       invited_by = u?.user?.id ?? null
+      if (invited_by) {
+        const { data: row } = await supabase.from('users').select('role').eq('id', invited_by).maybeSingle()
+        callerRole = row?.role ?? null
+      }
     }
 
     const body = (await req.json()) as Body
+
+    // Authorize caller. Admin/event_director may invite anyone. Other authenticated users
+    // may only invite participants to events they themselves are members of, and the
+    // access tier they hand out is clamped to 3 (Full Couple) so they cannot escalate
+    // anyone to Admin Light.
+    const isStaff = callerRole === 'admin' || callerRole === 'event_director'
+    if (!isStaff) {
+      if (!invited_by) throw new Error('Not authenticated')
+      if (body.resend_id) {
+        const { data: existingInv } = await supabase
+          .from('invitations').select('event_id, invite_type').eq('id', body.resend_id).maybeSingle()
+        if (!existingInv) throw new Error('Invitation not found')
+        if (existingInv.invite_type !== 'participant' || !existingInv.event_id) throw new Error('Not allowed')
+        const { data: memberRow } = await supabase
+          .from('event_users').select('user_id').eq('event_id', existingInv.event_id).eq('user_id', invited_by).maybeSingle()
+        if (!memberRow) throw new Error('Not allowed')
+      } else {
+        if (body.invite_type !== 'participant') throw new Error('Not allowed')
+        if (!body.event_id) throw new Error('event_id required')
+        const { data: memberRow } = await supabase
+          .from('event_users').select('user_id').eq('event_id', body.event_id).eq('user_id', invited_by).maybeSingle()
+        if (!memberRow) throw new Error('Not allowed')
+        if (typeof body.access_tier === 'number' && body.access_tier > 3) body.access_tier = 3
+      }
+    }
+
 
     let invitation: any
     let eventTitle: string | undefined
