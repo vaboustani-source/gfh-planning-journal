@@ -4,7 +4,6 @@
 // refreshes handed_off_at and re-sends the notification.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/send-email.ts'
-import { sendEmail } from '../_shared/send-email.ts'
 import { APP_BASE_URL } from '../_shared/appUrls.ts'
 import { renderTemplate } from '../_shared/email-shell.ts'
 
