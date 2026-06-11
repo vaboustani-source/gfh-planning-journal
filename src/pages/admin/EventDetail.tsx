@@ -54,6 +54,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "forms", label: "Forms" },
       { id: "documents", label: "Documents" },
       { id: "contracts", label: "Contracts" },
+      { id: "budget", label: "Budget" },
     ],
   },
   {
