@@ -1,120 +1,97 @@
-# Unified Permission System
+# Version History with Rollback — Investigation & Proposal
 
-One matrix, one file, enforced in both the UI and the database. No visual change — only what each role sees/edits.
+## 1. Existing change-tracking tables
 
-## 1. The matrix (single source of truth)
+### `public.audit_log` (primary, suitable for rollback)
+Columns: `id, event_id, table_name, record_id, action, changed_fields[], old_values jsonb, new_values jsonb, user_id, user_email, user_role, created_at`.
 
-New file: `src/lib/permissions.ts`
+This is a full before/after audit:
+- `table_name` + `record_id` identify the changed row
+- `old_values` and `new_values` are full row snapshots as JSONB (not just diffs)
+- `changed_fields[]` lists which keys differ on UPDATE
+- `action` is INSERT / UPDATE / DELETE
+- User attribution (id, email, role) and `event_id` scoping included
 
-```ts
-export type Role = 'admin' | 'event_director' | 'sales_manager'
-                 | 'marketing' | 'planner' | 'couple' | 'vendor';
-export type Access = 'full' | 'view' | 'none';
-export type Section =
-  | 'event_planning' | 'vendors_experiences_decor' | 'our_people'
-  | 'financials' | 'sales_roster' | 'marketing_roster'
-  | 'preferred_vendors_catalog' | 'other_catalogs' | 'settings'
-  | 'tasting_notes' | 'gmail_inbox';
+Written by the Postgres trigger function `public.log_audit_event()`, which builds the row from `to_jsonb(OLD)` / `to_jsonb(NEW)` and skips no-op updates.
 
-export const PERMISSIONS: Record<Section, Record<Role, Access>> = { /* matrix exactly as specified */ };
+### Other log/history tables (not general-purpose, not before/after)
+- `contract_audit_log` — contract lifecycle events (action + metadata), no row snapshots.
+- `couple_history` — couple actions (action + details jsonb), not field-level.
+- `role_change_log`, `lb_sync_log`, `lb_activity_log`, `scheduled_email_log`, `notification_log` — domain event logs, not row snapshots.
 
-export const DEFAULT_ROLE: Role = 'couple'; // graceful fallback for null/unknown
-export function accessLevel(role: Role | null | undefined, section: Section): Access;
-export function canView(role, section): boolean;
-export function canEdit(role, section): boolean;
+None of these support rollback. Only `audit_log` does.
+
+## 2. Coverage
+
+Audit triggers (`log_audit_event`) are attached to **9 tables only**:
+
+```
+bar_selections, ceremony_details, checklist_items, dietary_restrictions,
+events, financials, lodging_assignments, meal_events, vendors
 ```
 
-Scoping notes baked in as comments + enforced where they apply:
-- `couple` is always limited to their own event (already enforced by `event_users` joins; permission layer just gates the section).
-- `vendor` access for a section is `min(matrix, tab_access toggle)` — the per-person tab toggle is the final gate.
-- `sales_manager` gets view-everywhere for planning context; `full` only on `sales_roster`.
+The Planning Hub has ~80 public tables. Major areas NOT audited today include:
+- People & guests: `guests`, `guest_invitations`, `guest_dietary_entries`, `couples`, `couple_notes`
+- Menus: `menu_packages`, `menu_sections`, `menu_items`, `menu_accordions`, `menu_finalization`
+- Decor: `decor_selections`, `decor_catalog`
+- Experiences: `experience_requests`, `experience_catalog`
+- Timeline & milestones: `working_timeline`, `milestones`
+- Forms: `forms`, `form_assignments`, `form_responses`
+- Financials detail: `financial_line_items`, `budget_items`, `payment_schedule`, `event_budgets`
+- Seating: `seating_tables`, `seating_assignments`, `seating_config`
+- Docs/contracts: `documents`, `contracts`, `contract_signatures`
+- Messaging, RSVP, lodging rooms, preferred vendors, basics_cards, etc.
 
-## 2. Client helpers
+Live data confirms this is mostly idle: only ~78 rows total across `lodging_assignments`, `vendors`, `events`, `checklist_items`. Coverage today is roughly **~10% of mutable user-facing tables**.
 
-New file: `src/hooks/usePermission.ts`
+## 3. Where logging lives
 
-```ts
-const { profile } = useAuth();
-const access = usePermission('financials');      // 'full' | 'view' | 'none'
-const { canView, canEdit } = usePermissions();   // bulk helpers
-```
+- **Database triggers** for general row history (the 9 tables above via `log_audit_event`). No application code writes to `audit_log`.
+- **Application code** writes the domain logs: `sign-contract` and `countersign-contract` edge functions write `contract_audit_log`; `ContractsManager.tsx` / `SignedCertificate.tsx` read it.
+- No application-side double-logging for `audit_log` — it is purely trigger-driven, which is the right pattern for rollback.
 
-Also export a tiny `<RequireAccess section="..." mode="view|edit">` guard component used by pages.
+## 4. Existing UI
 
-## 3. Database equivalent (RLS)
+- `src/pages/admin/tabs/ActivityTab.tsx` (admin event view): a read-only feed of `audit_log` for the current event. Shows INSERT/UPDATE/DELETE, table label, changed field labels, user, timestamp, and expands to a per-field old → new diff. Filters by table and action. Limited to latest 500.
+- `src/lib/auditLabels.ts` maps raw table/column names to friendly labels and value formatters used by ActivityTab.
+- `ContractsManager` / `SignedCertificate` render `contract_audit_log` as a contract-specific timeline.
+- No rollback / restore UI anywhere.
 
-Migration adds:
+## 5. Proposed approach for Version History + Rollback
 
-```sql
-create type public.app_section as enum (...);          -- same sections
-create type public.access_level as enum ('full','view','none');
+### What we already have for free
+Because `audit_log.new_values` and `old_values` are **full row snapshots**, any audited row can be reconstructed at any point in time without replaying diffs. The trigger also skips no-op updates, so each audit row is a meaningful version.
 
-create or replace function public.user_access_level(_user_id uuid, _section app_section)
-returns access_level language sql stable security definer set search_path = public as $$
-  -- big CASE matrix matching permissions.ts exactly
-$$;
+### Minimum viable rollback (audited tables only)
+1. **Per-record version history view** — for any row in an audited table, query `audit_log WHERE table_name=? AND record_id=? ORDER BY created_at DESC`. Each row is a version; render side-by-side or field-by-field diffs (we already format these in ActivityTab).
+2. **Restore action** — an admin-only edge function `restore-record(table_name, record_id, audit_id)` that:
+   - Loads the target audit row
+   - For UPDATE/INSERT → `UPDATE <table> SET <columns from new_values or old_values> WHERE id = record_id`
+   - For DELETE → re-`INSERT` from `old_values`
+   - Runs as service role so RLS doesn't block it, but gates on `is_admin(auth.uid())`
+   - The restore itself fires the audit trigger again, so the rollback is itself a new audit entry — natural forward/back history.
+3. **UI** — add a "History" button on each audited record (vendor card, checklist item, ceremony details, etc.) opening a drawer that lists versions with a "Restore this version" CTA and a confirm dialog. Reuse `ActivityTab`'s diff renderer.
 
-create or replace function public.can_view_section(_user_id uuid, _section app_section) returns boolean ...;
-create or replace function public.can_edit_section(_user_id uuid, _section app_section) returns boolean ...;
-```
+### Gaps and risks to address before shipping
+- **Coverage** — most user-facing tables are NOT audited. Before promising "version history" broadly, attach `log_audit_event` triggers to the high-value tables listed in §2. This is a one-line `CREATE TRIGGER` per table; no app changes needed.
+- **Related-record integrity** — many "records" are actually parent + children (e.g. ceremony_details + meal_events; menu_packages + sections + items; guests + dietary entries; working_timeline jsonb blob; financials + line_items). A naive single-row restore can leave orphans or stale joins. Options:
+  - Scope rollback to "leaf" tables only (vendors, checklist items, ceremony_details, individual line items). Document this limit.
+  - For composite areas, group an audit "snapshot" by `(event_id, created_at window, user_id)` and offer "restore this save" across multiple tables in one transaction.
+- **Foreign keys & deletes** — restoring a DELETE may fail if children were cascade-deleted or if FK targets no longer exist. The restore function must run in a transaction and surface clear errors.
+- **Schema drift** — `old_values`/`new_values` are snapshots of columns that existed at write time. If columns were added/removed since, the restore must filter to columns that currently exist in the table (introspect `information_schema.columns`).
+- **Generated / sensitive columns** — `created_at`, computed columns, and `id` must be excluded from the UPDATE SET list; `updated_at` should be set to `now()`.
+- **Retention & size** — `old_values` + `new_values` per change is heavy. Add a retention policy (e.g. keep last N versions per record, or 12 months) and an index on `(table_name, record_id, created_at DESC)`.
+- **Permissions** — restore is admin-only; couples should see history (read-only) for their own event's records but never restore.
+- **Non-audited writes today** — current `audit_log` rows only exist for the 9 audited tables. Until coverage is expanded, "version history" is misleading elsewhere. Recommend phase 1 = expand triggers, phase 2 = build restore.
 
-RLS rewrites (keeping couple/vendor event-scoping intact):
-- `sales_details` → drop `is_sales_viewer`, use `can_view_section(auth.uid(),'sales_roster')` for SELECT, `can_edit_section(...,'sales_roster')` for write.
-- `financials`, `financial_line_items`, `payment_schedule` → admin/event_director/planner full; sales_manager + couple (own event) read-only.
-- `preferred_vendors` (catalog) → SELECT for any role whose matrix entry ≠ 'none'; INSERT/UPDATE/DELETE admin-only. Per-event `vendors` table stays editable by event members with planning edit rights.
-- Planning tables (`milestones`, `checklist_items`, `ceremony_details`, `decor_selections`, `experience_requests`, `menus_*`, `bar_selections`, `dietary_restrictions`, `guests`, `lodging_assignments`, `seating_*`, `couple_notes`, `messages`, `rsvp_config`, `forms`, `documents`, `working_timeline`, `contracts`) → admin/event_director/planner full; sales_manager + marketing (where allowed) view; couple full on own; vendor gated by `event_users.tab_access` (unchanged).
-- `gfh_resources`, `decor_catalog`, `experience_catalog`, `layout_library` → admin full; others view per matrix; non-listed roles blocked.
-- `gmail_connections`, `project_emails`, `filed_threads`, `email_sender_map` → admin + event_director only (tasting_notes + gmail_inbox sections both gate to these two roles per spec).
+### Phased rollout
+1. **Phase 1 (schema-only):** add `log_audit_event` triggers to the priority unaudited tables; add the `(table_name, record_id, created_at DESC)` index; add a retention job.
+2. **Phase 2 (read-only UI):** per-record History drawer reusing ActivityTab's diff renderer, available on vendor / checklist / ceremony / financials / lodging / menu / decor records.
+3. **Phase 3 (restore):** `restore-record` edge function + admin-only "Restore this version" button, leaf tables first.
+4. **Phase 4 (composite restore):** grouped snapshots for parent+children areas (ceremony + meal_events, menu package tree, working_timeline jsonb), with a transactional multi-table restore.
 
-Keep `is_admin`, `is_event_member` (used by event-scoping). Drop `is_sales_viewer`, `is_marketing_viewer` after their callers migrate — or alias them to `can_view_section(...)` for one release; this plan removes them outright and updates the two SQL files that reference them.
-
-## 4. UI refactor
-
-### Nav (`src/pages/PortalLayout.tsx`, `src/pages/AdminDashboard.tsx` header, sidebar)
-- Each nav entry declares `section: Section`. Filter with `canView(role, section)`.
-- Admin dashboard tabs (Overview, Milestones, Vendors, Financials, etc.) get the same gate.
-- Sales Roster icon → `canView('sales_roster')`. Marketing Roster icon → `canView('marketing_roster')`. Settings/Preferred Vendors catalog/etc. follow suit.
-
-### Route guards (`src/components/ProtectedRoute.tsx`)
-- New prop `section?: Section`. When set, checks `canView`; if `none`, toast "You don't have access to this section" and redirect to the role's default landing (admin → `/admin`, couple → `/portal/today`, others → `/admin`).
-- All `<Route>` definitions in `src/App.tsx` updated to pass `section`. The `requiredRole="admin"` shorthand is replaced with `section`.
-
-### View-only mode
-- Each editable page reads `const access = usePermission(section)`. When `'view'`:
-  - Inputs render as plain text / `readOnly` + `disabled`.
-  - Add/Edit/Delete/Save buttons hidden.
-  - Autosave hooks short-circuit (already no-op if nothing changes; we add an explicit guard).
-- Targeted: `Financials.tsx` (portal — couple view-only already; admin Financials becomes view for sales_manager), all admin tabs under `src/pages/admin/tabs/*`, portal detail pages, vendor/experience/decor catalogs.
-
-### Preferred Vendors split
-- `src/pages/admin/PreferredVendors.tsx` (catalog mgmt) → `section="preferred_vendors_catalog"`, edit only when `canEdit` (admin only). For others with view, render read-only catalog browser.
-- `BrowsePreferredDrawer` + "Add to Event" remain available to anyone with edit access on `vendors_experiences_decor` (event_director keeps this).
-
-### Replace old checks
-- `MarketingRoster.tsx` and `SalesRoster.tsx` — drop in-page `ALLOWED_ROLES` arrays; rely on route guard + `canView`.
-- `SalesDetailsCard.tsx` — gate edit on `canEdit('sales_roster')`.
-- `MenusBarTab.tsx` — replace its `role === 'admin'` check with `canEdit('event_planning')`.
-- Edge functions (`process-message-queue`, `enqueue-message-notification`, `_shared/appUrls.ts`) — left untouched where they only read `role` for routing logic (no permission decision), otherwise switched to `can_view_section` calls.
-
-## 5. Graceful degradation
-
-- Null/unknown role → treated as `couple` for matrix lookups but still requires `event_users` membership for any event-scoped data, so they effectively see nothing until invited.
-- Matrix lookup never throws; missing section → `'none'`.
-
-## 6. Files touched (high level)
-
-- New: `src/lib/permissions.ts`, `src/hooks/usePermission.ts`, `src/components/RequireAccess.tsx`, one migration.
-- Edited: `src/App.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/AdminDashboard.tsx`, `src/pages/portal/PortalLayout.tsx`, `src/pages/admin/EventDetail.tsx` (tab filter), `src/pages/admin/MarketingRoster.tsx`, `src/pages/admin/SalesRoster.tsx`, `src/pages/admin/PreferredVendors.tsx`, `src/components/admin/SalesDetailsCard.tsx`, `src/components/admin/BrowsePreferredDrawer.tsx`, `src/pages/admin/tabs/MenusBarTab.tsx` (+ other admin tabs that need view-mode for sales_manager), `src/pages/portal/Financials.tsx` (already read-only for couple — wired through new hook).
-- Migration: section enum + helpers + RLS rewrites on the tables listed above, drop `is_sales_viewer` / `is_marketing_viewer`.
-
-## 7. Out of scope
-
-- No visual redesign. Same sage + cream, same layouts.
-- No new pages or features.
-- Admin can still do everything; behavior for admin/couple is unchanged end-to-end.
-
-## Verification
-
-- Build passes.
-- Manual smoke (preview): sign in as each seeded role, confirm nav contents and edit/view state on financials, sales roster, marketing roster, preferred vendors.
-- DB: spot-check `select public.user_access_level('<uuid>','financials');` per role.
+### Decisions needed from you before building
+1. Is admin-only restore acceptable, or should couples also be able to roll back their own edits?
+2. Which areas are highest priority for both audit coverage and rollback (guests, menus, decor, working_timeline, financial_line_items, etc.)?
+3. Retention policy — keep everything, or cap (e.g. 90 days / last 50 versions per record)?
+4. For composite areas, do you want true multi-row "restore this save" or are leaf-row restores enough for v1?
