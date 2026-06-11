@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
     }
 
     const link = `${APP_BASE_URL}/accept-invite/${invitation.token}`
-    const { subject, html } = buildEmail({
+    const { subject, html } = await buildEmail({
       type: invitation.invite_type,
       link,
       invitedName: invitation.invited_name ?? undefined,
