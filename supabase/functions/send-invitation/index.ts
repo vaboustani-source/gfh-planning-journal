@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/send-email.ts'
 import { APP_BASE_URL } from '../_shared/appUrls.ts'
+import { renderTemplate } from '../_shared/email-shell.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +21,7 @@ interface Body {
   resend_id?: string
 }
 
-function buildEmail(opts: {
+async function buildEmail(opts: {
   type: 'staff' | 'couple' | 'participant'
   link: string
   invitedName?: string
@@ -28,49 +29,21 @@ function buildEmail(opts: {
   eventTitle?: string
 }) {
   const greeting = opts.invitedName ? `Hello ${opts.invitedName},` : 'Hello,'
-  let subject = ''
-  let intro = ''
-  let context = ''
-  if (opts.type === 'staff') {
-    subject = "You've been invited to the Gilbertsville Farmhouse team"
-    intro = 'Welcome.'
-    context = `You have been invited to join the Gilbertsville Farmhouse Planning Journal team. When you set up your access, you will be able to sign in and begin working alongside us right away.`
-  } else if (opts.type === 'couple') {
-    subject = 'Your wedding planning portal is ready'
-    intro = 'Welcome.'
-    context = `Your private planning portal at Gilbertsville Farmhouse is ready for you. Once you set up your access, you will land directly inside your wedding portal where everything for your weekend lives in one calm place.`
-  } else {
-    subject = `${opts.inviterName ?? 'Brandon'} has added you to ${opts.eventTitle ?? 'an upcoming wedding'}`
-    intro = 'Welcome.'
-    context = `You have been invited to help with ${opts.eventTitle ?? 'an upcoming wedding'} at Gilbertsville Farmhouse. Setting up your access takes about a minute, then you will land directly inside the parts of the portal that are yours to help with.`
-  }
+  const key =
+    opts.type === 'staff' ? 'invitation_staff'
+    : opts.type === 'couple' ? 'invitation_couple'
+    : 'invitation_participant'
 
-  const html = `<!doctype html>
-<html><body style="margin:0;padding:0;background:#FAF8F4;font-family:Georgia,'Times New Roman',serif;color:#2C3E2D;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#FAF8F4;padding:40px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #E8E2D9;border-radius:12px;overflow:hidden;">
-        <tr><td style="padding:36px 40px 8px;text-align:center;border-bottom:1px solid #F0EDE6;">
-          <div style="font-size:22px;letter-spacing:0.06em;color:#2C3E2D;font-weight:300;">Gilbertsville Farmhouse</div>
-          <div style="font-size:13px;color:#7a8478;font-style:italic;margin-top:4px;">Planning Journal</div>
-        </td></tr>
-        <tr><td style="padding:32px 40px 8px;">
-          <h1 style="font-size:26px;font-weight:300;color:#2C3E2D;margin:0 0 14px;letter-spacing:0.02em;">${intro}</h1>
-          <p style="font-size:15px;line-height:1.7;color:#55615a;margin:0 0 8px;">${greeting}</p>
-          <p style="font-size:15px;line-height:1.7;color:#55615a;margin:0 0 28px;">${context}</p>
-          <div style="text-align:center;margin:8px 0 12px;">
-            <a href="${opts.link}" style="display:inline-block;background:#5b6f56;color:#ffffff;text-decoration:none;padding:14px 30px;border-radius:6px;font-size:14px;letter-spacing:0.06em;">Set Up Your Access</a>
-          </div>
-          <p style="font-size:12px;line-height:1.6;color:#9aa097;margin:24px 0 0;text-align:center;">This invitation expires in 14 days. If you were not expecting this, you can disregard it.</p>
-        </td></tr>
-        <tr><td style="padding:24px 40px 32px;text-align:center;border-top:1px solid #F0EDE6;">
-          <div style="font-size:11px;color:#9aa097;letter-spacing:0.08em;">GILBERTSVILLE FARMHOUSE</div>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`
-  return { subject, html }
+  return await renderTemplate(key, {
+    variables: {
+      greeting,
+      invited_name: opts.invitedName ?? '',
+      inviter_name: opts.inviterName ?? 'Brandon',
+      event_title: opts.eventTitle ?? 'an upcoming wedding',
+      link: opts.link,
+    },
+    ctaUrl: opts.link,
+  })
 }
 
 Deno.serve(async (req) => {
@@ -197,7 +170,7 @@ Deno.serve(async (req) => {
     }
 
     const link = `${APP_BASE_URL}/accept-invite/${invitation.token}`
-    const { subject, html } = buildEmail({
+    const { subject, html } = await buildEmail({
       type: invitation.invite_type,
       link,
       invitedName: invitation.invited_name ?? undefined,

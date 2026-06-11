@@ -1040,6 +1040,45 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          body: string
+          created_at: string
+          cta_label: string | null
+          heading: string | null
+          id: string
+          key: string
+          name: string
+          subject: string
+          updated_at: string
+          variables: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          cta_label?: string | null
+          heading?: string | null
+          id?: string
+          key: string
+          name: string
+          subject: string
+          updated_at?: string
+          variables?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          cta_label?: string | null
+          heading?: string | null
+          id?: string
+          key?: string
+          name?: string
+          subject?: string
+          updated_at?: string
+          variables?: string | null
+        }
+        Relationships: []
+      }
       event_addons: {
         Row: {
           addon: string
