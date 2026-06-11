@@ -29,6 +29,7 @@ import SettingsEmailCopy from "./pages/admin/settings/SettingsEmailCopy";
 import SettingsScheduledEmails from "./pages/admin/settings/SettingsScheduledEmails";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
+import PortalHistory from "./pages/portal/History";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
 import Timeline from "./pages/portal/Timeline";
@@ -229,6 +230,7 @@ const App = () => (
               <Route path="documents" element={<Documents />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="rsvp" element={<Rsvp />} />
+              <Route path="history" element={<PortalHistory />} />
             </Route>
 
             {/* Couple Portal — nested */}
@@ -260,6 +262,7 @@ const App = () => (
               <Route path="documents" element={<Documents />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="rsvp" element={<Rsvp />} />
+              <Route path="history" element={<PortalHistory />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

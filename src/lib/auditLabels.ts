@@ -159,6 +159,100 @@ const FIELD_LABELS: Record<string, Record<string, string>> = {
     included_in_package: "Included in package",
     notes: "Notes",
   },
+  guests: {
+    first_name: "First name",
+    last_name: "Last name",
+    email: "Email",
+    phone: "Phone",
+    address: "Address",
+    invite_group: "Invite group",
+    rsvp_status: "RSVP",
+    plus_one_allowed: "Plus one allowed",
+    plus_one_name: "Plus one name",
+    meal_choice: "Meal choice",
+    table_assignment: "Table",
+    notes: "Notes",
+  },
+  guest_dietary_entries: {
+    guest_name: "Guest",
+    restriction_type: "Restriction",
+    severity: "Severity",
+    is_child: "Is child",
+    meal_scope: "Meals",
+    notes: "Notes",
+  },
+  working_timeline: {
+    published: "Published",
+    timeline_data: "Timeline",
+  },
+  milestones: {
+    title: "Milestone",
+    timeframe_label: "Timeframe",
+    target_date: "Target date",
+    status: "Status",
+    owner: "Owner",
+    notes: "Notes",
+  },
+  decor_selections: {
+    quantity: "Quantity",
+    unit_price: "Unit price",
+    notes: "Notes",
+  },
+  experience_requests: {
+    title: "Experience",
+    status: "Status",
+    requested_date: "Requested date",
+    notes: "Notes",
+  },
+  budget_items: {
+    label: "Item",
+    category: "Category",
+    estimated_amount: "Estimated amount",
+    actual_amount: "Actual amount",
+    notes: "Notes",
+  },
+  event_budgets: {
+    total_budget: "Total budget",
+    notes: "Notes",
+  },
+  seating_tables: {
+    label: "Table",
+    capacity: "Capacity",
+    shape: "Shape",
+    notes: "Notes",
+  },
+  seating_assignments: {
+    guest_name: "Guest",
+    seat_number: "Seat",
+    notes: "Notes",
+  },
+  seating_config: {
+    seating_mode: "Seating mode",
+    table_count: "Table count",
+    layout_image_url: "Layout image",
+  },
+  menu_finalization: {
+    finalized: "Menus finalized",
+  },
+  financial_line_items: {
+    label: "Item",
+    section: "Section",
+    quantity: "Quantity",
+    unit_price: "Unit price",
+  },
+  payment_schedule: {
+    label: "Payment",
+    amount: "Amount",
+    due_date: "Due date",
+    paid: "Paid",
+    paid_on: "Paid on",
+    notes: "Notes",
+  },
+  documents: {
+    title: "Document",
+    description: "Description",
+    file_name: "File name",
+  },
 };
 
 /** Friendly value mappings per (table, field). */
@@ -289,9 +383,24 @@ export const TABLE_LABELS: Record<string, string> = {
   bar_selections: "Bar selections",
   lodging_assignments: "Lodging assignment",
   decor_items: "Décor item",
+  decor_selections: "Décor selection",
   dietary_restrictions: "Dietary restriction",
   financials: "Financials",
   meal_events: "Meal event",
+  guests: "Guest",
+  guest_dietary_entries: "Guest dietary entry",
+  working_timeline: "Weekend timeline",
+  milestones: "Milestone",
+  experience_requests: "Experience",
+  budget_items: "Budget item",
+  event_budgets: "Budget",
+  seating_tables: "Seating table",
+  seating_assignments: "Seat assignment",
+  seating_config: "Seating layout",
+  menu_finalization: "Menus",
+  financial_line_items: "Financial line item",
+  payment_schedule: "Payment schedule",
+  documents: "Document",
 };
 
 /** Fields hidden from the audit log entirely (internal/noise). */
@@ -302,3 +411,39 @@ export const HIDDEN_AUDIT_FIELDS = new Set([
   "last_updated",
   "sort_order",
 ]);
+
+/**
+ * Tables whose changes are appropriate to surface in the couple-facing
+ * History view. Anything not in this set is hidden from couples.
+ * Admin views are unaffected.
+ */
+export const COUPLE_ALLOWED_TABLES = new Set<string>([
+  "guests",
+  "guest_dietary_entries",
+  "working_timeline",
+  "milestones",
+  "decor_selections",
+  "experience_requests",
+  "budget_items",
+  "event_budgets",
+  "seating_tables",
+  "seating_assignments",
+  "seating_config",
+  "menu_finalization",
+  "ceremony_details",
+  "bar_selections",
+  "dietary_restrictions",
+  "meal_events",
+  "financials",
+  "financial_line_items",
+  "payment_schedule",
+  "documents",
+]);
+
+/**
+ * Returns true only if a field has a friendly label defined for the table.
+ * Used by the couple-facing History view to "fail toward hiding" unmapped fields.
+ */
+export function hasFriendlyAuditField(table: string, field: string): boolean {
+  return Boolean(FIELD_LABELS[table]?.[field]);
+}
