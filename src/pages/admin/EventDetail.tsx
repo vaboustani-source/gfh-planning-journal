@@ -17,6 +17,7 @@ import MenusBarTab from "./tabs/MenusBarTab";
 import AdminNotesTab from "./tabs/AdminNotesTab";
 import AdminDocumentsTab from "./tabs/AdminDocumentsTab";
 import ContractsTab from "./tabs/ContractsTab";
+import AdminBudgetTab from "./tabs/AdminBudgetTab";
 import ActivityTab from "./tabs/ActivityTab";
 import DecorTab from "./tabs/DecorTab";
 import EventForms from "./tabs/EventForms";
