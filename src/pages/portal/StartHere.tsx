@@ -18,6 +18,7 @@ import {
   StickyNote,
   ArrowRight,
 } from "lucide-react";
+import { RSVP_ENABLED } from "@/lib/featureFlags";
 
 /* ── Welcome video URL ─────────────────────────
    Paste a Loom or YouTube embed URL below to show a welcome video.
