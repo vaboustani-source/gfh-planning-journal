@@ -4270,6 +4270,10 @@ export type Database = {
           wedding_name: string
         }[]
       }
+      restore_audit_record: {
+        Args: { p_audit_id: string; p_mode: string }
+        Returns: Json
+      }
       seed_checklist: { Args: { p_event_id: string }; Returns: undefined }
       seed_milestones: {
         Args: { p_event_id: string; p_wedding_date: string }
