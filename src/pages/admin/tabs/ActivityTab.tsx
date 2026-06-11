@@ -198,16 +198,22 @@ export default function ActivityTab({ eventId }: Props) {
             const config = ACTION_CONFIG[entry.action];
             const ActionIcon = config.Icon;
             const isOpen = expanded.has(entry.id);
-            const isAdmin = entry.user_role === "admin";
+            const entryActorIsAdmin = entry.user_role === "admin";
             const userLabel = entry.user_email || "System";
             const tableLabel = TABLE_LABELS[entry.table_name] || entry.table_name;
 
             const visibleFields = (entry.changed_fields || []).filter((f) => !HIDDEN_AUDIT_FIELDS.has(f));
+            const isRestorable = RESTORABLE_TABLES.has(entry.table_name) && !!entry.record_id;
+            const canRevert = isAdmin && isRestorable && entry.action === "UPDATE" && visibleFields.length > 0;
+            const canRestoreDelete = isAdmin && isRestorable && entry.action === "DELETE" && !!entry.old_values;
+            const isExpandable =
+              (entry.action === "UPDATE" && visibleFields.length > 0) ||
+              canRestoreDelete;
 
             return (
               <div key={entry.id} className="rounded-xl border border-border bg-card overflow-hidden">
                 <button
-                  onClick={() => toggleExpand(entry.id)}
+                  onClick={() => isExpandable && toggleExpand(entry.id)}
                   className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted/30 transition-colors text-left"
                 >
                   <span className={`shrink-0 mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-body text-[11px] font-medium ${config.color}`}>
@@ -228,7 +234,7 @@ export default function ActivityTab({ eventId }: Props) {
                     </p>
                     <p className="font-body text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                       <span className="inline-flex items-center gap-1">
-                        {isAdmin ? <Shield size={11} /> : <User size={11} />}
+                        {entryActorIsAdmin ? <Shield size={11} /> : <User size={11} />}
                         {userLabel}
                       </span>
                       <span>·</span>
@@ -238,7 +244,7 @@ export default function ActivityTab({ eventId }: Props) {
                     </p>
                   </div>
 
-                  {entry.action === "UPDATE" && visibleFields.length > 0 && (
+                  {isExpandable && (
                     isOpen ? <ChevronDown size={16} className="text-muted-foreground shrink-0 mt-1" />
                            : <ChevronRight size={16} className="text-muted-foreground shrink-0 mt-1" />
                   )}
@@ -259,8 +265,53 @@ export default function ActivityTab({ eventId }: Props) {
                         </div>
                       );
                     })}
+                    {canRevert && (
+                      <div className="pt-2 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRestoreTarget({ entry, mode: "revert_update" })}
+                        >
+                          <Undo2 size={14} />
+                          Revert this change
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {isOpen && canRestoreDelete && (
+                  <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-2">
+                    <p className="font-body text-xs text-muted-foreground">
+                      This record was deleted. Restoring will recreate it with these values:
+                    </p>
+                    <div className="space-y-1">
+                      {Object.keys(entry.old_values || {})
+                        .filter((f) => !HIDDEN_AUDIT_FIELDS.has(f))
+                        .slice(0, 8)
+                        .map((field) => (
+                          <div key={field} className="grid grid-cols-[160px_1fr] gap-3 font-body text-xs">
+                            <span className="text-muted-foreground">{formatAuditField(entry.table_name, field)}</span>
+                            <span className="text-foreground truncate">
+                              {formatAuditValue(entry.table_name, field, entry.old_values?.[field])}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRestoreTarget({ entry, mode: "restore_delete" })}
+                      >
+                        <RotateCcw size={14} />
+                        Restore this record
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
               </div>
             );
           })}
