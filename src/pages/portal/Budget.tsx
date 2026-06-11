@@ -39,6 +39,7 @@ const CATEGORIES = [
   "Transportation",
   "Officiant",
   "Rings",
+  "Rentals",
   "Other",
 ];
 
