@@ -41,6 +41,7 @@ import Seating from "./pages/portal/Seating";
 import MenusMeals from "./pages/portal/MenusMeals";
 import OurPeople from "./pages/portal/OurPeople";
 import Financials from "./pages/portal/Financials";
+import Budget from "./pages/portal/Budget";
 import Messages from "./pages/portal/Messages";
 import Notes from "./pages/portal/Notes";
 import PortalForms from "./pages/portal/Forms";
@@ -217,6 +218,7 @@ const App = () => (
               <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
               <Route path="financials" element={<Financials />} />
+              <Route path="budget" element={<Budget />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />
@@ -247,6 +249,7 @@ const App = () => (
               <Route path="menus-meals" element={<MenusMeals />} />
               <Route path="our-people" element={<OurPeople />} />
               <Route path="financials" element={<Financials />} />
+              <Route path="budget" element={<Budget />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notes" element={<Notes />} />
               <Route path="forms" element={<PortalForms />} />

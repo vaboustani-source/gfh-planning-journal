@@ -184,6 +184,53 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_items: {
+        Row: {
+          booked: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          estimated_amount: number
+          event_id: string
+          id: string
+          label: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          booked?: boolean
+          category: string
+          created_at?: string
+          created_by?: string | null
+          estimated_amount?: number
+          event_id: string
+          id?: string
+          label?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booked?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          estimated_amount?: number
+          event_id?: string
+          id?: string
+          label?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       builder_selections: {
         Row: {
           couple_id: string
@@ -1017,6 +1064,41 @@ export type Database = {
             foreignKeyName: "event_addons_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_budgets: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          event_id: string
+          id: string
+          target_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          event_id: string
+          id?: string
+          target_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          event_id?: string
+          id?: string
+          target_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_budgets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
