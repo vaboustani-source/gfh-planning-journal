@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { usePortalData } from "@/hooks/usePortalData";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2, Wallet } from "lucide-react";
+import { Loader2, Plus, Trash2, Wallet, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
+import { defaultsForRole } from "@/lib/tabAccess";
 
 interface BudgetRow {
   id: string;
