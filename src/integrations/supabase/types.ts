@@ -4159,6 +4159,19 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: undefined
       }
+      get_invitation_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          assigned_role: string
+          email: string
+          event_id: string
+          expires_at: string
+          id: string
+          invite_type: string
+          invited_name: string
+          status: string
+        }[]
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_event_member: {
         Args: { _event_id: string; _user_id: string }
