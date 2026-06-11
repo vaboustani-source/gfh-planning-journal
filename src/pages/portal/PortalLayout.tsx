@@ -6,7 +6,7 @@ import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck, Wallet
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
@@ -29,6 +29,7 @@ const allNavItems: NavItemDef[] = [
   { to: "/portal/our-people",      label: "Our People",        icon: Users,             tiers: [1, 3, 4],     tab: "lodging" },
   { to: "/portal/rsvp",            label: "RSVP",              icon: MailCheck,         tiers: [1, 3, 4],     tab: "rsvp" },
   { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4],     tab: "financials" },
+  { to: "/portal/budget",          label: "Budget",            icon: Wallet,            tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/messages",        label: "Messages",          icon: MessageCircle,     tiers: [1, 2, 3, 4],  tab: "messages" },
   { to: "/portal/notes",           label: "Notes",             icon: StickyNote,        tiers: [1, 3, 4],     tab: "notes" },
   { to: "/portal/forms",           label: "Forms",             icon: ClipboardList,     tiers: [1, 3, 4],     tab: "forms" },
