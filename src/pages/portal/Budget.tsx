@@ -199,17 +199,20 @@ export default function Budget() {
 
   return (
     <div className="max-w-5xl mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between mb-8 gap-3">
         <div>
           <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-2">Planning tool</p>
           <h1 className="font-display text-4xl font-light text-foreground">Budget</h1>
         </div>
-        <button
-          onClick={disableBudget}
-          className="font-body text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
-        >
-          Turn off
-        </button>
+        <div className="flex items-center gap-4">
+          <InviteCollaboratorButton eventId={eventId!} />
+          <button
+            onClick={disableBudget}
+            className="font-body text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+          >
+            Turn off
+          </button>
+        </div>
       </div>
 
       {/* Target input */}
