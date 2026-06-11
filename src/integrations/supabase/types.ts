@@ -2748,6 +2748,44 @@ export type Database = {
           },
         ]
       }
+      menu_finalization: {
+        Row: {
+          created_at: string
+          event_id: string
+          finalized: boolean
+          finalized_at: string | null
+          finalized_by: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          finalized?: boolean
+          finalized_at?: string | null
+          finalized_by?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          finalized?: boolean
+          finalized_at?: string | null
+          finalized_by?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_finalization_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_guide: {
         Row: {
           body: string | null
