@@ -94,6 +94,24 @@ const FALLBACKS: Record<string, TemplateRow> = {
     body: '{{handler_name}} has finished the sales setup and handed this wedding over for planning.\n\nWhen you\'ve finished configuring the wedding, click "Open Portal for Client" to invite the couple in.',
     cta_label: 'Open This Wedding',
   },
+  payment_reminder: {
+    subject: 'A friendly note about your upcoming payment',
+    heading: 'A friendly reminder.',
+    body: 'Hello {{couple_names}},\n\nThis is a friendly reminder that your next payment of {{amount}} is scheduled for {{due_date}}.\n\nYou can review the full schedule and submit your payment from your Planning Hub. If anything has changed on your end, just reply to this note and we will take care of it together.',
+    cta_label: 'Open Your Planning Hub',
+  },
+  wedding_countdown: {
+    subject: 'Your wedding at Gilbertsville Farmhouse is {{days_out}} days away',
+    heading: 'The day is getting close.',
+    body: 'Hello {{couple_names}},\n\nWe wanted to send a quick note: your wedding on {{wedding_date}} is just {{days_out}} days away. We have been thinking about your weekend and looking forward to welcoming you to the estate.\n\nIf anything is sitting on your mind, the Planning Hub is the best place to capture it so we can move on it together.',
+    cta_label: 'Open Your Planning Hub',
+  },
+  post_wedding_thankyou: {
+    subject: 'Thank you for celebrating with us at Gilbertsville',
+    heading: 'Thank you.',
+    body: 'Hello {{couple_names}},\n\nWe are still smiling from your weekend at Gilbertsville Farmhouse. Thank you for trusting us with such an important chapter, and for the care you brought to every detail.\n\nYour Planning Hub will stay open for a while so you can revisit notes, vendor contacts, and photos as they come in. If there is anything we can help wrap up, just reply to this note.',
+    cta_label: 'Open Your Planning Hub',
+  },
 }
 
 function escapeHtml(s: string): string {
