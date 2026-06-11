@@ -21,10 +21,22 @@ export interface TemplateRow {
 }
 
 export interface RenderOptions {
-  /** Variables substituted into {{name}} tokens. */
+  /** Variables substituted into {{name}} tokens in subject/heading/body/cta_label. */
   variables?: Record<string, string | undefined | null>
   /** Optional CTA link. If present and cta_label is non-empty, a button is rendered. */
   ctaUrl?: string
+  /**
+   * Trusted system-generated HTML inserted between the heading and the body.
+   * Used for repeating blocks (message bubbles, details tables) that should
+   * not be editable as copy. NOT escaped — only pass HTML the function itself
+   * built, never anything derived from user-editable template fields.
+   */
+  contentHtml?: string
+  /**
+   * Override the shell to render with a specific shell style. Default 'standard'.
+   * Reserved for future use.
+   */
+  shell?: 'standard'
 }
 
 export interface RenderedEmail {
@@ -58,6 +70,30 @@ const FALLBACKS: Record<string, TemplateRow> = {
     body: 'Dear {{signer_name}},\n\nThis is your receipt for the agreement you just signed: {{contract_title}}.\n\nSigned on {{signed_date}}.\n\nA copy is saved in your portal under Agreements for your records. If anything looks incorrect, please reply to this email right away.',
     cta_label: null,
   },
+  notify_admin_messages: {
+    subject: '{{status_prefix}}[GFH] {{partner_label}} — {{status_suffix}}',
+    heading: '{{partner_label}}',
+    body: '{{subline}}',
+    cta_label: 'Open Thread',
+  },
+  notify_couple_message: {
+    subject: 'A note from Brandon at Gilbertsville',
+    heading: 'A note from Brandon.',
+    body: 'Reply in your Planning Hub — we will see it and respond.',
+    cta_label: 'Open the Planning Hub',
+  },
+  notify_couple_messages_batch: {
+    subject: '{{count}} new notes from Brandon at Gilbertsville',
+    heading: 'A note from Brandon.',
+    body: 'Reply in your Planning Hub — we will see it and respond.',
+    cta_label: 'Open the Planning Hub',
+  },
+  event_handoff_notice: {
+    subject: 'New client to onboard: {{event_title}}',
+    heading: 'A new client is ready for you.',
+    body: '{{handler_name}} has finished the sales setup and handed this wedding over for planning.\n\nWhen you\'ve finished configuring the wedding, click "Open Portal for Client" to invite the couple in.',
+    cta_label: 'Open This Wedding',
+  },
 }
 
 function escapeHtml(s: string): string {
@@ -78,6 +114,7 @@ function substitute(input: string | null | undefined, vars: Record<string, strin
 }
 
 function bodyToHtml(plain: string): string {
+  if (!plain) return ''
   const escaped = escapeHtml(plain)
   // Preserve line breaks. Double newline becomes paragraph break.
   return escaped
@@ -86,7 +123,7 @@ function bodyToHtml(plain: string): string {
     .join('')
 }
 
-function wrapShell(opts: { heading: string; bodyHtml: string; ctaLabel?: string; ctaUrl?: string }): string {
+function wrapShell(opts: { heading: string; bodyHtml: string; contentHtml?: string; ctaLabel?: string; ctaUrl?: string }): string {
   const cta = opts.ctaLabel && opts.ctaUrl
     ? `<div style="text-align:center;margin:16px 0 12px;">
          <a href="${opts.ctaUrl}" style="display:inline-block;background:#2C3E2D;color:#ffffff;text-decoration:none;padding:14px 30px;border-radius:6px;font-size:14px;letter-spacing:0.06em;">${escapeHtml(opts.ctaLabel)}</a>
@@ -96,6 +133,8 @@ function wrapShell(opts: { heading: string; bodyHtml: string; ctaLabel?: string;
   const heading = opts.heading
     ? `<h1 style="font-family:Georgia,'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:#2C3E2D;margin:0 0 18px;letter-spacing:0.02em;">${escapeHtml(opts.heading)}</h1>`
     : ''
+
+  const content = opts.contentHtml ? `<div style="margin:0 0 16px;">${opts.contentHtml}</div>` : ''
 
   return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#FAF8F4;font-family:Georgia,'Times New Roman',serif;color:#2C3E2D;">
@@ -108,6 +147,7 @@ function wrapShell(opts: { heading: string; bodyHtml: string; ctaLabel?: string;
         </td></tr>
         <tr><td style="padding:32px 40px 24px;">
           ${heading}
+          ${content}
           ${opts.bodyHtml}
           ${cta}
         </td></tr>
@@ -147,7 +187,7 @@ async function loadTemplate(key: string): Promise<TemplateRow> {
 export async function renderTemplate(key: string, opts: RenderOptions = {}): Promise<RenderedEmail> {
   const vars = opts.variables ?? {}
   let row = await loadTemplate(key)
-  if (!row || !row.body) {
+  if (!row || (!row.body && !row.heading && !row.subject)) {
     row = FALLBACKS[key] ?? { subject: '', heading: '', body: '', cta_label: null }
   }
 
@@ -159,6 +199,7 @@ export async function renderTemplate(key: string, opts: RenderOptions = {}): Pro
   const html = wrapShell({
     heading,
     bodyHtml: bodyToHtml(bodyText),
+    contentHtml: opts.contentHtml,
     ctaLabel: ctaLabel || undefined,
     ctaUrl: opts.ctaUrl,
   })

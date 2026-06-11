@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/send-email.ts'
 import { APP_BASE_URL } from '../_shared/appUrls.ts'
+import { renderTemplate } from '../_shared/email-shell.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,21 +41,19 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
-function buildAdminSubject(partnerLabel: string, weddingDate: string | null): string {
-  if (!weddingDate) {
-    return `[GFH] ${partnerLabel} — planning phase`
-  }
+function adminStatusParts(weddingDate: string | null): { prefix: string; suffix: string } {
+  if (!weddingDate) return { prefix: '', suffix: 'planning phase' }
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const wd = new Date(weddingDate + 'T12:00:00')
   wd.setHours(0, 0, 0, 0)
   const days = Math.floor((wd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (days < 0) return `[GFH] ${partnerLabel} — post-event`
-  if (days <= 7) return `🔴 [GFH] ${partnerLabel} — ${days} days out`
-  if (days <= 30) return `🟡 [GFH] ${partnerLabel} — ${days} days out`
-  if (days <= 90) return `[GFH] ${partnerLabel} — ${days} days out`
-  return `[GFH] ${partnerLabel} — planning phase`
+  if (days < 0) return { prefix: '', suffix: 'post-event' }
+  if (days <= 7) return { prefix: '🔴 ', suffix: `${days} days out` }
+  if (days <= 30) return { prefix: '🟡 ', suffix: `${days} days out` }
+  if (days <= 90) return { prefix: '', suffix: `${days} days out` }
+  return { prefix: '', suffix: 'planning phase' }
 }
 
 function daysUntil(weddingDate: string | null): number | null {
@@ -66,70 +65,22 @@ function daysUntil(weddingDate: string | null): number | null {
   return Math.floor((wd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
-function buildAdminHtml(opts: {
-  partnerLabel: string
-  eventDateFormatted: string
-  daysOut: number | null
-  messages: QueuedMessage[]
-  portalUrl: string
-}): string {
-  const { partnerLabel, eventDateFormatted, daysOut, messages, portalUrl } = opts
-  const subline = daysOut === null
-    ? eventDateFormatted
-    : daysOut < 0
-      ? `${eventDateFormatted} · post-event`
-      : `${eventDateFormatted} · ${daysOut} days out`
-
-  const messageBlocks = messages.map(m => `
+function buildAdminMessageBlocks(messages: QueuedMessage[]): string {
+  return messages.map(m => `
     <div style="padding: 12px 14px; margin-bottom: 8px; background: #f7f5f0; border-left: 3px solid #8B9D77; border-radius: 6px;">
-      <p style="margin: 0 0 4px 0; font-size: 12px; color: #8B9D77; font-weight: 600;">${escapeHtml(m.sender_name)} · ${formatMessageTime(m.sent_at)}</p>
-      <p style="margin: 0; font-size: 14px; color: #2d2d2d; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(m.body)}</p>
+      <p style="margin: 0 0 4px 0; font-family:Helvetica,Arial,sans-serif;font-size: 12px; color: #8B9D77; font-weight: 600;">${escapeHtml(m.sender_name)} · ${formatMessageTime(m.sent_at)}</p>
+      <p style="margin: 0; font-family:Helvetica,Arial,sans-serif;font-size: 14px; color: #2d2d2d; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(m.body)}</p>
     </div>
   `).join('')
-
-  return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#faf9f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
-    <div style="background:#fff;border:1px solid #e8e4de;border-radius:12px;padding:28px;">
-      <p style="margin:0 0 16px 0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#8B9D77;font-weight:600;">Gilbertsville Farmhouse — Planning Hub</p>
-      <h2 style="margin:0 0 4px 0;font-size:20px;font-weight:500;color:#2d2d2d;">${escapeHtml(partnerLabel)}</h2>
-      <p style="margin:0 0 20px 0;font-size:13px;color:#888;">${escapeHtml(subline)}</p>
-      ${messageBlocks}
-      <div style="text-align:center;margin-top:24px;">
-        <a href="${portalUrl}" style="display:inline-block;background:#8B9D77;color:#fff;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:500;">Open Thread</a>
-      </div>
-    </div>
-  </div>
-</body></html>`
 }
 
-function buildCoupleHtml(opts: {
-  messages: QueuedMessage[]
-  portalUrl: string
-}): string {
-  const { messages, portalUrl } = opts
-  const messageBlocks = messages.map(m => `
+function buildCoupleMessageBlocks(messages: QueuedMessage[]): string {
+  return messages.map(m => `
     <div style="padding:14px 16px;margin-bottom:10px;background:#f7f5f0;border-radius:8px;">
-      <p style="margin:0 0 6px 0;font-size:15px;color:#2d2d2d;line-height:1.55;font-style:italic;white-space:pre-wrap;">"${escapeHtml(m.body)}"</p>
-      <p style="margin:0;font-size:12px;color:#8B9D77;">Brandon · ${formatMessageTime(m.sent_at)}</p>
+      <p style="margin:0 0 6px 0;font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#2d2d2d;line-height:1.55;font-style:italic;white-space:pre-wrap;">"${escapeHtml(m.body)}"</p>
+      <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#8B9D77;">Brandon · ${formatMessageTime(m.sent_at)}</p>
     </div>
   `).join('')
-
-  return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#faf9f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:560px;margin:0 auto;padding:40px 16px;">
-    <div style="background:#fff;border:1px solid #e8e4de;border-radius:12px;padding:32px;text-align:center;">
-      <p style="margin:0 0 24px 0;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8B9D77;font-weight:600;">Gilbertsville Farmhouse</p>
-      <h2 style="margin:0 0 24px 0;font-size:22px;font-weight:300;color:#2d2d2d;">A note from Brandon.</h2>
-      <div style="text-align:left;">${messageBlocks}</div>
-      <p style="margin:24px 0 20px 0;font-size:13px;color:#666;line-height:1.5;">Reply in your Planning Hub — we will see it and respond.</p>
-      <a href="${portalUrl}" style="display:inline-block;background:#8B9D77;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:500;">Open the Planning Hub</a>
-      <p style="margin:28px 0 0 0;font-size:11px;color:#bbb;letter-spacing:0.08em;">Gilbertsville Farmhouse</p>
-    </div>
-  </div>
-</body></html>`
 }
 
 /**
@@ -225,22 +176,33 @@ Deno.serve(async (req) => {
         let html: string
 
         if (row.recipient_role === 'admin') {
-          subject = buildAdminSubject(partnerLabel, weddingDate)
-          html = buildAdminHtml({
-            partnerLabel,
-            eventDateFormatted,
-            daysOut,
-            messages,
-            portalUrl: `${PORTAL_BASE}/admin`,
+          const { prefix, suffix } = adminStatusParts(weddingDate)
+          const subline = daysOut === null
+            ? eventDateFormatted
+            : daysOut < 0
+              ? `${eventDateFormatted} · post-event`
+              : `${eventDateFormatted} · ${daysOut} days out`
+          const rendered = await renderTemplate('notify_admin_messages', {
+            variables: {
+              status_prefix: prefix,
+              partner_label: partnerLabel,
+              status_suffix: suffix,
+              subline,
+            },
+            contentHtml: buildAdminMessageBlocks(messages),
+            ctaUrl: `${PORTAL_BASE}/admin`,
           })
+          subject = rendered.subject
+          html = rendered.html
         } else {
-          subject = messages.length === 1
-            ? 'A note from Brandon at Gilbertsville'
-            : `${messages.length} new notes from Brandon at Gilbertsville`
-          html = buildCoupleHtml({
-            messages,
-            portalUrl: `${PORTAL_BASE}/portal/messages`,
+          const key = messages.length === 1 ? 'notify_couple_message' : 'notify_couple_messages_batch'
+          const rendered = await renderTemplate(key, {
+            variables: { count: String(messages.length) },
+            contentHtml: buildCoupleMessageBlocks(messages),
+            ctaUrl: `${PORTAL_BASE}/portal/messages`,
           })
+          subject = rendered.subject
+          html = rendered.html
         }
 
         await sendEmail({
