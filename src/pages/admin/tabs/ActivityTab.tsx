@@ -60,13 +60,17 @@ interface Props {
 }
 
 export default function ActivityTab({ eventId }: Props) {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [tableFilter, setTableFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [restoreTarget, setRestoreTarget] = useState<RestoreTarget | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
-  useEffect(() => {
+  const loadEntries = () => {
     if (!eventId) return;
     setLoading(true);
     supabase
@@ -79,7 +83,9 @@ export default function ActivityTab({ eventId }: Props) {
         if (data) setEntries(data as unknown as AuditEntry[]);
         setLoading(false);
       });
-  }, [eventId]);
+  };
+
+  useEffect(loadEntries, [eventId]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -95,6 +101,44 @@ export default function ActivityTab({ eventId }: Props) {
     if (actionFilter !== "all" && e.action !== actionFilter) return false;
     return true;
   });
+
+  const handleConfirmRestore = async () => {
+    if (!restoreTarget || !isAdmin) return;
+    setRestoring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("restore-record", {
+        body: {
+          table_name: restoreTarget.entry.table_name,
+          record_id: restoreTarget.entry.record_id,
+          audit_id: restoreTarget.entry.id,
+          mode: restoreTarget.mode,
+        },
+      });
+      const result = (data ?? {}) as { success?: boolean; summary?: string; error?: string };
+      if (error || !result.success) {
+        toast({
+          title: "Restore did not complete",
+          description: result.error || error?.message || "Something went wrong.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: restoreTarget.mode === "revert_update" ? "Change reverted" : "Record restored",
+          description: result.summary || "Done.",
+        });
+        loadEntries();
+      }
+    } catch (err) {
+      toast({
+        title: "Restore failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setRestoring(false);
+      setRestoreTarget(null);
+    }
+  };
 
   if (loading) {
     return (
