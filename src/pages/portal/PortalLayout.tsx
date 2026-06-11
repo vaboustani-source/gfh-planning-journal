@@ -93,15 +93,22 @@ function PortalLayoutInner() {
   // Tier 2 = messages only; others filter by tier array AND tab_access
   const navItems = useMemo(() => {
     if (accessTier === 2) return allNavItems.filter(i => i.to === "/portal/messages");
-    const byTier = allNavItems.filter(i => i.tiers.includes(accessTier));
+    let byTier = allNavItems.filter(i => i.tiers.includes(accessTier));
+    if (!isPreviewMode && !RSVP_ENABLED) {
+      byTier = byTier.filter(i => i.to !== "/portal/rsvp");
+    }
     if (isPreviewMode) return byTier;
     return byTier.filter(i => tabAccess[i.tab]);
   }, [accessTier, tabAccess, isPreviewMode]);
 
-  // Guard: redirect away from blocked tabs
+  // Guard: redirect away from blocked tabs and feature-flagged routes
   useEffect(() => {
     if (isPreviewMode) return;
     if (location.pathname === "/portal" || location.pathname === "/portal/today") return;
+    if (!RSVP_ENABLED && location.pathname === "/portal/rsvp") {
+      navigate("/portal/today", { replace: true });
+      return;
+    }
     const tab = tabKeyForPath(location.pathname);
     if (tab && !tabAccess[tab]) {
       toast.error("You don't have access to this section");
