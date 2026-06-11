@@ -25,6 +25,7 @@ import SettingsJournal from "./pages/admin/settings/SettingsJournal";
 import SettingsIntegrations from "./pages/admin/settings/SettingsIntegrations";
 import SettingsTeamRoles from "./pages/admin/settings/SettingsTeamRoles";
 import SettingsContractTemplates from "./pages/admin/settings/SettingsContractTemplates";
+import SettingsEmailCopy from "./pages/admin/settings/SettingsEmailCopy";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import Today from "./pages/portal/Today";
