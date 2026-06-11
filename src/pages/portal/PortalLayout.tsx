@@ -6,7 +6,7 @@ import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck, Wallet, History as HistoryIcon
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck, Wallet, History as HistoryIcon, Compass
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
@@ -17,6 +17,7 @@ type NavItemDef = {
 };
 
 const allNavItems: NavItemDef[] = [
+  { to: "/portal/start",           label: "Start Here",        icon: Compass,         tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/today",           label: "Home",              icon: Home,              tiers: [1, 2, 3, 4], tab: "overview" },
   { to: "/portal/our-wedding",     label: "Our Wedding",       icon: CalendarHeart,     tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/timeline",        label: "Timeline",          icon: Clock,             tiers: [1, 3, 4],     tab: "timeline" },

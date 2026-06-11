@@ -31,6 +31,7 @@ import SettingsEmailTest from "./pages/admin/settings/SettingsEmailTest";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import PortalHistory from "./pages/portal/History";
+import StartHere from "./pages/portal/StartHere";
 import Today from "./pages/portal/Today";
 import OurWeekend from "./pages/portal/OurWeekend";
 import Timeline from "./pages/portal/Timeline";
@@ -213,6 +214,7 @@ const App = () => (
               }
             >
               <Route index element={<Navigate to="today" replace />} />
+              <Route path="start" element={<StartHere />} />
               <Route path="today" element={<Today />} />
               <Route path="our-wedding" element={<OurWeekend />} />
               <Route path="timeline" element={<Timeline />} />
@@ -245,6 +247,7 @@ const App = () => (
               }
             >
               <Route index element={<Navigate to="/portal/today" replace />} />
+              <Route path="start" element={<StartHere />} />
               <Route path="today" element={<Today />} />
               <Route path="our-wedding" element={<OurWeekend />} />
               <Route path="timeline" element={<Timeline />} />
