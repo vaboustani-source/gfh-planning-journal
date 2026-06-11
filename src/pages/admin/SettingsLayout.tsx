@@ -13,6 +13,7 @@ const LIBRARIES = [
   { slug: "forms", label: "Forms" },
   { slug: "contract-templates", label: "Contract Templates" },
   { slug: "email-copy", label: "Email Copy" },
+  { slug: "automated-emails", label: "Automated Emails" },
   { slug: "integrations", label: "Integrations" },
 ];
 
