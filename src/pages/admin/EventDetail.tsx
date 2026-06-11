@@ -339,6 +339,7 @@ export default function EventDetail() {
             {activeTab === "forms" && <EventForms eventId={event.id} />}
             {activeTab === "documents" && <AdminDocumentsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "contracts" && <ContractsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+            {activeTab === "budget" && <AdminBudgetTab eventId={event.id} />}
             {activeTab === "activity" && <ActivityTab eventId={event.id} />}
           </div>
         </main>
