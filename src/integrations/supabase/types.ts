@@ -3693,6 +3693,69 @@ export type Database = {
           },
         ]
       }
+      scheduled_email_log: {
+        Row: {
+          id: string
+          key: string
+          marker: string
+          sent_at: string
+          target_id: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          marker: string
+          sent_at?: string
+          target_id: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          marker?: string
+          sent_at?: string
+          target_id?: string
+        }
+        Relationships: []
+      }
+      scheduled_emails: {
+        Row: {
+          anchor: string
+          created_at: string
+          description: string | null
+          direction: string
+          enabled: boolean
+          id: string
+          key: string
+          name: string
+          offset_days: number[]
+          updated_at: string
+        }
+        Insert: {
+          anchor: string
+          created_at?: string
+          description?: string | null
+          direction: string
+          enabled?: boolean
+          id?: string
+          key: string
+          name: string
+          offset_days: number[]
+          updated_at?: string
+        }
+        Update: {
+          anchor?: string
+          created_at?: string
+          description?: string | null
+          direction?: string
+          enabled?: boolean
+          id?: string
+          key?: string
+          name?: string
+          offset_days?: number[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       seating_assignments: {
         Row: {
           created_at: string | null
