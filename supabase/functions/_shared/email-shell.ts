@@ -130,6 +130,12 @@ const FALLBACKS: Record<string, TemplateRow> = {
     body: 'Hello {{couple_names}},\n\nYour ceremony and key day-of details at Gilbertsville Farmhouse are not finalized yet. With {{days_out}} days until your wedding on {{wedding_date}}, this is a good moment to walk through them.\n\nThe Ceremony section in your Planning Hub covers things like your officiant, processional order, first dance, and the small choices that shape the day. You can save as you go and finalize once it feels right.\n\nIf you want to talk anything through before locking it in, reply to this note and we will help.',
     cta_label: 'Open Ceremony Details',
   },
+  nudge_menu: {
+    subject: 'A gentle nudge about your menu and meal choices',
+    heading: 'Your menu is waiting for the final touch.',
+    body: 'Hello {{couple_names}},\n\nYour Menus and Meals area at Gilbertsville Farmhouse has not been finalized yet. With {{days_out}} days to go until your wedding on {{wedding_date}}, this is a lovely moment to look it over together and lock in your choices.\n\nThe Menus and Meals section in your Planning Hub gathers everything in one place: meal preferences, headcounts, dietary needs, and bar selections. You can step through each tab at your own pace, save as you go, and then mark the whole area finalized when it feels right. There is still plenty of time, and nothing needs to be perfect on the first pass.\n\nIf any question is making it feel harder than it should, reply to this note and we will walk through it with you.',
+    cta_label: 'Open Your Menu',
+  },
 }
 
 function escapeHtml(s: string): string {

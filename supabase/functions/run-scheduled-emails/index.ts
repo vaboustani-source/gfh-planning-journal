@@ -249,6 +249,7 @@ async function runPostWeddingThankYou(supabase: any, offsets: number[]): Promise
 const NUDGE_GUESTLIST_PATH = '/portal/our-people'
 const NUDGE_FORMS_PATH = '/portal/forms'
 const NUDGE_TIMELINE_PATH = '/portal/ceremony'
+const NUDGE_MENU_PATH = '/portal/menus-meals'
 
 interface NudgeArea {
   key: string
@@ -281,6 +282,15 @@ async function isCeremonyDetailsIncomplete(supabase: any, eventId: string): Prom
     .eq('event_id', eventId)
     .eq('finalized', true)
   return (count ?? 0) === 0
+}
+
+async function isMenuIncomplete(supabase: any, eventId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('menu_finalization')
+    .select('finalized')
+    .eq('event_id', eventId)
+    .maybeSingle()
+  return !(data?.finalized === true)
 }
 
 async function runNudge(supabase: any, area: NudgeArea, offsets: number[]): Promise<PerKeyCount> {
@@ -336,6 +346,7 @@ const NUDGE_AREAS: Record<string, NudgeArea> = {
   nudge_guestlist: { key: 'nudge_guestlist', ctaPath: NUDGE_GUESTLIST_PATH, isIncomplete: isGuestlistIncomplete },
   nudge_forms:     { key: 'nudge_forms',     ctaPath: NUDGE_FORMS_PATH,     isIncomplete: isFormsIncomplete },
   nudge_timeline:  { key: 'nudge_timeline',  ctaPath: NUDGE_TIMELINE_PATH,  isIncomplete: isCeremonyDetailsIncomplete },
+  nudge_menu:      { key: 'nudge_menu',      ctaPath: NUDGE_MENU_PATH,      isIncomplete: isMenuIncomplete },
 }
 
 
