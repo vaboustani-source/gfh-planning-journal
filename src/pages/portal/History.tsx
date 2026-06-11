@@ -61,8 +61,13 @@ export default function PortalHistory() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [tableFilter, setTableFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setCurrentUserId(data.user.id);
+    });
+  }, []);
     if (!eventId) return;
     setLoading(true);
     supabase
