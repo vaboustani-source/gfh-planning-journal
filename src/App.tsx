@@ -112,6 +112,7 @@ const App = () => (
               <Route path="resources" element={<Resources />} />
               <Route path="forms" element={<AdminForms />} />
               <Route path="contract-templates" element={<SettingsContractTemplates />} />
+              <Route path="email-copy" element={<SettingsEmailCopy />} />
               <Route path="integrations" element={<SettingsIntegrations />} />
               <Route path="team" element={<SettingsTeamRoles />} />
             </Route>
