@@ -23,11 +23,17 @@ export function VendorList() {
 
   const updateVendor = async (id: string, fields: Partial<Vendor>) => {
     const safeFields: Partial<Vendor> = {};
-    const allowedKeys: (keyof Vendor)[] = ["business_name", "contact_name", "phone", "email", "instagram"];
+    const allowedKeys: (keyof Vendor)[] = ["business_name", "contact_name", "phone", "email", "instagram", "coi_requested", "coi_requested_at"];
     for (const key of allowedKeys) {
       if (key in fields) (safeFields as any)[key] = fields[key];
     }
-    await supabase.from("vendors").update(safeFields).eq("id", id);
+    // coi_requested/at are written by the edge function; do not echo to DB here.
+    const dbFields = { ...safeFields };
+    delete (dbFields as any).coi_requested;
+    delete (dbFields as any).coi_requested_at;
+    if (Object.keys(dbFields).length > 0) {
+      await supabase.from("vendors").update(dbFields).eq("id", id);
+    }
     setVendors(prev => prev.map(v => v.id === id ? { ...v, ...safeFields } : v));
   };
 
