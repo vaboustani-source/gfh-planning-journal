@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical } from "lucide-react";
+import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical, ShieldCheck } from "lucide-react";
 import VendorFileUpload from "@/components/admin/VendorFileUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface Vendor {
   id: string;
@@ -16,6 +18,8 @@ export interface Vendor {
   info_emailed: boolean | null;
   vendor_meals: number | null;
   brandon_notes: string | null;
+  coi_requested?: boolean | null;
+  coi_requested_at?: string | null;
 }
 
 export const FRIENDLY_CATEGORY: Record<string, string> = {
