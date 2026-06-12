@@ -55,6 +55,7 @@ import Contracts from "./pages/portal/Contracts";
 import Insurance from "./pages/portal/Insurance";
 import Rsvp from "./pages/portal/Rsvp";
 import PublicRsvp from "./pages/PublicRsvp";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
