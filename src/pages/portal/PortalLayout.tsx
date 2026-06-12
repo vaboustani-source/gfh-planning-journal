@@ -7,7 +7,7 @@ import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import { RSVP_ENABLED } from "@/lib/featureFlags";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck, Wallet, History as HistoryIcon, Compass
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, Shield, ShieldCheck, Wallet, History as HistoryIcon, Compass
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
@@ -37,6 +37,7 @@ const allNavItems: NavItemDef[] = [
   { to: "/portal/forms",           label: "Forms",             icon: ClipboardList,     tiers: [1, 3, 4],     tab: "forms" },
   { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4],     tab: "documents" },
   { to: "/portal/contracts",       label: "Agreements",        icon: ShieldCheck,       tiers: [1, 3, 4],     tab: "documents" },
+  { to: "/portal/insurance",       label: "Wedding Insurance", icon: Shield,            tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/history",         label: "History",           icon: HistoryIcon,       tiers: [1, 3, 4],     tab: "overview" },
 ];
 

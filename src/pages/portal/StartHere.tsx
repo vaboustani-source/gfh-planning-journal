@@ -92,6 +92,7 @@ const COMPACT_LINKS: CompactLink[] = [
   { to: "/portal/forms", label: "Forms", description: "anything we need you to fill out." },
   { to: "/portal/documents", label: "Documents", description: "shared files and resources." },
   { to: "/portal/contracts", label: "Agreements", description: "your signed agreements." },
+  { to: "/portal/insurance", label: "Wedding Insurance", description: "recommended in your contract, with two ways to buy." },
   { to: "/portal/notes", label: "Notes", description: "a place for your own notes." },
 ];
 
