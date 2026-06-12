@@ -136,6 +136,12 @@ const FALLBACKS: Record<string, TemplateRow> = {
     body: 'Hello {{couple_names}},\n\nYour Menus and Meals area at Gilbertsville Farmhouse has not been finalized yet. With {{days_out}} days to go until your wedding on {{wedding_date}}, this is a lovely moment to look it over together and lock in your choices.\n\nThe Menus and Meals section in your Planning Hub gathers everything in one place: meal preferences, headcounts, dietary needs, and bar selections. You can step through each tab at your own pace, save as you go, and then mark the whole area finalized when it feels right. There is still plenty of time, and nothing needs to be perfect on the first pass.\n\nIf any question is making it feel harder than it should, reply to this note and we will walk through it with you.',
     cta_label: 'Open Your Menu',
   },
+  coi_request: {
+    subject: 'Certificate of Insurance required to work at Gilbertsville Farmhouse',
+    heading: 'Certificate of Insurance request',
+    body: 'Hello {{business_name}},\n\nThank you for being part of an upcoming celebration at Gilbertsville Farmhouse. Before your team arrives on the estate, we need a current Certificate of Insurance on file. The exact requirements are below.\n\nIn order for a third-party vendor to operate on our venue, we require a Certificate of Insurance evidencing the following:\n- Commercial General Liability $1,000,000 per occurrence / $2,000,000 aggregate\n- Name the "Gilbertsville Farmhouse, Inc. and Sharon & Aldo Boustani", and its officers, employees, agents, and volunteers added as additional insured with respect to specific project/service/event.\n- Automobile Liability $1,000,000 CSL (if applicable)\n\nAsk your insurance agent to email the certificate to Experience@gilbertsvillefarmhouse.com. The certificate is due prior to the actual work start date.\n\nIf you have any questions, just reply to this note and we will help.',
+    cta_label: null,
+  },
 }
 
 function escapeHtml(s: string): string {
