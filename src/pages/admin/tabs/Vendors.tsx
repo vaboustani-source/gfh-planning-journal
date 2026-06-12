@@ -310,6 +310,47 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
         vendors={vendors}
       />
 
+      {coiBulkOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !coiBulkProgress && setCoiBulkOpen(false)}>
+          <div className="bg-card rounded-xl border border-border shadow-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="rounded-full bg-sage/15 p-2 text-sage shrink-0"><ShieldCheck size={18} /></div>
+              <div>
+                <h3 className="font-display text-lg font-light text-foreground">Request COI from all vendors</h3>
+                <p className="font-body text-sm text-muted-foreground mt-1">
+                  This will email the Certificate of Insurance requirements to{" "}
+                  <span className="text-foreground font-medium">{vendors.filter(eligibleForCoi).length}</span>{" "}
+                  vendor{vendors.filter(eligibleForCoi).length === 1 ? "" : "s"} with an email on file.
+                  Vendors without an email will be skipped.
+                </p>
+              </div>
+            </div>
+            {coiBulkProgress && (
+              <div className="mt-4 rounded-md bg-muted/40 p-3">
+                <p className="font-body text-xs text-muted-foreground">
+                  Sending {coiBulkProgress.sent} of {coiBulkProgress.total}
+                  {coiBulkProgress.current ? ` · ${coiBulkProgress.current}` : ""}
+                </p>
+                <div className="h-1.5 mt-2 rounded-full bg-border overflow-hidden">
+                  <div className="h-full bg-sage transition-all"
+                    style={{ width: `${(coiBulkProgress.sent / Math.max(coiBulkProgress.total, 1)) * 100}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <button onClick={() => setCoiBulkOpen(false)} disabled={!!coiBulkProgress}
+                className="px-4 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground font-body text-sm transition-colors disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={sendCoiToAll} disabled={!!coiBulkProgress}
+                className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                {coiBulkProgress ? "Sending..." : "Send to all"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
