@@ -12,7 +12,7 @@ export function VendorList() {
     if (!eventId) return;
     supabase
       .from("vendors")
-      .select("id, category, business_name, contact_name, phone, email, instagram, status, contract_uploaded, coi_received, info_emailed, vendor_meals, brandon_notes")
+      .select("id, category, business_name, contact_name, phone, email, instagram, status, contract_uploaded, coi_received, info_emailed, vendor_meals, brandon_notes, coi_requested, coi_requested_at")
       .eq("event_id", eventId)
       .order("created_at", { ascending: true })
       .then(({ data }) => {
