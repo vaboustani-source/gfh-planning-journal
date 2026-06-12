@@ -81,6 +81,37 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const [socialModalOpen, setSocialModalOpen] = useState(false);
   const { status, markSaving, markSaved } = useAutosaveStatus();
   const seeded = useRef(false);
+  const [coiBulkOpen, setCoiBulkOpen] = useState(false);
+  const [coiBulkProgress, setCoiBulkProgress] = useState<{ sent: number; total: number; current?: string } | null>(null);
+
+  const eligibleForCoi = (v: Vendor) =>
+    !!v.email && !!v.business_name && !(["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse");
+
+  const sendCoiToAll = async () => {
+    const targets = vendors.filter(eligibleForCoi);
+    if (targets.length === 0) {
+      toast.error("No vendors with an email on file yet");
+      return;
+    }
+    setCoiBulkProgress({ sent: 0, total: targets.length });
+    let failures = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const v = targets[i];
+      setCoiBulkProgress({ sent: i, total: targets.length, current: v.business_name || "" });
+      try {
+        const { data, error } = await supabase.functions.invoke("send-coi-request", { body: { vendor_id: v.id } });
+        if (error || (data as any)?.error) throw new Error(error?.message || (data as any)?.error);
+        setVendors(prev => prev.map(x => x.id === v.id ? { ...x, coi_requested: true, coi_requested_at: new Date().toISOString() } as Vendor : x));
+      } catch (e) {
+        failures++;
+        console.error("[coi bulk]", v.business_name, e);
+      }
+    }
+    setCoiBulkProgress({ sent: targets.length, total: targets.length });
+    if (failures === 0) toast.success(`COI requests sent to ${targets.length} vendor${targets.length === 1 ? "" : "s"}`);
+    else toast.error(`Sent ${targets.length - failures} of ${targets.length}. ${failures} failed.`);
+    setTimeout(() => { setCoiBulkOpen(false); setCoiBulkProgress(null); }, 800);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
