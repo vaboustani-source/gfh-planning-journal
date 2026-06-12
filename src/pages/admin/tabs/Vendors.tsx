@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Share2 } from "lucide-react";
+import { Plus, Share2, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import { CoiRequirementsPanel } from "@/components/vendor/CoiRequirementsPanel";
 import { VendorCard, Vendor, VENDOR_GROUPS, STANDARD_VENDOR_CATEGORIES } from "@/components/vendor/VendorCard";
 import { BrowsePreferredDrawer } from "@/components/admin/BrowsePreferredDrawer";
 import { PreferredVendor } from "@/components/admin/PreferredVendorCard";
@@ -79,6 +81,37 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const [socialModalOpen, setSocialModalOpen] = useState(false);
   const { status, markSaving, markSaved } = useAutosaveStatus();
   const seeded = useRef(false);
+  const [coiBulkOpen, setCoiBulkOpen] = useState(false);
+  const [coiBulkProgress, setCoiBulkProgress] = useState<{ sent: number; total: number; current?: string } | null>(null);
+
+  const eligibleForCoi = (v: Vendor) =>
+    !!v.email && !!v.business_name && !(["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse");
+
+  const sendCoiToAll = async () => {
+    const targets = vendors.filter(eligibleForCoi);
+    if (targets.length === 0) {
+      toast.error("No vendors with an email on file yet");
+      return;
+    }
+    setCoiBulkProgress({ sent: 0, total: targets.length });
+    let failures = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const v = targets[i];
+      setCoiBulkProgress({ sent: i, total: targets.length, current: v.business_name || "" });
+      try {
+        const { data, error } = await supabase.functions.invoke("send-coi-request", { body: { vendor_id: v.id } });
+        if (error || (data as any)?.error) throw new Error(error?.message || (data as any)?.error);
+        setVendors(prev => prev.map(x => x.id === v.id ? { ...x, coi_requested: true, coi_requested_at: new Date().toISOString() } as Vendor : x));
+      } catch (e) {
+        failures++;
+        console.error("[coi bulk]", v.business_name, e);
+      }
+    }
+    setCoiBulkProgress({ sent: targets.length, total: targets.length });
+    if (failures === 0) toast.success(`COI requests sent to ${targets.length} vendor${targets.length === 1 ? "" : "s"}`);
+    else toast.error(`Sent ${targets.length - failures} of ${targets.length}. ${failures} failed.`);
+    setTimeout(() => { setCoiBulkOpen(false); setCoiBulkProgress(null); }, 800);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -195,7 +228,11 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           <span className="font-body text-sm text-sage">{byStatus.done + byStatus.confirmed} confirmed</span>
           <span className="font-body text-sm text-muted-foreground">{byStatus.pending} pending</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={() => setCoiBulkOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sage/40 text-sage bg-background font-body text-sm hover:bg-sage/10 transition-colors">
+            <ShieldCheck size={14} /> Request COI from all vendors
+          </button>
           <button onClick={() => setSocialModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-foreground font-body text-sm hover:bg-muted/50 transition-colors">
             <Share2 size={14} /> Export for Social
@@ -206,6 +243,10 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           </button>
         </div>
       </div>
+
+      <CoiRequirementsPanel
+        intro="Use the Request COI button on any vendor card to email these requirements directly. The wording below is sourced from the editable email template, so changes there flow to both the email and this panel."
+      />
 
       {VENDOR_GROUPS.map(group => {
         const groupVendors = sortGroupVendors(vendors.filter(v => group.categories.includes(v.category)));
@@ -268,6 +309,47 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
         onClose={() => setSocialModalOpen(false)}
         vendors={vendors}
       />
+
+      {coiBulkOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !coiBulkProgress && setCoiBulkOpen(false)}>
+          <div className="bg-card rounded-xl border border-border shadow-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="rounded-full bg-sage/15 p-2 text-sage shrink-0"><ShieldCheck size={18} /></div>
+              <div>
+                <h3 className="font-display text-lg font-light text-foreground">Request COI from all vendors</h3>
+                <p className="font-body text-sm text-muted-foreground mt-1">
+                  This will email the Certificate of Insurance requirements to{" "}
+                  <span className="text-foreground font-medium">{vendors.filter(eligibleForCoi).length}</span>{" "}
+                  vendor{vendors.filter(eligibleForCoi).length === 1 ? "" : "s"} with an email on file.
+                  Vendors without an email will be skipped.
+                </p>
+              </div>
+            </div>
+            {coiBulkProgress && (
+              <div className="mt-4 rounded-md bg-muted/40 p-3">
+                <p className="font-body text-xs text-muted-foreground">
+                  Sending {coiBulkProgress.sent} of {coiBulkProgress.total}
+                  {coiBulkProgress.current ? ` · ${coiBulkProgress.current}` : ""}
+                </p>
+                <div className="h-1.5 mt-2 rounded-full bg-border overflow-hidden">
+                  <div className="h-full bg-sage transition-all"
+                    style={{ width: `${(coiBulkProgress.sent / Math.max(coiBulkProgress.total, 1)) * 100}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <button onClick={() => setCoiBulkOpen(false)} disabled={!!coiBulkProgress}
+                className="px-4 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground font-body text-sm transition-colors disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={sendCoiToAll} disabled={!!coiBulkProgress}
+                className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                {coiBulkProgress ? "Sending..." : "Send to all"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical } from "lucide-react";
+import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical, ShieldCheck } from "lucide-react";
 import VendorFileUpload from "@/components/admin/VendorFileUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface Vendor {
   id: string;
@@ -16,6 +18,8 @@ export interface Vendor {
   info_emailed: boolean | null;
   vendor_meals: number | null;
   brandon_notes: string | null;
+  coi_requested?: boolean | null;
+  coi_requested_at?: string | null;
 }
 
 export const FRIENDLY_CATEGORY: Record<string, string> = {
@@ -90,9 +94,40 @@ export function VendorCard({
   const [draft, setDraft] = useState(vendor);
   const [fileCount, setFileCount] = useState(0);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [coiConfirmOpen, setCoiConfirmOpen] = useState(false);
+  const [coiSending, setCoiSending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => { setDraft(vendor); }, [vendor]);
+
+  const canRequestCoi = !isGF && !!vendor.business_name && !!vendor.email;
+  const showCoiButton = !isGF && !!vendor.business_name; // shown disabled when no email
+
+  const sendCoiRequest = async () => {
+    setCoiSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-coi-request", {
+        body: { vendor_id: vendor.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("COI request sent");
+      // Update local field so the pill appears immediately.
+      await onUpdate(vendor.id, {
+        coi_requested: true,
+        coi_requested_at: new Date().toISOString(),
+      } as Partial<Vendor>);
+      setCoiConfirmOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send COI request");
+    } finally {
+      setCoiSending(false);
+    }
+  };
+
+  const coiRequestedLabel = vendor.coi_requested && vendor.coi_requested_at
+    ? `COI requested ${new Date(vendor.coi_requested_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : vendor.coi_requested ? "COI requested" : null;
 
   const saveAndClose = async () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -161,6 +196,11 @@ export function VendorCard({
                     {vendor.status}
                   </span>
                 )}
+                {coiRequestedLabel && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sage/10 border border-sage/30 px-2 py-0.5 font-body text-[10px] text-sage">
+                    <ShieldCheck size={8} /> {coiRequestedLabel}
+                  </span>
+                )}
               </div>
               {vendor.business_name ? (
                 <p className="font-body text-sm font-medium text-foreground">{vendor.business_name}</p>
@@ -199,6 +239,15 @@ export function VendorCard({
                 <button onClick={() => setEditing(true)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors font-body text-xs">
                   <Pencil size={12} /> Edit
+                </button>
+              )}
+              {showCoiButton && (
+                <button
+                  onClick={() => canRequestCoi && setCoiConfirmOpen(true)}
+                  disabled={!canRequestCoi}
+                  title={canRequestCoi ? "Email the Certificate of Insurance requirements to this vendor" : "Add an email address first"}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-body text-xs disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed">
+                  <ShieldCheck size={12} /> Request COI
                 </button>
               )}
               {/* Delete button — not for GF rows */}
@@ -245,6 +294,31 @@ export function VendorCard({
             {fileCount === 0 && (
               <p className="font-body text-xs text-muted-foreground text-center py-2">No files uploaded yet.</p>
             )}
+          </div>
+        )}
+        {coiConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !coiSending && setCoiConfirmOpen(false)}>
+            <div className="bg-card rounded-xl border border-border shadow-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start gap-3 mb-3">
+                <div className="rounded-full bg-sage/15 p-2 text-sage shrink-0"><ShieldCheck size={18} /></div>
+                <div>
+                  <h3 className="font-display text-lg font-light text-foreground">Send COI requirements?</h3>
+                  <p className="font-body text-sm text-muted-foreground mt-1">
+                    We will email the Certificate of Insurance requirements to <span className="text-foreground font-medium">{vendor.email}</span>{vendor.business_name ? <> at <span className="text-foreground font-medium">{vendor.business_name}</span></> : null}. They can forward it straight to their insurance agent.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button onClick={() => setCoiConfirmOpen(false)} disabled={coiSending}
+                  className="px-4 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground font-body text-sm transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+                <button onClick={sendCoiRequest} disabled={coiSending}
+                  className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                  {coiSending ? "Sending..." : "Send request"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

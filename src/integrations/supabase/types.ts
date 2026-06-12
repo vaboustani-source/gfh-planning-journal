@@ -4040,6 +4040,8 @@ export type Database = {
           business_name: string | null
           category: string
           coi_received: boolean | null
+          coi_requested: boolean
+          coi_requested_at: string | null
           contact_name: string | null
           contract_uploaded: boolean | null
           created_at: string | null
@@ -4058,6 +4060,8 @@ export type Database = {
           business_name?: string | null
           category: string
           coi_received?: boolean | null
+          coi_requested?: boolean
+          coi_requested_at?: string | null
           contact_name?: string | null
           contract_uploaded?: boolean | null
           created_at?: string | null
@@ -4076,6 +4080,8 @@ export type Database = {
           business_name?: string | null
           category?: string
           coi_received?: boolean | null
+          coi_requested?: boolean
+          coi_requested_at?: string | null
           contact_name?: string | null
           contract_uploaded?: boolean | null
           created_at?: string | null
