@@ -37,6 +37,7 @@ const allNavItems: NavItemDef[] = [
   { to: "/portal/forms",           label: "Forms",             icon: ClipboardList,     tiers: [1, 3, 4],     tab: "forms" },
   { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4],     tab: "documents" },
   { to: "/portal/contracts",       label: "Agreements",        icon: ShieldCheck,       tiers: [1, 3, 4],     tab: "documents" },
+  { to: "/portal/insurance",       label: "Wedding Insurance", icon: Shield,            tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/history",         label: "History",           icon: HistoryIcon,       tiers: [1, 3, 4],     tab: "overview" },
 ];
 

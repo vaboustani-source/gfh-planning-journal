@@ -53,7 +53,7 @@ import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
 import Contracts from "./pages/portal/Contracts";
 import Rsvp from "./pages/portal/Rsvp";
-import PublicRsvp from "./pages/PublicRsvp";
+import Insurance from "./pages/portal/Insurance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -233,6 +233,7 @@ const App = () => (
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
               <Route path="contracts" element={<Contracts />} />
+              <Route path="insurance" element={<Insurance />} />
               <Route path="rsvp" element={<Rsvp />} />
               <Route path="history" element={<PortalHistory />} />
             </Route>
@@ -266,6 +267,7 @@ const App = () => (
               <Route path="forms" element={<PortalForms />} />
               <Route path="documents" element={<Documents />} />
               <Route path="contracts" element={<Contracts />} />
+              <Route path="insurance" element={<Insurance />} />
               <Route path="rsvp" element={<Rsvp />} />
               <Route path="history" element={<PortalHistory />} />
             </Route>
