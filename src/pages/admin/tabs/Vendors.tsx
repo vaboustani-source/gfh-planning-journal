@@ -228,7 +228,11 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           <span className="font-body text-sm text-sage">{byStatus.done + byStatus.confirmed} confirmed</span>
           <span className="font-body text-sm text-muted-foreground">{byStatus.pending} pending</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={() => setCoiBulkOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sage/40 text-sage bg-background font-body text-sm hover:bg-sage/10 transition-colors">
+            <ShieldCheck size={14} /> Request COI from all vendors
+          </button>
           <button onClick={() => setSocialModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-foreground font-body text-sm hover:bg-muted/50 transition-colors">
             <Share2 size={14} /> Export for Social
@@ -239,6 +243,10 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           </button>
         </div>
       </div>
+
+      <CoiRequirementsPanel
+        intro="Use the Request COI button on any vendor card to email these requirements directly. The wording below is sourced from the editable email template, so changes there flow to both the email and this panel."
+      />
 
       {VENDOR_GROUPS.map(group => {
         const groupVendors = sortGroupVendors(vendors.filter(v => group.categories.includes(v.category)));
