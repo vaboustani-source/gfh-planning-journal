@@ -94,9 +94,40 @@ export function VendorCard({
   const [draft, setDraft] = useState(vendor);
   const [fileCount, setFileCount] = useState(0);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [coiConfirmOpen, setCoiConfirmOpen] = useState(false);
+  const [coiSending, setCoiSending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => { setDraft(vendor); }, [vendor]);
+
+  const canRequestCoi = !isGF && !!vendor.business_name && !!vendor.email;
+  const showCoiButton = !isGF && !!vendor.business_name; // shown disabled when no email
+
+  const sendCoiRequest = async () => {
+    setCoiSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-coi-request", {
+        body: { vendor_id: vendor.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("COI request sent");
+      // Update local field so the pill appears immediately.
+      await onUpdate(vendor.id, {
+        coi_requested: true,
+        coi_requested_at: new Date().toISOString(),
+      } as Partial<Vendor>);
+      setCoiConfirmOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send COI request");
+    } finally {
+      setCoiSending(false);
+    }
+  };
+
+  const coiRequestedLabel = vendor.coi_requested && vendor.coi_requested_at
+    ? `COI requested ${new Date(vendor.coi_requested_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : vendor.coi_requested ? "COI requested" : null;
 
   const saveAndClose = async () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
