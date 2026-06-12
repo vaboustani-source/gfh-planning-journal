@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Share2 } from "lucide-react";
+import { Plus, Share2, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import { CoiRequirementsPanel } from "@/components/vendor/CoiRequirementsPanel";
 import { VendorCard, Vendor, VENDOR_GROUPS, STANDARD_VENDOR_CATEGORIES } from "@/components/vendor/VendorCard";
 import { BrowsePreferredDrawer } from "@/components/admin/BrowsePreferredDrawer";
 import { PreferredVendor } from "@/components/admin/PreferredVendorCard";
