@@ -52,9 +52,9 @@ import Notes from "./pages/portal/Notes";
 import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
 import Contracts from "./pages/portal/Contracts";
-import Rsvp from "./pages/portal/Rsvp";
 import Insurance from "./pages/portal/Insurance";
-import NotFound from "./pages/NotFound";
+import Rsvp from "./pages/portal/Rsvp";
+import PublicRsvp from "./pages/PublicRsvp";
 
 const queryClient = new QueryClient();
 

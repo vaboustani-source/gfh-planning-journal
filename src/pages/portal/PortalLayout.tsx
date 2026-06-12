@@ -7,7 +7,7 @@ import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import { RSVP_ENABLED } from "@/lib/featureFlags";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, ShieldCheck, Wallet, History as HistoryIcon, Compass
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, Shield, ShieldCheck, Wallet, History as HistoryIcon, Compass
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
