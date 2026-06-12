@@ -241,6 +241,15 @@ export function VendorCard({
                   <Pencil size={12} /> Edit
                 </button>
               )}
+              {showCoiButton && (
+                <button
+                  onClick={() => canRequestCoi && setCoiConfirmOpen(true)}
+                  disabled={!canRequestCoi}
+                  title={canRequestCoi ? "Email the Certificate of Insurance requirements to this vendor" : "Add an email address first"}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-body text-xs disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed">
+                  <ShieldCheck size={12} /> Request COI
+                </button>
+              )}
               {/* Delete button — not for GF rows */}
               {!isGF && onDelete && !confirmingDelete && (
                 <button onClick={() => setConfirmingDelete(true)}
