@@ -1861,6 +1861,8 @@ export type Database = {
           event_id: string
           first_name: string
           id: string
+          invited_optional_meals: string[]
+          is_child: boolean
           is_plus_one: boolean | null
           last_name: string
           lodging_preference: string | null
@@ -1889,6 +1891,8 @@ export type Database = {
           event_id: string
           first_name: string
           id?: string
+          invited_optional_meals?: string[]
+          is_child?: boolean
           is_plus_one?: boolean | null
           last_name: string
           lodging_preference?: string | null
@@ -1917,6 +1921,8 @@ export type Database = {
           event_id?: string
           first_name?: string
           id?: string
+          invited_optional_meals?: string[]
+          is_child?: boolean
           is_plus_one?: boolean | null
           last_name?: string
           lodging_preference?: string | null
