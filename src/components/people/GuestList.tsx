@@ -316,6 +316,57 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             <Pills options={LODGING} value={editing.lodging_preference ?? "undecided"}
               onChange={v => setEditing({ ...editing, lodging_preference: v as any })} />
           </Field>
+          <Field label="Adult or child">
+            <Pills
+              options={[{ value: "adult", label: "Adult" }, { value: "child", label: "Child" }]}
+              value={editing.is_child ? "child" : "adult"}
+              onChange={async (v) => {
+                const next = v === "child";
+                setEditing({ ...editing, is_child: next });
+                if (editing.id) {
+                  const { error } = await db.from("guests").update({ is_child: next }).eq("id", editing.id);
+                  if (error) toast.error(error.message);
+                  else setGuests(prev => prev.map(g => g.id === editing.id ? { ...g, is_child: next } as Guest : g));
+                }
+              }}
+            />
+          </Field>
+          <div className="rounded-lg bg-cream-dark/30 border border-border px-4 py-3">
+            <p className="font-body text-xs text-foreground">
+              On-site guests are automatically invited to every event. Off-site guests automatically get the welcome hour, cocktail hour, and reception. You can add off-site guests to the optional events below.
+            </p>
+          </div>
+          {editing.lodging_preference !== "on_site" && (
+            <Field label="Also invite to (off-site guests only)">
+              <div className="flex flex-col gap-2">
+                {OPTIONAL_MEALS.map(m => {
+                  const current = editing.invited_optional_meals ?? [];
+                  const checked = current.includes(m.code);
+                  return (
+                    <label key={m.code} className="inline-flex items-center gap-2 font-body text-sm">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={async (e) => {
+                          const on = e.target.checked;
+                          const next = on
+                            ? Array.from(new Set([...current, m.code]))
+                            : current.filter(c => c !== m.code);
+                          setEditing({ ...editing, invited_optional_meals: next });
+                          if (editing.id) {
+                            const { error } = await db.from("guests").update({ invited_optional_meals: next }).eq("id", editing.id);
+                            if (error) toast.error(error.message);
+                            else setGuests(prev => prev.map(g => g.id === editing.id ? { ...g, invited_optional_meals: next } as Guest : g));
+                          }
+                        }}
+                      />
+                      {m.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </Field>
+          )}
           <Field label="Dietary needs">
             {editing.id ? (
               <>
