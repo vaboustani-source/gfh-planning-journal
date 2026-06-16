@@ -1,6 +1,7 @@
 const MEAL_DISPLAY_NAMES: Record<string, string> = {
   arrival_lunch: "Arrival Lunch",
   rehearsal_dinner: "Rehearsal Dinner",
+  welcome_party: "Welcome Party",
   wedding_breakfast: "Wedding Day Breakfast",
   welcome_hour: "Welcome Hour",
   cocktail_hour: "Cocktail Hour",
@@ -14,6 +15,7 @@ const MEAL_DISPLAY_NAMES: Record<string, string> = {
 export const MEAL_SORT_ORDER: string[] = [
   "arrival_lunch",
   "rehearsal_dinner",
+  "welcome_party",
   "wedding_breakfast",
   "welcome_hour",
   "cocktail_hour",
