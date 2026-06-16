@@ -81,6 +81,8 @@ const emptyGuest = (eventId: string, isAdmin: boolean): Partial<Guest> => ({
   meal_preference: "",
   notes: "",
   added_by: isAdmin ? "admin" : "couple",
+  is_child: false,
+  invited_optional_meals: [],
 });
 
 export default function GuestList({ eventId, isAdmin = false, onCountChange }: Props) {
