@@ -24,8 +24,16 @@ export interface Guest {
   meal_preference: string | null;
   notes: string | null;
   added_by: string | null;
+  is_child?: boolean | null;
+  invited_optional_meals?: string[] | null;
   created_at?: string;
 }
+
+const OPTIONAL_MEALS: { code: string; label: string }[] = [
+  { code: "rehearsal_dinner", label: "Rehearsal Dinner" },
+  { code: "welcome_party", label: "Welcome Party" },
+  { code: "farewell_brunch", label: "Farewell Brunch" },
+];
 
 const RSVP = ["invited", "confirmed", "declined", "maybe"] as const;
 const SIDES = [
