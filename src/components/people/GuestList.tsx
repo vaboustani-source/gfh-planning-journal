@@ -861,3 +861,121 @@ function DietaryCell({ guestId, legacy, info }: { guestId: string; legacy: strin
   );
 }
 
+
+function ReviewGrid({
+  rows, rowErrors, onUpdate, onRemove, onCancel, onConfirm, importing, validCount, hasErrors,
+}: {
+  rows: ImportRow[];
+  rowErrors: { error: string | null; duplicate: boolean }[];
+  onUpdate: (idx: number, patch: Partial<ImportRow>) => void;
+  onRemove: (idx: number) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  importing: boolean;
+  validCount: number;
+  hasErrors: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="font-body text-sm text-foreground">
+        Review {rows.length} row{rows.length === 1 ? "" : "s"} below. Fix anything in red, untick duplicates you do not want, then import.
+      </p>
+      <div className="overflow-x-auto border border-border rounded-lg">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40">
+            <tr className="text-left font-body text-[11px] uppercase tracking-wider text-muted-foreground">
+              <th className="px-2 py-2">First</th>
+              <th className="px-2 py-2">Last</th>
+              <th className="px-2 py-2">Email</th>
+              <th className="px-2 py-2">Phone</th>
+              <th className="px-2 py-2">Lodging</th>
+              <th className="px-2 py-2">Type</th>
+              <th className="px-2 py-2">Status</th>
+              <th className="px-2 py-2 w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const v = rowErrors[i] ?? { error: null, duplicate: false };
+              const bad = !!v.error;
+              const dup = v.duplicate;
+              return (
+                <tr key={i} className={`border-t border-border ${bad ? "bg-red-50" : dup ? "bg-amber-50" : ""}`}>
+                  <td className="px-2 py-1.5">
+                    <input value={r.first_name} onChange={e => onUpdate(i, { first_name: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <input value={r.last_name} onChange={e => onUpdate(i, { last_name: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <input value={r.email} onChange={e => onUpdate(i, { email: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <input value={r.phone} onChange={e => onUpdate(i, { phone: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <select value={r.lodging_preference}
+                      onChange={e => onUpdate(i, { lodging_preference: e.target.value as ImportRow["lodging_preference"] })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm">
+                      <option value="on_site">On-site</option>
+                      <option value="off_site">Off-site</option>
+                      <option value="undecided">Undecided</option>
+                    </select>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <select value={r.is_child ? "child" : "adult"}
+                      onChange={e => onUpdate(i, { is_child: e.target.value === "child" })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm">
+                      <option value="adult">Adult</option>
+                      <option value="child">Child</option>
+                    </select>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    {bad ? (
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300 text-[11px]">
+                        {v.error}
+                      </span>
+                    ) : dup ? (
+                      <label className="inline-flex items-center gap-1.5 text-[11px] text-amber-900">
+                        <input type="checkbox" checked={r.exclude} onChange={e => onUpdate(i, { exclude: e.target.checked })} />
+                        Skip duplicate
+                      </label>
+                    ) : (
+                      <span className="text-[11px] text-sage-dark">Ready</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-right">
+                    <button onClick={() => onRemove(i)} className="p-1 text-muted-foreground hover:text-destructive" title="Remove row">
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <p className="font-body text-xs text-muted-foreground">
+          {validCount} ready to import
+          {rows.some((r, i) => rowErrors[i]?.duplicate && r.exclude)
+            ? `, ${rows.filter((r, i) => rowErrors[i]?.duplicate && r.exclude).length} duplicate skipped`
+            : ""}
+          {hasErrors ? ", some rows still need attention" : ""}
+        </p>
+        <div className="flex gap-2">
+          <button onClick={onCancel} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">Cancel</button>
+          <button onClick={onConfirm}
+            disabled={hasErrors || importing || validCount === 0}
+            className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark disabled:opacity-50 disabled:cursor-not-allowed">
+            {importing ? "Importing..." : `Import ${validCount} guest${validCount === 1 ? "" : "s"}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
