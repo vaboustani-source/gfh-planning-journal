@@ -1,11 +1,163 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle, ClipboardPaste, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import DietaryEntriesEditor from "@/components/dietary/DietaryEntriesEditor";
 import { SEVERITY_BADGE } from "@/lib/dietary";
 
 const db = supabase as any;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface ImportRow {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  lodging_preference: "on_site" | "off_site" | "undecided";
+  is_child: boolean;
+  rsvp_status: "invited" | "confirmed" | "declined" | "maybe";
+  side: string;
+  relationship: string;
+  notes: string;
+  exclude: boolean;
+}
+
+const CSV_HEADERS = ["First", "Last", "Email", "Phone", "Lodging", "Adult or Child", "RSVP", "Side", "Relationship", "Notes"];
+
+// Robust CSV parser: handles quoted fields, embedded commas, doubled quotes, CRLF
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if (c === '"') { inQuotes = true; i++; continue; }
+    if (c === ',') { cur.push(field); field = ""; i++; continue; }
+    if (c === '\r') { i++; continue; }
+    if (c === '\n') { cur.push(field); rows.push(cur); cur = []; field = ""; i++; continue; }
+    field += c; i++;
+  }
+  if (field.length > 0 || cur.length > 0) { cur.push(field); rows.push(cur); }
+  return rows.filter(r => r.some(c => c.trim().length > 0));
+}
+
+function findEmail(s: string): string | null {
+  const m = s.match(/[^\s,;<>"']+@[^\s,;<>"']+\.[^\s,;<>"']+/);
+  return m ? m[0] : null;
+}
+
+function blankImportRow(partial: Partial<ImportRow> = {}): ImportRow {
+  return {
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    lodging_preference: "undecided",
+    is_child: false,
+    rsvp_status: "invited",
+    side: "",
+    relationship: "",
+    notes: "",
+    exclude: false,
+    ...partial,
+  };
+}
+
+// Parse a single pasted line into an import row.
+// Splits on tabs first, then commas. Falls back to email detection by regex.
+function parseQuickLine(raw: string): ImportRow {
+  const line = raw.trim();
+  const parts = (line.includes("\t") ? line.split("\t") : line.split(","))
+    .map(p => p.trim());
+  // Pull out any email from the whole line if columns don't line up
+  const detectedEmail = findEmail(line) ?? "";
+  const emailIdx = parts.findIndex(p => EMAIL_RE.test(p));
+  let first = "", last = "", email = "", phone = "";
+  if (emailIdx >= 0) {
+    email = parts[emailIdx];
+    const before = parts.slice(0, emailIdx);
+    const after = parts.slice(emailIdx + 1);
+    first = before[0] ?? "";
+    last = before.slice(1).join(" ").trim() || (before.length === 1 ? "" : "");
+    phone = after[0] ?? "";
+  } else {
+    first = parts[0] ?? "";
+    last = parts[1] ?? "";
+    email = detectedEmail;
+    phone = parts[2] ?? "";
+  }
+  return blankImportRow({ first_name: first, last_name: last, email, phone });
+}
+
+function normalizeLodging(v: string): "on_site" | "off_site" | "undecided" {
+  const s = v.trim().toLowerCase().replace(/[-_\s]+/g, "");
+  if (s === "onsite" || s === "on") return "on_site";
+  if (s === "offsite" || s === "off") return "off_site";
+  return "undecided";
+}
+
+function normalizeChild(v: string): boolean {
+  const s = v.trim().toLowerCase();
+  return s === "child" || s === "kid" || s === "yes" || s === "true" || s === "y";
+}
+
+function normalizeRsvp(v: string): "invited" | "confirmed" | "declined" | "maybe" {
+  const s = v.trim().toLowerCase();
+  if (s === "confirmed" || s === "yes") return "confirmed";
+  if (s === "declined" || s === "no") return "declined";
+  if (s === "maybe") return "maybe";
+  return "invited";
+}
+
+// Map a parsed CSV grid (header row + data rows) into ImportRows.
+function csvRowsToImportRows(grid: string[][]): ImportRow[] {
+  if (grid.length === 0) return [];
+  const headers = grid[0].map(h => h.trim().toLowerCase());
+  const findCol = (...names: string[]) => {
+    for (const n of names) {
+      const idx = headers.findIndex(h => h === n.toLowerCase());
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+  const cFirst = findCol("first", "first name", "firstname", "given name");
+  const cLast = findCol("last", "last name", "lastname", "surname", "family name");
+  const cEmail = findCol("email", "e-mail", "email address");
+  const cPhone = findCol("phone", "mobile", "cell", "telephone");
+  const cLodging = findCol("lodging", "lodging preference", "stay");
+  const cChild = findCol("adult or child", "child", "kid", "type");
+  const cRsvp = findCol("rsvp", "rsvp status", "status");
+  const cSide = findCol("side", "which side");
+  const cRel = findCol("relationship", "relation");
+  const cNotes = findCol("notes", "note", "comment");
+
+  return grid.slice(1).map(cols => {
+    const get = (i: number) => (i >= 0 ? (cols[i] ?? "").trim() : "");
+    return blankImportRow({
+      first_name: get(cFirst),
+      last_name: get(cLast),
+      email: get(cEmail),
+      phone: get(cPhone),
+      lodging_preference: cLodging >= 0 ? normalizeLodging(get(cLodging)) : "undecided",
+      is_child: cChild >= 0 ? normalizeChild(get(cChild)) : false,
+      rsvp_status: cRsvp >= 0 ? normalizeRsvp(get(cRsvp)) : "invited",
+      side: get(cSide),
+      relationship: get(cRel),
+      notes: get(cNotes),
+    });
+  });
+}
+
 
 export interface Guest {
   id: string;
@@ -91,8 +243,11 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
-  const [importOpen, setImportOpen] = useState(false);
+  const [importMode, setImportMode] = useState<null | "quick" | "csv">(null);
   const [importText, setImportText] = useState("");
+  const [parsedRows, setParsedRows] = useState<ImportRow[] | null>(null);
+  const [importing, setImporting] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
   const [dietaryByGuest, setDietaryByGuest] = useState<Record<string, { count: number; topSeverity: string | null; hasProximity: boolean }>>({});
 
   useEffect(() => { if (eventId) load(); }, [eventId]);
@@ -183,19 +338,112 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     const a = document.createElement("a"); a.href = url; a.download = "guest-list.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
-  const bulkImport = async () => {
-    const lines = importText.split("\n").map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-    const rows = lines.map(line => {
-      const parts = line.split(/\s+/);
-      const first = parts[0] ?? "";
-      const last = parts.slice(1).join(" ") || "—";
-      return { ...emptyGuest(eventId, isAdmin), first_name: first, last_name: last };
+  const openQuick = () => { setImportText(""); setParsedRows(null); setImportMode("quick"); };
+  const openCsv = () => { setParsedRows(null); setImportMode("csv"); setTimeout(() => csvInputRef.current?.click(), 0); };
+  const closeImport = () => { setImportMode(null); setParsedRows(null); setImportText(""); };
+
+  const handleQuickParse = () => {
+    const lines = importText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) { toast.error("Paste at least one guest first"); return; }
+    setParsedRows(lines.map(parseQuickLine));
+  };
+
+  const handleCsvFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const grid = parseCsv(text);
+      if (grid.length < 2) { toast.error("CSV looks empty. Include a header row and at least one guest."); return; }
+      const rows = csvRowsToImportRows(grid);
+      if (rows.length === 0) { toast.error("No data rows found"); return; }
+      setParsedRows(rows);
+    } catch (err: any) {
+      toast.error(`Could not read CSV: ${err?.message ?? "unknown error"}`);
+    }
+  };
+
+  const downloadCsvTemplate = () => {
+    const csv = CSV_HEADERS.map(h => `"${h}"`).join(",") + "\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "guest-list-template.csv"; a.click(); URL.revokeObjectURL(url);
+  };
+
+  // Validation for the review grid
+  const existingEmails = useMemo(
+    () => new Set(guests.map(g => (g.email ?? "").trim().toLowerCase()).filter(Boolean)),
+    [guests]
+  );
+
+  const rowErrors = useMemo(() => {
+    if (!parsedRows) return [] as { error: string | null; duplicate: boolean }[];
+    const seen = new Map<string, number>();
+    return parsedRows.map((r, idx) => {
+      let error: string | null = null;
+      if (!r.first_name.trim()) error = "First name required";
+      else if (!r.last_name.trim()) error = "Last name required";
+      else if (!r.email.trim()) error = "Email required";
+      else if (!EMAIL_RE.test(r.email.trim())) error = "Email looks invalid";
+      const key = r.email.trim().toLowerCase();
+      let duplicate = false;
+      if (key) {
+        if (existingEmails.has(key)) duplicate = true;
+        const first = seen.get(key);
+        if (first !== undefined && first !== idx) duplicate = true;
+        if (!seen.has(key)) seen.set(key, idx);
+      }
+      return { error, duplicate };
     });
-    const { error } = await db.from("guests").insert(rows);
+  }, [parsedRows, existingEmails]);
+
+  const updateRow = (idx: number, patch: Partial<ImportRow>) => {
+    setParsedRows(prev => prev ? prev.map((r, i) => i === idx ? { ...r, ...patch } : r) : prev);
+  };
+  const removeRow = (idx: number) => {
+    setParsedRows(prev => prev ? prev.filter((_, i) => i !== idx) : prev);
+  };
+
+  const importValid = useMemo(() => {
+    if (!parsedRows) return { rows: [], skippedDup: 0, hasErrors: false };
+    const rows: ImportRow[] = [];
+    let skippedDup = 0;
+    let hasErrors = false;
+    parsedRows.forEach((r, i) => {
+      const v = rowErrors[i];
+      if (v?.error) hasErrors = true;
+      if (v?.duplicate && r.exclude) { skippedDup++; return; }
+      if (v?.error) return;
+      if (v?.duplicate && !r.exclude) { rows.push(r); return; }
+      rows.push(r);
+    });
+    return { rows, skippedDup, hasErrors };
+  }, [parsedRows, rowErrors]);
+
+  const confirmImport = async () => {
+    if (!parsedRows) return;
+    if (importValid.hasErrors) { toast.error("Fix the rows marked in red first"); return; }
+    if (importValid.rows.length === 0) { toast.error("Nothing to import"); return; }
+    setImporting(true);
+    const payload = importValid.rows.map(r => ({
+      ...emptyGuest(eventId, isAdmin),
+      first_name: r.first_name.trim(),
+      last_name: r.last_name.trim(),
+      email: r.email.trim(),
+      phone: r.phone.trim() || null,
+      lodging_preference: r.lodging_preference,
+      is_child: r.is_child,
+      rsvp_status: r.rsvp_status,
+      side: r.side || null,
+      relationship: r.relationship || null,
+      notes: r.notes || null,
+    }));
+    const { error } = await db.from("guests").insert(payload);
+    setImporting(false);
     if (error) return toast.error(error.message);
-    toast.success(`Added ${rows.length} guests — open each to add details`);
-    setImportText(""); setImportOpen(false); load();
+    const added = payload.length;
+    const dups = parsedRows.filter((r, i) => rowErrors[i]?.duplicate && r.exclude).length;
+    toast.success(`Added ${added} guest${added === 1 ? "" : "s"}${dups > 0 ? `, skipped ${dups} duplicate${dups === 1 ? "" : "s"}` : ""}`);
+    closeImport();
+    load();
   };
 
   if (loading) return <div className="py-12 text-center font-body text-muted-foreground">Loading…</div>;
@@ -243,10 +491,25 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             </button>
           ))}
         </div>
-        <button onClick={() => setImportOpen(true)}
+        <button onClick={openQuick}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
-          <FileUp size={14} /> Import
+          <ClipboardPaste size={14} /> Quick Import
         </button>
+        <button onClick={openCsv}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
+          <FileSpreadsheet size={14} /> Import CSV
+        </button>
+        <input
+          ref={csvInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (f) await handleCsvFile(f);
+            if (csvInputRef.current) csvInputRef.current.value = "";
+          }}
+        />
         {isAdmin && (
           <button onClick={exportCsv}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
@@ -260,19 +523,74 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       </div>
 
       {/* Import panel */}
-      {importOpen && (
+      {importMode && (
         <div className="bg-white border border-border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-display text-lg">Quick import</h3>
-            <button onClick={() => setImportOpen(false)}><X size={16} /></button>
+            <h3 className="font-display text-lg">
+              {importMode === "quick" ? "Quick Import" : "Import CSV"}
+            </h3>
+            <button onClick={closeImport}><X size={16} /></button>
           </div>
-          <p className="font-body text-sm text-muted-foreground">Paste one name per line. You can fill in details after.</p>
-          <textarea value={importText} onChange={e => setImportText(e.target.value)} rows={6}
-            placeholder="Jane Smith&#10;John Doe&#10;…"
-            className="w-full p-3 rounded-md border border-input bg-background font-body text-sm" />
-          <div className="flex justify-end">
-            <button onClick={bulkImport} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Add all</button>
-          </div>
+
+          {importMode === "quick" && !parsedRows && (
+            <>
+              <div className="rounded-lg bg-sage/10 border border-sage/20 px-3 py-2.5 space-y-1">
+                <p className="font-body text-xs font-semibold text-foreground">One guest per line, in this order:</p>
+                <p className="font-body text-xs text-foreground">First, Last, Email, Phone (phone optional)</p>
+                <p className="font-body text-[11px] text-muted-foreground italic">
+                  Tabs or commas both work. Example: Jane, Smith, jane@example.com, 555-123-4567
+                </p>
+                <p className="font-body text-[11px] text-muted-foreground">
+                  Email is required. You will be able to review and fix every row before anything is saved.
+                </p>
+              </div>
+              <textarea
+                value={importText}
+                onChange={e => setImportText(e.target.value)}
+                rows={8}
+                placeholder={"Jane, Smith, jane@example.com, 555-123-4567\nJohn, Doe, john@example.com"}
+                className="w-full p-3 rounded-md border border-input bg-background font-body text-sm font-mono"
+              />
+              <div className="flex justify-end gap-2">
+                <button onClick={closeImport} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">Cancel</button>
+                <button onClick={handleQuickParse} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Review</button>
+              </div>
+            </>
+          )}
+
+          {importMode === "csv" && !parsedRows && (
+            <div className="rounded-lg bg-sage/10 border border-sage/20 px-3 py-3 space-y-2">
+              <p className="font-body text-sm text-foreground">
+                Upload a .csv file with a header row. Supported columns (case-insensitive):
+              </p>
+              <p className="font-body text-xs text-muted-foreground">
+                {CSV_HEADERS.join(", ")}
+              </p>
+              <p className="font-body text-[11px] text-muted-foreground italic">
+                Email is required for every row. Quoted fields and commas inside values are handled.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button onClick={() => csvInputRef.current?.click()} className="px-3 py-1.5 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">
+                  Choose CSV file
+                </button>
+                <button onClick={downloadCsvTemplate} className="px-3 py-1.5 rounded-md border border-border font-body text-sm hover:bg-muted/40">
+                  Download CSV template
+                </button>
+              </div>
+            </div>
+          )}
+
+          {parsedRows && <ReviewGrid
+            rows={parsedRows}
+            rowErrors={rowErrors}
+            onUpdate={updateRow}
+            onRemove={removeRow}
+            onCancel={closeImport}
+            onConfirm={confirmImport}
+            importing={importing}
+            validCount={importValid.rows.length}
+            hasErrors={importValid.hasErrors}
+          />}
         </div>
       )}
 
@@ -543,3 +861,121 @@ function DietaryCell({ guestId, legacy, info }: { guestId: string; legacy: strin
   );
 }
 
+
+function ReviewGrid({
+  rows, rowErrors, onUpdate, onRemove, onCancel, onConfirm, importing, validCount, hasErrors,
+}: {
+  rows: ImportRow[];
+  rowErrors: { error: string | null; duplicate: boolean }[];
+  onUpdate: (idx: number, patch: Partial<ImportRow>) => void;
+  onRemove: (idx: number) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  importing: boolean;
+  validCount: number;
+  hasErrors: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="font-body text-sm text-foreground">
+        Review {rows.length} row{rows.length === 1 ? "" : "s"} below. Fix anything in red, untick duplicates you do not want, then import.
+      </p>
+      <div className="overflow-x-auto border border-border rounded-lg">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40">
+            <tr className="text-left font-body text-[11px] uppercase tracking-wider text-muted-foreground">
+              <th className="px-2 py-2">First</th>
+              <th className="px-2 py-2">Last</th>
+              <th className="px-2 py-2">Email</th>
+              <th className="px-2 py-2">Phone</th>
+              <th className="px-2 py-2">Lodging</th>
+              <th className="px-2 py-2">Type</th>
+              <th className="px-2 py-2">Status</th>
+              <th className="px-2 py-2 w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const v = rowErrors[i] ?? { error: null, duplicate: false };
+              const bad = !!v.error;
+              const dup = v.duplicate;
+              return (
+                <tr key={i} className={`border-t border-border ${bad ? "bg-red-50" : dup ? "bg-amber-50" : ""}`}>
+                  <td className="px-2 py-1.5">
+                    <input value={r.first_name} onChange={e => onUpdate(i, { first_name: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <input value={r.last_name} onChange={e => onUpdate(i, { last_name: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <input value={r.email} onChange={e => onUpdate(i, { email: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <input value={r.phone} onChange={e => onUpdate(i, { phone: e.target.value })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <select value={r.lodging_preference}
+                      onChange={e => onUpdate(i, { lodging_preference: e.target.value as ImportRow["lodging_preference"] })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm">
+                      <option value="on_site">On-site</option>
+                      <option value="off_site">Off-site</option>
+                      <option value="undecided">Undecided</option>
+                    </select>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <select value={r.is_child ? "child" : "adult"}
+                      onChange={e => onUpdate(i, { is_child: e.target.value === "child" })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm">
+                      <option value="adult">Adult</option>
+                      <option value="child">Child</option>
+                    </select>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    {bad ? (
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300 text-[11px]">
+                        {v.error}
+                      </span>
+                    ) : dup ? (
+                      <label className="inline-flex items-center gap-1.5 text-[11px] text-amber-900">
+                        <input type="checkbox" checked={r.exclude} onChange={e => onUpdate(i, { exclude: e.target.checked })} />
+                        Skip duplicate
+                      </label>
+                    ) : (
+                      <span className="text-[11px] text-sage-dark">Ready</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-right">
+                    <button onClick={() => onRemove(i)} className="p-1 text-muted-foreground hover:text-destructive" title="Remove row">
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <p className="font-body text-xs text-muted-foreground">
+          {validCount} ready to import
+          {rows.some((r, i) => rowErrors[i]?.duplicate && r.exclude)
+            ? `, ${rows.filter((r, i) => rowErrors[i]?.duplicate && r.exclude).length} duplicate skipped`
+            : ""}
+          {hasErrors ? ", some rows still need attention" : ""}
+        </p>
+        <div className="flex gap-2">
+          <button onClick={onCancel} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">Cancel</button>
+          <button onClick={onConfirm}
+            disabled={hasErrors || importing || validCount === 0}
+            className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark disabled:opacity-50 disabled:cursor-not-allowed">
+            {importing ? "Importing..." : `Import ${validCount} guest${validCount === 1 ? "" : "s"}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
