@@ -1,11 +1,163 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle, ClipboardPaste, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import DietaryEntriesEditor from "@/components/dietary/DietaryEntriesEditor";
 import { SEVERITY_BADGE } from "@/lib/dietary";
 
 const db = supabase as any;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface ImportRow {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  lodging_preference: "on_site" | "off_site" | "undecided";
+  is_child: boolean;
+  rsvp_status: "invited" | "confirmed" | "declined" | "maybe";
+  side: string;
+  relationship: string;
+  notes: string;
+  exclude: boolean;
+}
+
+const CSV_HEADERS = ["First", "Last", "Email", "Phone", "Lodging", "Adult or Child", "RSVP", "Side", "Relationship", "Notes"];
+
+// Robust CSV parser: handles quoted fields, embedded commas, doubled quotes, CRLF
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if (c === '"') { inQuotes = true; i++; continue; }
+    if (c === ',') { cur.push(field); field = ""; i++; continue; }
+    if (c === '\r') { i++; continue; }
+    if (c === '\n') { cur.push(field); rows.push(cur); cur = []; field = ""; i++; continue; }
+    field += c; i++;
+  }
+  if (field.length > 0 || cur.length > 0) { cur.push(field); rows.push(cur); }
+  return rows.filter(r => r.some(c => c.trim().length > 0));
+}
+
+function findEmail(s: string): string | null {
+  const m = s.match(/[^\s,;<>"']+@[^\s,;<>"']+\.[^\s,;<>"']+/);
+  return m ? m[0] : null;
+}
+
+function blankImportRow(partial: Partial<ImportRow> = {}): ImportRow {
+  return {
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    lodging_preference: "undecided",
+    is_child: false,
+    rsvp_status: "invited",
+    side: "",
+    relationship: "",
+    notes: "",
+    exclude: false,
+    ...partial,
+  };
+}
+
+// Parse a single pasted line into an import row.
+// Splits on tabs first, then commas. Falls back to email detection by regex.
+function parseQuickLine(raw: string): ImportRow {
+  const line = raw.trim();
+  const parts = (line.includes("\t") ? line.split("\t") : line.split(","))
+    .map(p => p.trim());
+  // Pull out any email from the whole line if columns don't line up
+  const detectedEmail = findEmail(line) ?? "";
+  const emailIdx = parts.findIndex(p => EMAIL_RE.test(p));
+  let first = "", last = "", email = "", phone = "";
+  if (emailIdx >= 0) {
+    email = parts[emailIdx];
+    const before = parts.slice(0, emailIdx);
+    const after = parts.slice(emailIdx + 1);
+    first = before[0] ?? "";
+    last = before.slice(1).join(" ").trim() || (before.length === 1 ? "" : "");
+    phone = after[0] ?? "";
+  } else {
+    first = parts[0] ?? "";
+    last = parts[1] ?? "";
+    email = detectedEmail;
+    phone = parts[2] ?? "";
+  }
+  return blankImportRow({ first_name: first, last_name: last, email, phone });
+}
+
+function normalizeLodging(v: string): "on_site" | "off_site" | "undecided" {
+  const s = v.trim().toLowerCase().replace(/[-_\s]+/g, "");
+  if (s === "onsite" || s === "on") return "on_site";
+  if (s === "offsite" || s === "off") return "off_site";
+  return "undecided";
+}
+
+function normalizeChild(v: string): boolean {
+  const s = v.trim().toLowerCase();
+  return s === "child" || s === "kid" || s === "yes" || s === "true" || s === "y";
+}
+
+function normalizeRsvp(v: string): "invited" | "confirmed" | "declined" | "maybe" {
+  const s = v.trim().toLowerCase();
+  if (s === "confirmed" || s === "yes") return "confirmed";
+  if (s === "declined" || s === "no") return "declined";
+  if (s === "maybe") return "maybe";
+  return "invited";
+}
+
+// Map a parsed CSV grid (header row + data rows) into ImportRows.
+function csvRowsToImportRows(grid: string[][]): ImportRow[] {
+  if (grid.length === 0) return [];
+  const headers = grid[0].map(h => h.trim().toLowerCase());
+  const findCol = (...names: string[]) => {
+    for (const n of names) {
+      const idx = headers.findIndex(h => h === n.toLowerCase());
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+  const cFirst = findCol("first", "first name", "firstname", "given name");
+  const cLast = findCol("last", "last name", "lastname", "surname", "family name");
+  const cEmail = findCol("email", "e-mail", "email address");
+  const cPhone = findCol("phone", "mobile", "cell", "telephone");
+  const cLodging = findCol("lodging", "lodging preference", "stay");
+  const cChild = findCol("adult or child", "child", "kid", "type");
+  const cRsvp = findCol("rsvp", "rsvp status", "status");
+  const cSide = findCol("side", "which side");
+  const cRel = findCol("relationship", "relation");
+  const cNotes = findCol("notes", "note", "comment");
+
+  return grid.slice(1).map(cols => {
+    const get = (i: number) => (i >= 0 ? (cols[i] ?? "").trim() : "");
+    return blankImportRow({
+      first_name: get(cFirst),
+      last_name: get(cLast),
+      email: get(cEmail),
+      phone: get(cPhone),
+      lodging_preference: cLodging >= 0 ? normalizeLodging(get(cLodging)) : "undecided",
+      is_child: cChild >= 0 ? normalizeChild(get(cChild)) : false,
+      rsvp_status: cRsvp >= 0 ? normalizeRsvp(get(cRsvp)) : "invited",
+      side: get(cSide),
+      relationship: get(cRel),
+      notes: get(cNotes),
+    });
+  });
+}
+
 
 export interface Guest {
   id: string;
