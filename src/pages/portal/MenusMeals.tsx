@@ -8,6 +8,16 @@ import { Headcounts } from "./people/Headcounts";
 import { DietaryRestrictions } from "./details/DietaryRestrictions";
 import { BarSelections } from "./details/BarSelections";
 import { Check, Loader2, Lock, Unlock } from "lucide-react";
+import MenuSelectionsDisplay from "@/components/menu/MenuSelectionsDisplay";
+
+type ApprovalStatus = "not_started" | "submitted" | "under_review" | "approved" | "declined";
+const STATUS_BANNER: Record<ApprovalStatus, { label: string; tone: string }> = {
+  not_started: { label: "Not submitted yet", tone: "bg-muted text-muted-foreground border-border" },
+  submitted: { label: "Submitted, your team is reviewing", tone: "bg-sage/10 text-sage border-sage/30" },
+  under_review: { label: "Your team is reviewing your menu", tone: "bg-amber-50 text-amber-800 border-amber-300" },
+  approved: { label: "Approved", tone: "bg-primary/10 text-primary border-primary/30" },
+  declined: { label: "Your team has notes, check messages", tone: "bg-red-50 text-red-800 border-red-300" },
+};
 
 const TABS = [
   { id: "meals", label: "Meal Preferences" },
@@ -139,6 +149,8 @@ export default function MenusMeals() {
           </div>
         )}
 
+        {eventId && <MenuSelectionsPanel eventId={eventId} />}
+
         <SectionTabs tabs={TABS} active={tab} onChange={setTab} />
 
         {tab === "meals" && <MealPrefs />}
@@ -146,6 +158,37 @@ export default function MenusMeals() {
         {tab === "dietary" && <DietaryRestrictions />}
         {tab === "bar" && <BarSelections />}
       </div>
+    </div>
+  );
+}
+
+function MenuSelectionsPanel({ eventId }: { eventId: string }) {
+  const [status, setStatus] = useState<ApprovalStatus>("not_started");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("menu_approvals")
+        .select("status")
+        .eq("event_id", eventId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data?.status) setStatus(data.status as ApprovalStatus);
+    })();
+    return () => { cancelled = true; };
+  }, [eventId]);
+
+  const banner = STATUS_BANNER[status];
+
+  return (
+    <div className="mb-8 rounded-xl border border-border bg-white p-5 lg:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <p className="font-display text-lg text-foreground">Your menu selections</p>
+        <span className={`inline-flex items-center rounded-full border px-3 py-1 font-body text-xs ${banner.tone}`}>
+          {banner.label}
+        </span>
+      </div>
+      <MenuSelectionsDisplay eventId={eventId} />
     </div>
   );
 }
