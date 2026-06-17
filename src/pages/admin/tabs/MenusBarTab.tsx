@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import BarTab from "./BarTab";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatMealType } from "@/lib/formatMealType";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import { guestAttendsMeal, countMealAttendees, type AttendanceGuest } from "@/lib/mealAttendance";
+
+interface GuestForMeals extends AttendanceGuest {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface DietaryEntryLite {
+  guest_id: string | null;
+  restriction: string;
+  severity: string | null;
+  applies_to_meals: string[] | null;
+}
 
 /* ──── Meal Events sub-tab ──── */
 
