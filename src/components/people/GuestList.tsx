@@ -243,8 +243,11 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
-  const [importOpen, setImportOpen] = useState(false);
+  const [importMode, setImportMode] = useState<null | "quick" | "csv">(null);
   const [importText, setImportText] = useState("");
+  const [parsedRows, setParsedRows] = useState<ImportRow[] | null>(null);
+  const [importing, setImporting] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
   const [dietaryByGuest, setDietaryByGuest] = useState<Record<string, { count: number; topSeverity: string | null; hasProximity: boolean }>>({});
 
   useEffect(() => { if (eventId) load(); }, [eventId]);
