@@ -491,10 +491,25 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             </button>
           ))}
         </div>
-        <button onClick={() => setImportOpen(true)}
+        <button onClick={openQuick}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
-          <FileUp size={14} /> Import
+          <ClipboardPaste size={14} /> Quick Import
         </button>
+        <button onClick={openCsv}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
+          <FileSpreadsheet size={14} /> Import CSV
+        </button>
+        <input
+          ref={csvInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (f) await handleCsvFile(f);
+            if (csvInputRef.current) csvInputRef.current.value = "";
+          }}
+        />
         {isAdmin && (
           <button onClick={exportCsv}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
@@ -508,19 +523,74 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       </div>
 
       {/* Import panel */}
-      {importOpen && (
+      {importMode && (
         <div className="bg-white border border-border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-display text-lg">Quick import</h3>
-            <button onClick={() => setImportOpen(false)}><X size={16} /></button>
+            <h3 className="font-display text-lg">
+              {importMode === "quick" ? "Quick Import" : "Import CSV"}
+            </h3>
+            <button onClick={closeImport}><X size={16} /></button>
           </div>
-          <p className="font-body text-sm text-muted-foreground">Paste one name per line. You can fill in details after.</p>
-          <textarea value={importText} onChange={e => setImportText(e.target.value)} rows={6}
-            placeholder="Jane Smith&#10;John Doe&#10;…"
-            className="w-full p-3 rounded-md border border-input bg-background font-body text-sm" />
-          <div className="flex justify-end">
-            <button onClick={bulkImport} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Add all</button>
-          </div>
+
+          {importMode === "quick" && !parsedRows && (
+            <>
+              <div className="rounded-lg bg-sage/10 border border-sage/20 px-3 py-2.5 space-y-1">
+                <p className="font-body text-xs font-semibold text-foreground">One guest per line, in this order:</p>
+                <p className="font-body text-xs text-foreground">First, Last, Email, Phone (phone optional)</p>
+                <p className="font-body text-[11px] text-muted-foreground italic">
+                  Tabs or commas both work. Example: Jane, Smith, jane@example.com, 555-123-4567
+                </p>
+                <p className="font-body text-[11px] text-muted-foreground">
+                  Email is required. You will be able to review and fix every row before anything is saved.
+                </p>
+              </div>
+              <textarea
+                value={importText}
+                onChange={e => setImportText(e.target.value)}
+                rows={8}
+                placeholder={"Jane, Smith, jane@example.com, 555-123-4567\nJohn, Doe, john@example.com"}
+                className="w-full p-3 rounded-md border border-input bg-background font-body text-sm font-mono"
+              />
+              <div className="flex justify-end gap-2">
+                <button onClick={closeImport} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">Cancel</button>
+                <button onClick={handleQuickParse} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Review</button>
+              </div>
+            </>
+          )}
+
+          {importMode === "csv" && !parsedRows && (
+            <div className="rounded-lg bg-sage/10 border border-sage/20 px-3 py-3 space-y-2">
+              <p className="font-body text-sm text-foreground">
+                Upload a .csv file with a header row. Supported columns (case-insensitive):
+              </p>
+              <p className="font-body text-xs text-muted-foreground">
+                {CSV_HEADERS.join(", ")}
+              </p>
+              <p className="font-body text-[11px] text-muted-foreground italic">
+                Email is required for every row. Quoted fields and commas inside values are handled.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button onClick={() => csvInputRef.current?.click()} className="px-3 py-1.5 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">
+                  Choose CSV file
+                </button>
+                <button onClick={downloadCsvTemplate} className="px-3 py-1.5 rounded-md border border-border font-body text-sm hover:bg-muted/40">
+                  Download CSV template
+                </button>
+              </div>
+            </div>
+          )}
+
+          {parsedRows && <ReviewGrid
+            rows={parsedRows}
+            rowErrors={rowErrors}
+            onUpdate={updateRow}
+            onRemove={removeRow}
+            onCancel={closeImport}
+            onConfirm={confirmImport}
+            importing={importing}
+            validCount={importValid.rows.length}
+            hasErrors={importValid.hasErrors}
+          />}
         </div>
       )}
 
