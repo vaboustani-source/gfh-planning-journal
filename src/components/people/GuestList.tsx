@@ -338,19 +338,112 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     const a = document.createElement("a"); a.href = url; a.download = "guest-list.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
-  const bulkImport = async () => {
-    const lines = importText.split("\n").map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-    const rows = lines.map(line => {
-      const parts = line.split(/\s+/);
-      const first = parts[0] ?? "";
-      const last = parts.slice(1).join(" ") || "—";
-      return { ...emptyGuest(eventId, isAdmin), first_name: first, last_name: last };
+  const openQuick = () => { setImportText(""); setParsedRows(null); setImportMode("quick"); };
+  const openCsv = () => { setParsedRows(null); setImportMode("csv"); setTimeout(() => csvInputRef.current?.click(), 0); };
+  const closeImport = () => { setImportMode(null); setParsedRows(null); setImportText(""); };
+
+  const handleQuickParse = () => {
+    const lines = importText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) { toast.error("Paste at least one guest first"); return; }
+    setParsedRows(lines.map(parseQuickLine));
+  };
+
+  const handleCsvFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const grid = parseCsv(text);
+      if (grid.length < 2) { toast.error("CSV looks empty. Include a header row and at least one guest."); return; }
+      const rows = csvRowsToImportRows(grid);
+      if (rows.length === 0) { toast.error("No data rows found"); return; }
+      setParsedRows(rows);
+    } catch (err: any) {
+      toast.error(`Could not read CSV: ${err?.message ?? "unknown error"}`);
+    }
+  };
+
+  const downloadCsvTemplate = () => {
+    const csv = CSV_HEADERS.map(h => `"${h}"`).join(",") + "\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "guest-list-template.csv"; a.click(); URL.revokeObjectURL(url);
+  };
+
+  // Validation for the review grid
+  const existingEmails = useMemo(
+    () => new Set(guests.map(g => (g.email ?? "").trim().toLowerCase()).filter(Boolean)),
+    [guests]
+  );
+
+  const rowErrors = useMemo(() => {
+    if (!parsedRows) return [] as { error: string | null; duplicate: boolean }[];
+    const seen = new Map<string, number>();
+    return parsedRows.map((r, idx) => {
+      let error: string | null = null;
+      if (!r.first_name.trim()) error = "First name required";
+      else if (!r.last_name.trim()) error = "Last name required";
+      else if (!r.email.trim()) error = "Email required";
+      else if (!EMAIL_RE.test(r.email.trim())) error = "Email looks invalid";
+      const key = r.email.trim().toLowerCase();
+      let duplicate = false;
+      if (key) {
+        if (existingEmails.has(key)) duplicate = true;
+        const first = seen.get(key);
+        if (first !== undefined && first !== idx) duplicate = true;
+        if (!seen.has(key)) seen.set(key, idx);
+      }
+      return { error, duplicate };
     });
-    const { error } = await db.from("guests").insert(rows);
+  }, [parsedRows, existingEmails]);
+
+  const updateRow = (idx: number, patch: Partial<ImportRow>) => {
+    setParsedRows(prev => prev ? prev.map((r, i) => i === idx ? { ...r, ...patch } : r) : prev);
+  };
+  const removeRow = (idx: number) => {
+    setParsedRows(prev => prev ? prev.filter((_, i) => i !== idx) : prev);
+  };
+
+  const importValid = useMemo(() => {
+    if (!parsedRows) return { rows: [], skippedDup: 0, hasErrors: false };
+    const rows: ImportRow[] = [];
+    let skippedDup = 0;
+    let hasErrors = false;
+    parsedRows.forEach((r, i) => {
+      const v = rowErrors[i];
+      if (v?.error) hasErrors = true;
+      if (v?.duplicate && r.exclude) { skippedDup++; return; }
+      if (v?.error) return;
+      if (v?.duplicate && !r.exclude) { rows.push(r); return; }
+      rows.push(r);
+    });
+    return { rows, skippedDup, hasErrors };
+  }, [parsedRows, rowErrors]);
+
+  const confirmImport = async () => {
+    if (!parsedRows) return;
+    if (importValid.hasErrors) { toast.error("Fix the rows marked in red first"); return; }
+    if (importValid.rows.length === 0) { toast.error("Nothing to import"); return; }
+    setImporting(true);
+    const payload = importValid.rows.map(r => ({
+      ...emptyGuest(eventId, isAdmin),
+      first_name: r.first_name.trim(),
+      last_name: r.last_name.trim(),
+      email: r.email.trim(),
+      phone: r.phone.trim() || null,
+      lodging_preference: r.lodging_preference,
+      is_child: r.is_child,
+      rsvp_status: r.rsvp_status,
+      side: r.side || null,
+      relationship: r.relationship || null,
+      notes: r.notes || null,
+    }));
+    const { error } = await db.from("guests").insert(payload);
+    setImporting(false);
     if (error) return toast.error(error.message);
-    toast.success(`Added ${rows.length} guests — open each to add details`);
-    setImportText(""); setImportOpen(false); load();
+    const added = payload.length;
+    const dups = parsedRows.filter((r, i) => rowErrors[i]?.duplicate && r.exclude).length;
+    toast.success(`Added ${added} guest${added === 1 ? "" : "s"}${dups > 0 ? `, skipped ${dups} duplicate${dups === 1 ? "" : "s"}` : ""}`);
+    closeImport();
+    load();
   };
 
   if (loading) return <div className="py-12 text-center font-body text-muted-foreground">Loading…</div>;
