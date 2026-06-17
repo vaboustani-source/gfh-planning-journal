@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import BarTab from "./BarTab";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatMealType } from "@/lib/formatMealType";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
+import { guestAttendsMeal, countMealAttendees, type AttendanceGuest } from "@/lib/mealAttendance";
+
+interface GuestForMeals extends AttendanceGuest {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface DietaryEntryLite {
+  guest_id: string | null;
+  restriction: string;
+  severity: string | null;
+  applies_to_meals: string[] | null;
+}
 
 /* ──── Meal Events sub-tab ──── */
 
@@ -23,19 +37,29 @@ interface MealEvent {
 
 function MealEventsSubTab({ eventId }: { eventId: string }) {
   const [meals, setMeals] = useState<MealEvent[]>([]);
+  const [guests, setGuests] = useState<GuestForMeals[]>([]);
+  const [dietaries, setDietaries] = useState<DietaryEntryLite[]>([]);
   const [loading, setLoading] = useState(true);
   const autosave = useAutosaveStatus();
 
   useEffect(() => {
-    supabase
-      .from("meal_events")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("meal_type")
-      .then(({ data }) => {
-        if (data) setMeals(data.map(m => ({ ...m, included_in_package: m.included_in_package ?? true })));
-        setLoading(false);
-      });
+    (async () => {
+      const [mealsRes, guestsRes, dietRes] = await Promise.all([
+        supabase.from("meal_events").select("*").eq("event_id", eventId).order("meal_type"),
+        supabase
+          .from("guests")
+          .select("id, first_name, last_name, lodging_preference, is_child, invited_optional_meals, rsvp_status")
+          .eq("event_id", eventId),
+        supabase
+          .from("guest_dietary_entries")
+          .select("guest_id, restriction, severity, applies_to_meals")
+          .eq("event_id", eventId),
+      ]);
+      if (mealsRes.data) setMeals(mealsRes.data.map((m: any) => ({ ...m, included_in_package: m.included_in_package ?? true })));
+      if (guestsRes.data) setGuests(guestsRes.data as any);
+      if (dietRes.data) setDietaries(dietRes.data as any);
+      setLoading(false);
+    })();
   }, [eventId]);
 
   const updateMeal = (id: string, field: string, value: any) => {
@@ -69,7 +93,30 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
           <Plus size={13} /> Add Meal
         </button>
       </div>
-      {meals.map(meal => (
+      {meals.map(meal => {
+        const { adults, kids } = countMealAttendees(meal.meal_type, guests);
+        // Per-meal dietary summary: include entries whose applies_to_meals is empty/null
+        // (treated as all-meals default) or contains this meal_type, AND whose guest attends.
+        const attendingIds = new Set(
+          guests.filter(g => g.rsvp_status !== "declined" && guestAttendsMeal(g, meal.meal_type)).map(g => g.id)
+        );
+        const relevant = dietaries.filter(d => {
+          if (!d.guest_id || !attendingIds.has(d.guest_id)) return false;
+          const tags = d.applies_to_meals ?? [];
+          return tags.length === 0 || tags.includes(meal.meal_type) || tags.includes("wedding");
+        });
+        const counts = new Map<string, number>();
+        for (const d of relevant) {
+          const key = d.restriction;
+          counts.set(key, (counts.get(key) ?? 0) + 1);
+        }
+        const summary = Array.from(counts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([k, n]) => `${n} ${k}`)
+          .join(", ");
+        const fatalCount = relevant.filter(d => d.severity === "fatal").length;
+
+        return (
         <div key={meal.id} className="rounded-xl bg-card border border-border p-5 shadow-soft space-y-3">
           <div className="flex items-center justify-between">
             <input
@@ -87,17 +134,38 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
               <input value={meal.location ?? ""} onChange={e => updateMeal(meal.id, "location", e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm" />
             </div>
             <div>
-              <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Adults</label>
-              <input type="number" value={meal.adult_count ?? 0} onChange={e => updateMeal(meal.id, "adult_count", parseInt(e.target.value) || 0)} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm" />
-            </div>
-            <div>
-              <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Kids</label>
-              <input type="number" value={meal.kids_count ?? 0} onChange={e => updateMeal(meal.id, "kids_count", parseInt(e.target.value) || 0)} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm" />
-            </div>
-            <div>
               <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Vendor meals</label>
               <input type="number" value={meal.vendor_count ?? 0} onChange={e => updateMeal(meal.id, "vendor_count", parseInt(e.target.value) || 0)} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm" />
             </div>
+            <div>
+              <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Adults</label>
+              <div className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2 font-body text-sm flex items-baseline justify-between">
+                <span className="font-medium">{adults}</span>
+                <span className="text-[10px] text-muted-foreground italic">from guest list</span>
+              </div>
+            </div>
+            <div>
+              <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Kids</label>
+              <div className="w-full rounded-lg border border-border bg-muted/30 px-3 py-2 font-body text-sm flex items-baseline justify-between">
+                <span className="font-medium">{kids}</span>
+                <span className="text-[10px] text-muted-foreground italic">from guest list</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Dietary summary</label>
+            {relevant.length === 0 ? (
+              <p className="font-body text-xs text-muted-foreground italic mt-1">No dietary needs noted.</p>
+            ) : (
+              <p className="font-body text-xs text-foreground mt-1">
+                {summary}
+                {fatalCount > 0 && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-300 px-1.5 py-0.5 text-[10px] font-medium">
+                    {fatalCount} fatal
+                  </span>
+                )}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <input type="checkbox" checked={meal.included_in_package} onChange={e => updateMeal(meal.id, "included_in_package", e.target.checked)} className="accent-primary" />
@@ -108,7 +176,7 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
             <textarea value={meal.notes ?? ""} onChange={e => updateMeal(meal.id, "notes", e.target.value)} rows={2} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm resize-none" />
           </div>
         </div>
-      ))}
+      );})}
     </div>
   );
 }
