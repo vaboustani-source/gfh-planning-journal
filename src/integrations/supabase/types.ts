@@ -1973,6 +1973,36 @@ export type Database = {
           },
         ]
       }
+      guide_cards: {
+        Row: {
+          body: string
+          card_key: string
+          created_at: string
+          header: string
+          id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          card_key: string
+          created_at?: string
+          header: string
+          id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          card_key?: string
+          created_at?: string
+          header?: string
+          id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -3549,11 +3579,14 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          display_category: string | null
           id: string
           included_count: number | null
           is_active: boolean
           item_key: string
           item_label: string
+          last_updated_by: string | null
+          menu_item_id: string | null
           price: number
           sort_order: number
           updated_at: string
@@ -3561,11 +3594,14 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          display_category?: string | null
           id?: string
           included_count?: number | null
           is_active?: boolean
           item_key: string
           item_label: string
+          last_updated_by?: string | null
+          menu_item_id?: string | null
           price?: number
           sort_order?: number
           updated_at?: string
@@ -3573,11 +3609,14 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          display_category?: string | null
           id?: string
           included_count?: number | null
           is_active?: boolean
           item_key?: string
           item_label?: string
+          last_updated_by?: string | null
+          menu_item_id?: string | null
           price?: number
           sort_order?: number
           updated_at?: string
