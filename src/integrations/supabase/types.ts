@@ -235,6 +235,7 @@ export type Database = {
         Row: {
           couple_id: string
           created_at: string
+          event_id: string | null
           id: string
           selections: Json
           status: string
@@ -244,6 +245,7 @@ export type Database = {
         Insert: {
           couple_id: string
           created_at?: string
+          event_id?: string | null
           id?: string
           selections?: Json
           status?: string
@@ -253,6 +255,7 @@ export type Database = {
         Update: {
           couple_id?: string
           created_at?: string
+          event_id?: string | null
           id?: string
           selections?: Json
           status?: string
@@ -265,6 +268,13 @@ export type Database = {
             columns: ["couple_id"]
             isOneToOne: true
             referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "builder_selections_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -719,6 +729,7 @@ export type Database = {
         Row: {
           couple_id: string
           created_at: string
+          event_id: string | null
           group_label: string | null
           id: string
           menu_item_id: string
@@ -728,6 +739,7 @@ export type Database = {
         Insert: {
           couple_id: string
           created_at?: string
+          event_id?: string | null
           group_label?: string | null
           id?: string
           menu_item_id: string
@@ -737,6 +749,7 @@ export type Database = {
         Update: {
           couple_id?: string
           created_at?: string
+          event_id?: string | null
           group_label?: string | null
           id?: string
           menu_item_id?: string
@@ -749,6 +762,13 @@ export type Database = {
             columns: ["couple_id"]
             isOneToOne: false
             referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_selections_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -2750,6 +2770,56 @@ export type Database = {
             columns: ["section_id"]
             isOneToOne: false
             referencedRelation: "menu_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_approvals: {
+        Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          event_id: string
+          final_price: number | null
+          final_price_label: string | null
+          id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          event_id: string
+          final_price?: number | null
+          final_price_label?: string | null
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          event_id?: string
+          final_price?: number | null
+          final_price_label?: string | null
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_approvals_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
