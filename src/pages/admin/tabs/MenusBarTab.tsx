@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { SectionTabs } from "@/components/portal/SectionTabs";
 import BarTab from "./BarTab";
+import MenuSelectionsSubTab from "./MenuSelectionsSubTab";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Lock, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -276,6 +277,7 @@ function TastingSubTab({ eventId, tastingDate, tastingDateNote }: { eventId: str
 
 const SUB_TABS = [
   { id: "meals", label: "Meal Events" },
+  { id: "selections", label: "Menu Selections" },
   { id: "bar", label: "Bar Selections" },
   { id: "tasting", label: "Tasting" },
 ];
@@ -294,6 +296,7 @@ export default function MenusBarTab({ eventId, onNavigateNext, tastingDate, tast
       <SectionTabs tabs={SUB_TABS} active={sub} onChange={setSub} />
       <div className="mt-6">
         {sub === "meals" && <MealEventsSubTab eventId={eventId} />}
+        {sub === "selections" && <MenuSelectionsSubTab eventId={eventId} />}
         {sub === "bar" && <BarTab eventId={eventId} onNavigateNext={() => {}} />}
         {sub === "tasting" && <TastingSubTab eventId={eventId} tastingDate={tastingDate ?? null} tastingDateNote={tastingDateNote ?? null} />}
       </div>
