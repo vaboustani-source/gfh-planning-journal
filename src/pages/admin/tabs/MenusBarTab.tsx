@@ -37,19 +37,29 @@ interface MealEvent {
 
 function MealEventsSubTab({ eventId }: { eventId: string }) {
   const [meals, setMeals] = useState<MealEvent[]>([]);
+  const [guests, setGuests] = useState<GuestForMeals[]>([]);
+  const [dietaries, setDietaries] = useState<DietaryEntryLite[]>([]);
   const [loading, setLoading] = useState(true);
   const autosave = useAutosaveStatus();
 
   useEffect(() => {
-    supabase
-      .from("meal_events")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("meal_type")
-      .then(({ data }) => {
-        if (data) setMeals(data.map(m => ({ ...m, included_in_package: m.included_in_package ?? true })));
-        setLoading(false);
-      });
+    (async () => {
+      const [mealsRes, guestsRes, dietRes] = await Promise.all([
+        supabase.from("meal_events").select("*").eq("event_id", eventId).order("meal_type"),
+        supabase
+          .from("guests")
+          .select("id, first_name, last_name, lodging_preference, is_child, invited_optional_meals, rsvp_status")
+          .eq("event_id", eventId),
+        supabase
+          .from("guest_dietary_entries")
+          .select("guest_id, restriction, severity, applies_to_meals")
+          .eq("event_id", eventId),
+      ]);
+      if (mealsRes.data) setMeals(mealsRes.data.map((m: any) => ({ ...m, included_in_package: m.included_in_package ?? true })));
+      if (guestsRes.data) setGuests(guestsRes.data as any);
+      if (dietRes.data) setDietaries(dietRes.data as any);
+      setLoading(false);
+    })();
   }, [eventId]);
 
   const updateMeal = (id: string, field: string, value: any) => {
