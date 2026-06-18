@@ -145,9 +145,7 @@ export default function PublicRsvp() {
       setLoading(true);
       try {
         const { data: cfg, error: cfgErr } = await supabase
-          .from("rsvp_config")
-          .select("*")
-          .eq("public_token", token)
+          .rpc("lookup_rsvp_config", { p_token: token })
           .maybeSingle();
         if (cfgErr) throw cfgErr;
         if (!alive) return;
