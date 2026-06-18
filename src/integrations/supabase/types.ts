@@ -4342,6 +4342,37 @@ export type Database = {
           wedding_name: string
         }[]
       }
+      lookup_rsvp_config: {
+        Args: { p_token: string }
+        Returns: {
+          ask_dietary: boolean
+          ask_meal_preference: boolean
+          ask_song_request: boolean
+          color_accent: string
+          color_primary: string
+          color_secondary: string
+          conditional_reminders: Json
+          confirmation_message: string | null
+          created_at: string
+          custom_questions: Json
+          event_id: string
+          id: string
+          is_live: boolean
+          offsite_questions: Json
+          onsite_questions: Json
+          public_token: string | null
+          rsvp_deadline: string | null
+          updated_at: string
+          welcome_headline: string | null
+          welcome_message: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rsvp_config"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       lookup_rsvp_event: {
         Args: { p_token: string }
         Returns: {

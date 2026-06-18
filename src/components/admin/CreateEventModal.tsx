@@ -89,11 +89,11 @@ export default function CreateEventModal({ onClose }: Props) {
     e.preventDefault();
     setError(null);
 
-    if (!form.partner1_email || !form.partner2_email) {
-      setError("Both partner emails are required.");
+    if (!form.partner1_email) {
+      setError("Partner one's email is required.");
       return;
     }
-    if (form.partner1_email === form.partner2_email) {
+    if (form.partner2_email && form.partner1_email === form.partner2_email) {
       setError("Partners must have different email addresses.");
       return;
     }
@@ -175,13 +175,13 @@ export default function CreateEventModal({ onClose }: Props) {
             <div>
               <p className="font-display text-base font-light text-foreground mb-3 flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-sage/15 border border-sage/25 text-sage font-body text-[10px] flex items-center justify-center">2</span>
-                Partner Two
+                Partner Two <span className="font-body text-[11px] text-muted-foreground normal-case tracking-normal">(optional)</span>
               </p>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <Field label="First Name" value={form.partner2_first_name} onChange={v => set("partner2_first_name", v)} placeholder="Alex" />
                 <Field label="Last Name" value={form.partner2_last_name} onChange={v => set("partner2_last_name", v)} placeholder="Johnson" />
               </div>
-              <Field label="Email Address *" value={form.partner2_email} onChange={v => set("partner2_email", v)} type="email" placeholder="alex@example.com" />
+              <Field label="Email Address" value={form.partner2_email} onChange={v => set("partner2_email", v)} type="email" placeholder="alex@example.com (optional)" />
             </div>
 
             <div className="h-px bg-border" />

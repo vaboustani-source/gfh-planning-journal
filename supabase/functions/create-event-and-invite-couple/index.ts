@@ -31,16 +31,17 @@ Deno.serve(async (req) => {
       wedding_date, arrival_date, departure_date, package_tier,
     } = await req.json()
 
-    if (!partner1_email || !partner2_email) {
-      throw new Error('Both partner emails are required')
+    if (!partner1_email) {
+      throw new Error("Partner one's email is required")
     }
     const p1Email = String(partner1_email).trim().toLowerCase()
-    const p2Email = String(partner2_email).trim().toLowerCase()
-    if (p1Email === p2Email) throw new Error('Partners must have different email addresses')
+    const p2Email = partner2_email ? String(partner2_email).trim().toLowerCase() : null
+    if (p2Email && p1Email === p2Email) throw new Error('Partners must have different email addresses')
 
     const n1 = [partner1_first_name, partner1_last_name].filter(Boolean).join(' ') || p1Email
-    const n2 = [partner2_first_name, partner2_last_name].filter(Boolean).join(' ') || p2Email
-    const eventTitle = `${n1} & ${n2}`
+    const n2Raw = [partner2_first_name, partner2_last_name].filter(Boolean).join(' ')
+    const n2 = n2Raw || p2Email || null
+    const eventTitle = n2 ? `${n1} & ${n2}` : n1
 
     // Create event in sales_setup stage. Couple receives NO email yet.
     const { data: event, error: eventError } = await supabase
