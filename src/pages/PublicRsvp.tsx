@@ -144,9 +144,10 @@ export default function PublicRsvp() {
     (async () => {
       setLoading(true);
       try {
-        const { data: cfg, error: cfgErr } = await supabase
+        const { data: cfgRaw, error: cfgErr } = await (supabase as any)
           .rpc("lookup_rsvp_config", { p_token: token })
           .maybeSingle();
+        const cfg: any = cfgRaw;
         if (cfgErr) throw cfgErr;
         if (!alive) return;
         if (!cfg) { setError("not_found"); return; }
