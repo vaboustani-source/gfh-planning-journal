@@ -46,8 +46,8 @@ Deno.serve(async (req) => {
 
     const p1Email = (overrideP1Email || event.pending_partner1_email || '').toLowerCase().trim()
     const p2Email = (overrideP2Email || event.pending_partner2_email || '').toLowerCase().trim()
-    if (!p1Email || !p2Email) throw new Error('Partner email addresses are required to open the portal')
-    if (p1Email === p2Email) throw new Error('Partners must have different email addresses')
+    if (!p1Email) throw new Error('Partner one email is required to open the portal')
+    if (p2Email && p1Email === p2Email) throw new Error('Partners must have different email addresses')
 
     const fnUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-invitation`
     const inviteHeaders: Record<string, string> = {
@@ -75,7 +75,9 @@ Deno.serve(async (req) => {
     }
 
     const inv1 = await invitePartner(p1Email, event.pending_partner1_name ?? event.partner1_name, 'partner_1')
-    const inv2 = await invitePartner(p2Email, event.pending_partner2_name ?? event.partner2_name, 'partner_2')
+    const inv2 = p2Email
+      ? await invitePartner(p2Email, event.pending_partner2_name ?? event.partner2_name, 'partner_2')
+      : null
 
     const { error: updErr } = await supabase
       .from('events')
