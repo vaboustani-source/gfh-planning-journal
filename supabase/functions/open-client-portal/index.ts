@@ -92,8 +92,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        invitations: [inv1?.invitation, inv2?.invitation],
-        emailDelivery: { partner1: inv1?.emailDelivery, partner2: inv2?.emailDelivery },
+        invitations: [inv1?.invitation, inv2?.invitation ?? null].filter(Boolean),
+        emailDelivery: { partner1: inv1?.emailDelivery, partner2: inv2?.emailDelivery ?? null },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
