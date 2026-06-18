@@ -1,97 +1,79 @@
-# Version History with Rollback — Investigation & Proposal
+# Menu Selections — Findings Report (read-only)
 
-## 1. Existing change-tracking tables
+## 1. Where the Hub shows menu selections
 
-### `public.audit_log` (primary, suitable for rollback)
-Columns: `id, event_id, table_name, record_id, action, changed_fields[], old_values jsonb, new_values jsonb, user_id, user_email, user_role, created_at`.
+Two surfaces, both rendered by the same component `src/components/menu/MenuSelectionsDisplay.tsx`:
 
-This is a full before/after audit:
-- `table_name` + `record_id` identify the changed row
-- `old_values` and `new_values` are full row snapshots as JSONB (not just diffs)
-- `changed_fields[]` lists which keys differ on UPDATE
-- `action` is INSERT / UPDATE / DELETE
-- User attribution (id, email, role) and `event_id` scoping included
+- **Admin / planner view** — route: `/admin/events/:eventId` → Menus & Bar tab → "Menu Selections" sub-tab.
+  - File: `src/pages/admin/tabs/MenusBarTab.tsx` (sub-tab id `selections`) → `src/pages/admin/tabs/MenuSelectionsSubTab.tsx` → embeds `<MenuSelectionsDisplay eventId={eventId} />`.
+  - Who sees it: admin-tier roles (Admin, Event Director, etc. — anyone routed through `EventDetail`).
+- **Couple portal view** — route: `/portal/menus` (`src/pages/portal/MenusMeals.tsx`), in the "Your menu selections" panel above the section tabs. Also embeds `<MenuSelectionsDisplay eventId={eventId} />`.
+  - Who sees it: the couple for that event, plus admins using "View as Couple" preview.
 
-Written by the Postgres trigger function `public.log_audit_event()`, which builds the row from `to_jsonb(OLD)` / `to_jsonb(NEW)` and skips no-op updates.
+The admin sub-tab additionally reads/writes `menu_approvals` (status, final price, admin notes) and posts a Catering line to Financials on approval. The couple panel reads `menu_approvals.status` only to show a banner.
 
-### Other log/history tables (not general-purpose, not before/after)
-- `contract_audit_log` — contract lifecycle events (action + metadata), no row snapshots.
-- `couple_history` — couple actions (action + details jsonb), not field-level.
-- `role_change_log`, `lb_sync_log`, `lb_activity_log`, `scheduled_email_log`, `notification_log` — domain event logs, not row snapshots.
+## 2. How the view READS the selections
 
-None of these support rollback. Only `audit_log` does.
+`MenuSelectionsDisplay` queries the **`couple_selections`** table — NOT `builder_selections`, NOT `menu_approvals.selections`:
 
-## 2. Coverage
-
-Audit triggers (`log_audit_event`) are attached to **9 tables only**:
-
-```
-bar_selections, ceremony_details, checklist_items, dietary_restrictions,
-events, financials, lodging_assignments, meal_events, vendors
+```ts
+supabase
+  .from("couple_selections")
+  .select(`
+    id, notes, menu_item_id, section_id,
+    menu_items:menu_item_id ( name, sort_order ),
+    menu_sections:section_id ( label, section_title, sort_order )
+  `)
+  .eq("event_id", eventId);
 ```
 
-The Planning Hub has ~80 public tables. Major areas NOT audited today include:
-- People & guests: `guests`, `guest_invitations`, `guest_dietary_entries`, `couples`, `couple_notes`
-- Menus: `menu_packages`, `menu_sections`, `menu_items`, `menu_accordions`, `menu_finalization`
-- Decor: `decor_selections`, `decor_catalog`
-- Experiences: `experience_requests`, `experience_catalog`
-- Timeline & milestones: `working_timeline`, `milestones`
-- Forms: `forms`, `form_assignments`, `form_responses`
-- Financials detail: `financial_line_items`, `budget_items`, `payment_schedule`, `event_budgets`
-- Seating: `seating_tables`, `seating_assignments`, `seating_config`
-- Docs/contracts: `documents`, `contracts`, `contract_signatures`
-- Messaging, RSVP, lodging rooms, preferred vendors, basics_cards, etc.
+- **Keyed by**: `event_id` (uuid) on `couple_selections`.
+- **Shape expected**: one row per picked menu item — columns `event_id`, `couple_id`, `menu_item_id` (FK → `menu_items.id`), `section_id` (TEXT FK-ish → `menu_sections.id`), `group_label`, `notes`.
+- **Render**: groups rows by `section_id`, sorts sections by `menu_sections.sort_order`, sorts items within a section by `menu_items.sort_order`, renders `menu_items.name` with optional italic `notes` underneath. No JSON keys are read — it is fully relational against the curated `menu_items` / `menu_sections` catalog.
 
-Live data confirms this is mostly idle: only ~78 rows total across `lodging_assignments`, `vendors`, `events`, `checklist_items`. Coverage today is roughly **~10% of mutable user-facing tables**.
+There is **no code anywhere in this app that reads `builder_selections.selections` JSON** (verified via ripgrep — only `src/integrations/supabase/types.ts` references `builder_selections`, plus a DB trigger).
 
-## 3. Where logging lives
+## 3. Database state
 
-- **Database triggers** for general row history (the 9 tables above via `log_audit_event`). No application code writes to `audit_log`.
-- **Application code** writes the domain logs: `sign-contract` and `countersign-contract` edge functions write `contract_audit_log`; `ContractsManager.tsx` / `SignedCertificate.tsx` read it.
-- No application-side double-logging for `audit_log` — it is purely trigger-driven, which is the right pattern for rollback.
+### builder_selections
+```
+id                                    couple_id                             event_id  status        updated_at
+6c4c087d-3b3f-4e57-a21e-2517c8114a89  88ee19ef-8886-4c15-a6c1-7ea3f0fc3806  NULL      in_progress   2026-06-18 18:41
+```
+Only one row total. `event_id` is **NULL**. `selections` JSON top-level keys for that row are just `{ "test": true, "picked": ["a","b"] }` — i.e. a smoke-test payload, not the real builder schema (`rehearsalDinner`, `welcomeHour`, …) you described.
 
-## 4. Existing UI
+### couples ↔ event link
+`couples` has no `event_id` column. Couple→event resolution goes through `event_users.user_id = couples.user_id`. For the only `builder_selections` row:
 
-- `src/pages/admin/tabs/ActivityTab.tsx` (admin event view): a read-only feed of `audit_log` for the current event. Shows INSERT/UPDATE/DELETE, table label, changed field labels, user, timestamp, and expands to a per-field old → new diff. Filters by table and action. Limited to latest 500.
-- `src/lib/auditLabels.ts` maps raw table/column names to friendly labels and value formatters used by ActivityTab.
-- `ContractsManager` / `SignedCertificate` render `contract_audit_log` as a contract-specific timeline.
-- No rollback / restore UI anywhere.
+```
+couples.id  = 88ee19ef…  (Avery & Jordan)
+couples.user_id = 9292dd2f-5181-437f-9ae0-8a65ff1cf5fd
+event_users rows for that user_id: 0
+```
+So this couple is not linked to any event in `event_users`, and `builder_selections.event_id` is NULL — there is no path today to resolve which event this row belongs to.
 
-## 5. Proposed approach for Version History + Rollback
+### menu_approvals
+`SELECT … FROM menu_approvals` → **0 rows**. The trigger `builder_selections_to_menu_approval` (function `sync_builder_submission_to_menu_approval`) fires on insert/update of `status` or `event_id`, but only when `NEW.status = 'submitted' AND NEW.event_id IS NOT NULL`. The current row is `status='in_progress'` with `event_id=NULL`, so nothing was written. `couple_selections` is also empty for this couple/event.
 
-### What we already have for free
-Because `audit_log.new_values` and `old_values` are **full row snapshots**, any audited row can be reconstructed at any point in time without replaying diffs. The trigger also skips no-op updates, so each audit row is a meaningful version.
+### How they relate
+- `builder_selections` is the builder app's working draft (one JSON blob per couple, optional event_id).
+- On submit, the trigger only flips/creates a `menu_approvals` row (status + submitted_at). **It does not unpack `selections` JSON into `couple_selections`.**
+- `couple_selections` is the table the Hub renders from, and nothing currently writes to it from the builder.
 
-### Minimum viable rollback (audited tables only)
-1. **Per-record version history view** — for any row in an audited table, query `audit_log WHERE table_name=? AND record_id=? ORDER BY created_at DESC`. Each row is a version; render side-by-side or field-by-field diffs (we already format these in ActivityTab).
-2. **Restore action** — an admin-only edge function `restore-record(table_name, record_id, audit_id)` that:
-   - Loads the target audit row
-   - For UPDATE/INSERT → `UPDATE <table> SET <columns from new_values or old_values> WHERE id = record_id`
-   - For DELETE → re-`INSERT` from `old_values`
-   - Runs as service role so RLS doesn't block it, but gates on `is_admin(auth.uid())`
-   - The restore itself fires the audit trigger again, so the rollback is itself a new audit entry — natural forward/back history.
-3. **UI** — add a "History" button on each audited record (vendor card, checklist item, ceremony details, etc.) opening a drawer that lists versions with a "Restore this version" CTA and a confirm dialog. Reuse `ActivityTab`'s diff renderer.
+## 4. Bottom line
 
-### Gaps and risks to address before shipping
-- **Coverage** — most user-facing tables are NOT audited. Before promising "version history" broadly, attach `log_audit_event` triggers to the high-value tables listed in §2. This is a one-line `CREATE TRIGGER` per table; no app changes needed.
-- **Related-record integrity** — many "records" are actually parent + children (e.g. ceremony_details + meal_events; menu_packages + sections + items; guests + dietary entries; working_timeline jsonb blob; financials + line_items). A naive single-row restore can leave orphans or stale joins. Options:
-  - Scope rollback to "leaf" tables only (vendors, checklist items, ceremony_details, individual line items). Document this limit.
-  - For composite areas, group an audit "snapshot" by `(event_id, created_at window, user_id)` and offer "restore this save" across multiple tables in one transaction.
-- **Foreign keys & deletes** — restoring a DELETE may fail if children were cascade-deleted or if FK targets no longer exist. The restore function must run in a transaction and surface clear errors.
-- **Schema drift** — `old_values`/`new_values` are snapshots of columns that existed at write time. If columns were added/removed since, the restore must filter to columns that currently exist in the table (introspect `information_schema.columns`).
-- **Generated / sensitive columns** — `created_at`, computed columns, and `id` must be excluded from the UPDATE SET list; `updated_at` should be set to `now()`.
-- **Retention & size** — `old_values` + `new_values` per change is heavy. Add a retention policy (e.g. keep last N versions per record, or 12 months) and an index on `(table_name, record_id, created_at DESC)`.
-- **Permissions** — restore is admin-only; couples should see history (read-only) for their own event's records but never restore.
-- **Non-audited writes today** — current `audit_log` rows only exist for the 9 audited tables. Until coverage is expanded, "version history" is misleading elsewhere. Recommend phase 1 = expand triggers, phase 2 = build restore.
+**No.** If a couple submits selections in the external builder today, the Planning Hub menu tab will display "No menu selections submitted yet." Two independent reasons:
 
-### Phased rollout
-1. **Phase 1 (schema-only):** add `log_audit_event` triggers to the priority unaudited tables; add the `(table_name, record_id, created_at DESC)` index; add a retention job.
-2. **Phase 2 (read-only UI):** per-record History drawer reusing ActivityTab's diff renderer, available on vendor / checklist / ceremony / financials / lodging / menu / decor records.
-3. **Phase 3 (restore):** `restore-record` edge function + admin-only "Restore this version" button, leaf tables first.
-4. **Phase 4 (composite restore):** grouped snapshots for parent+children areas (ceremony + meal_events, menu package tree, working_timeline jsonb), with a transactional multi-table restore.
+1. **Wrong table.** The Hub renders from `couple_selections` (normalized rows referencing `menu_items` / `menu_sections`). The builder writes a JSON blob to `builder_selections.selections`. Nothing translates one to the other. The submit trigger only touches `menu_approvals` status.
+2. **No event linkage.** Even `menu_approvals` and any future projection need `event_id`. The builder is writing `event_id = NULL`, and the couple's `user_id` has no row in `event_users`, so there is no way to resolve which event the selections belong to.
 
-### Decisions needed from you before building
-1. Is admin-only restore acceptable, or should couples also be able to roll back their own edits?
-2. Which areas are highest priority for both audit coverage and rollback (guests, menus, decor, working_timeline, financial_line_items, etc.)?
-3. Retention policy — keep everything, or cap (e.g. 90 days / last 50 versions per record)?
-4. For composite areas, do you want true multi-row "restore this save" or are leaf-row restores enough for v1?
+### What it would take to make it work
+At least one of the following — pick a direction before any code changes:
+
+- **A. Project builder JSON into `couple_selections` on submit.** Extend `sync_builder_submission_to_menu_approval` (or add a new trigger / edge function) to iterate the JSON keys (`rehearsalDinner`, `welcomeHour`, `cocktailHour`, `reception`, `mealInclusions`, `desserts`, `barPackage`, `stepNotes`) and insert matching rows into `couple_selections` (and probably `bar_selections` for `barPackage`). Requires a mapping from builder item identifiers → `menu_items.id` / `menu_sections.id`, which doesn't exist yet.
+- **B. Teach the Hub to read `builder_selections.selections` directly.** Change `MenuSelectionsDisplay` (and the portal panel) to fetch by `event_id` from `builder_selections` and render the JSON shape (`rehearsalDinner`, `welcomeHour`, …) instead of/in addition to the relational data.
+- **C. Fix the linkage regardless of approach.** Builder must populate `builder_selections.event_id`, and the couple's auth user must have an `event_users` row for that event (today: zero). Without this, neither A nor B can find the right event.
+
+Suggested fastest minimum to verify end-to-end: ensure builder writes `event_id`, then implement (B) as a read-only JSON fallback panel in the Hub while (A) is built out properly for catalog/pricing fidelity.
+
+No files were changed.
