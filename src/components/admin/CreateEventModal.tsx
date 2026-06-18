@@ -89,11 +89,11 @@ export default function CreateEventModal({ onClose }: Props) {
     e.preventDefault();
     setError(null);
 
-    if (!form.partner1_email || !form.partner2_email) {
-      setError("Both partner emails are required.");
+    if (!form.partner1_email) {
+      setError("Partner one's email is required.");
       return;
     }
-    if (form.partner1_email === form.partner2_email) {
+    if (form.partner2_email && form.partner1_email === form.partner2_email) {
       setError("Partners must have different email addresses.");
       return;
     }
