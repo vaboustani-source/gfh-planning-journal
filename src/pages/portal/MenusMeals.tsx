@@ -7,7 +7,9 @@ import { MealPrefs } from "./details/MealPrefs";
 import { Headcounts } from "./people/Headcounts";
 import { DietaryRestrictions } from "./details/DietaryRestrictions";
 import { BarSelections } from "./details/BarSelections";
-import { Check, Loader2, Lock, Unlock } from "lucide-react";
+import { Check, Loader2, Lock, Unlock, ExternalLink } from "lucide-react";
+
+const MENU_BUILDER_URL = "https://menu.gilbertsvillefarmhouse.com";
 import MenuSelectionsDisplay from "@/components/menu/MenuSelectionsDisplay";
 
 type ApprovalStatus = "not_started" | "submitted" | "under_review" | "approved" | "declined";
@@ -184,10 +186,21 @@ function MenuSelectionsPanel({ eventId }: { eventId: string }) {
     <div className="mb-8 rounded-xl border border-border bg-white p-5 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <p className="font-display text-lg text-foreground">Your menu selections</p>
-        <span className={`inline-flex items-center rounded-full border px-3 py-1 font-body text-xs ${banner.tone}`}>
-          {banner.label}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center rounded-full border px-3 py-1 font-body text-xs ${banner.tone}`}>
+            {banner.label}
+          </span>
+        </div>
       </div>
+      <a
+        href={MENU_BUILDER_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-body text-sm text-primary-foreground hover:bg-primary/90 transition-colors mb-4"
+      >
+        <ExternalLink size={14} />
+        Open menu builder
+      </a>
       <MenuSelectionsDisplay eventId={eventId} />
     </div>
   );
