@@ -7,7 +7,9 @@ import { MealPrefs } from "./details/MealPrefs";
 import { Headcounts } from "./people/Headcounts";
 import { DietaryRestrictions } from "./details/DietaryRestrictions";
 import { BarSelections } from "./details/BarSelections";
-import { Check, Loader2, Lock, Unlock } from "lucide-react";
+import { Check, Loader2, Lock, Unlock, ExternalLink } from "lucide-react";
+
+const MENU_BUILDER_URL = "https://menu.gilbertsvillefarmhouse.com";
 import MenuSelectionsDisplay from "@/components/menu/MenuSelectionsDisplay";
 
 type ApprovalStatus = "not_started" | "submitted" | "under_review" | "approved" | "declined";
