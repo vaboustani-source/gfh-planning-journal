@@ -2003,6 +2003,64 @@ export type Database = {
         }
         Relationships: []
       }
+      inbound_emails: {
+        Row: {
+          created_at: string
+          created_message_id: string | null
+          event_id: string | null
+          from_email: string | null
+          id: string
+          matched_user_id: string | null
+          postmark_message_id: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_message_id?: string | null
+          event_id?: string | null
+          from_email?: string | null
+          id?: string
+          matched_user_id?: string | null
+          postmark_message_id?: string | null
+          status: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_message_id?: string | null
+          event_id?: string | null
+          from_email?: string | null
+          id?: string
+          matched_user_id?: string | null
+          postmark_message_id?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbound_emails_created_message_id_fkey"
+            columns: ["created_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_emails_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_emails_matched_user_id_fkey"
+            columns: ["matched_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -3141,6 +3199,32 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reply_routes: {
+        Row: {
+          created_at: string
+          event_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reply_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
