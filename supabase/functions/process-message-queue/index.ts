@@ -10,6 +10,34 @@ const corsHeaders = {
 
 const PORTAL_BASE = APP_BASE_URL
 
+// Per-event reply address so couples can reply to notification emails and have it thread back in-app.
+const INBOUND_REPLY_ADDRESS = Deno.env.get('INBOUND_REPLY_ADDRESS') // e.g. "reply@reply.gilbertsvillefarmhouse.com"
+
+async function ensureReplyTo(supabase: any, eventId: string): Promise<string | undefined> {
+  if (!INBOUND_REPLY_ADDRESS || !INBOUND_REPLY_ADDRESS.includes('@')) return undefined
+  const { data: existing } = await supabase
+    .from('message_reply_routes')
+    .select('token')
+    .eq('event_id', eventId)
+    .maybeSingle()
+  let token: string | undefined = existing?.token
+  if (!token) {
+    token = crypto.randomUUID().replace(/-/g, '')
+    const { error } = await supabase.from('message_reply_routes').insert({ token, event_id: eventId })
+    if (error) {
+      const { data: again } = await supabase
+        .from('message_reply_routes')
+        .select('token')
+        .eq('event_id', eventId)
+        .maybeSingle()
+      token = again?.token
+    }
+  }
+  if (!token) return undefined
+  const [local, domain] = INBOUND_REPLY_ADDRESS.split('@')
+  return `${local}+${token}@${domain}`
+}
+
 interface QueuedMessage {
   sender_name: string
   body: string
@@ -174,6 +202,7 @@ Deno.serve(async (req) => {
 
         let subject: string
         let html: string
+        let replyTo: string | undefined
 
         if (row.recipient_role === 'admin') {
           const { prefix, suffix } = adminStatusParts(weddingDate)
@@ -203,12 +232,14 @@ Deno.serve(async (req) => {
           })
           subject = rendered.subject
           html = rendered.html
+          replyTo = await ensureReplyTo(supabase, row.event_id)
         }
 
         await sendEmail({
           to: row.recipient_email,
           subject,
           html,
+          replyTo,
         })
 
         await supabase
