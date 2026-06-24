@@ -4,6 +4,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // into the matching event's message thread. Public function — auth via ?s=<POSTMARK_INBOUND_SECRET>.
 // Sender must be a known user who is on the event (or role 'admin'). Idempotent on Postmark MessageID.
 
+// Remove the sender's email signature and mobile sign-offs from a reply body.
+function stripSignature(text: string): string {
+  const lines = text.split('\n')
+  // Standard signature delimiter line "-- " (Gmail, Apple Mail, etc.).
+  const idx = lines.findIndex((l) => l.trim() === '--')
+  let out = idx >= 0 ? lines.slice(0, idx).join('\n') : text
+  // Trim common mobile sign-offs at the end.
+  out = out.replace(/\n+\s*Sent from my (iPhone|iPad|Android|mobile device|phone).*$/is, '')
+  return out.trim()
+}
+
 Deno.serve(async (req) => {
   try {
     const url = new URL(req.url)
@@ -30,7 +41,7 @@ Deno.serve(async (req) => {
     const bodyRaw: string = (p.StrippedTextReply && String(p.StrippedTextReply).trim())
       ? String(p.StrippedTextReply)
       : String(p.TextBody ?? '')
-    const body = bodyRaw.trim()
+    const body = stripSignature(bodyRaw)
 
     async function log(status: string, extra: Record<string, unknown> = {}) {
       await supabase.from('inbound_emails').insert({
