@@ -1,7 +1,7 @@
 // Re-runs vendor matching for all filed emails on a given event.
 // Useful after vendors are added/edited so older emails inherit the new category.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders } from "../_shared/gmail.ts";
+import { corsHeaders, GMAIL_ALLOWED_ROLES } from "../_shared/gmail.ts";
 import { loadMatchContext, matchVendorForSender } from "../_shared/vendor-match.ts";
 
 Deno.serve(async (req) => {
@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { data: profile } = await userClient.from("users").select("role").eq("id", user.id).single();
-    if (profile?.role !== "admin") return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!GMAIL_ALLOWED_ROLES.includes(profile?.role ?? "")) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { event_id, only_uncategorized = true } = await req.json();
     if (!event_id) return new Response(JSON.stringify({ error: "event_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });

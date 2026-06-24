@@ -3,6 +3,8 @@
 
 export const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send";
 
+export const GMAIL_ALLOWED_ROLES = ["admin", "event_director", "planner"];
+
 export interface ParsedMessage {
   id: string;
   threadId: string;

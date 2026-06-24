@@ -73,7 +73,7 @@ const M: Record<Section, Record<Role, Access>> = {
   },
   gmail_inbox: {
     admin: "full", event_director: "full", sales_manager: "none",
-    marketing: "none", planner: "none", couple: "none", vendor: "none",
+    marketing: "none", planner: "full", couple: "none", vendor: "none",
   },
 };
 

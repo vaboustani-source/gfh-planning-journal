@@ -1,6 +1,6 @@
 // Returns the Google OAuth URL the admin should visit to connect Gmail.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders, GMAIL_SCOPE } from "../_shared/gmail.ts";
+import { corsHeaders, GMAIL_SCOPE, GMAIL_ALLOWED_ROLES } from "../_shared/gmail.ts";
 
 const FALLBACK_APP_ORIGIN = "https://plan.gilbertsvillefarmhouse.com";
 const ALLOWED_APP_ORIGINS = new Set([
@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
     // Verify admin
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-    if (profile?.role !== "admin") {
+    if (!GMAIL_ALLOWED_ROLES.includes(profile?.role ?? "")) {
       return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
