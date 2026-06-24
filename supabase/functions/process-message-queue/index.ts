@@ -202,6 +202,7 @@ Deno.serve(async (req) => {
 
         let subject: string
         let html: string
+        let replyTo: string | undefined
 
         if (row.recipient_role === 'admin') {
           const { prefix, suffix } = adminStatusParts(weddingDate)
@@ -231,12 +232,14 @@ Deno.serve(async (req) => {
           })
           subject = rendered.subject
           html = rendered.html
+          replyTo = await ensureReplyTo(supabase, row.event_id)
         }
 
         await sendEmail({
           to: row.recipient_email,
           subject,
           html,
+          replyTo,
         })
 
         await supabase
