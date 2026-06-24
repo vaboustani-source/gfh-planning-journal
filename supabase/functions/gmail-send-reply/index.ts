@@ -1,6 +1,6 @@
 // Sends a reply from Brandon's Gmail, threaded into the original Gmail conversation.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders, gmailApi, parseGmailMessage, refreshAccessToken } from "../_shared/gmail.ts";
+import { corsHeaders, gmailApi, parseGmailMessage, refreshAccessToken, GMAIL_ALLOWED_ROLES } from "../_shared/gmail.ts";
 
 function b64url(s: string): string {
   // UTF-8 safe base64url
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { data: profile } = await userClient.from("users").select("role").eq("id", user.id).single();
-    if (profile?.role !== "admin") return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!GMAIL_ALLOWED_ROLES.includes(profile?.role ?? "")) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json();
     const { event_id, gmail_thread_id, in_reply_to_message_id, to, subject, body_text } = body ?? {};

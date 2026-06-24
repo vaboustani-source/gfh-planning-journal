@@ -2,7 +2,7 @@
 // Updates every message in the thread on this event and teaches email_sender_map so
 // future emails from this sender auto-categorize.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders } from "../_shared/gmail.ts";
+import { corsHeaders, GMAIL_ALLOWED_ROLES } from "../_shared/gmail.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { data: profile } = await userClient.from("users").select("role").eq("id", user.id).single();
-    if (profile?.role !== "admin") return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!GMAIL_ALLOWED_ROLES.includes(profile?.role ?? "")) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { event_id, gmail_thread_id, vendor_id } = await req.json();
     if (!event_id || !gmail_thread_id) {
