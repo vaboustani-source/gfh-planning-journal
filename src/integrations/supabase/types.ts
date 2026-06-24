@@ -233,7 +233,7 @@ export type Database = {
       }
       builder_selections: {
         Row: {
-          couple_id: string
+          couple_id: string | null
           created_at: string
           event_id: string | null
           id: string
@@ -243,7 +243,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          couple_id: string
+          couple_id?: string | null
           created_at?: string
           event_id?: string | null
           id?: string
@@ -253,7 +253,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          couple_id?: string
+          couple_id?: string | null
           created_at?: string
           event_id?: string | null
           id?: string
