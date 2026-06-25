@@ -34,12 +34,13 @@ Deno.serve(async (req) => {
 
     const eventTitle = eventResult.data?.title || 'Wedding'
     const senderName = [sender.first_name, sender.last_name].filter(Boolean).join(' ') || sender.email
-    const isAdmin = sender.role === 'admin'
+    const STAFF_ROLES = ['admin', 'event_director', 'planner', 'sales_manager', 'marketing']
+    const isStaff = STAFF_ROLES.includes(sender.role)
 
     // Build recipient list
     const recipients: { email: string; role: string }[] = []
 
-    if (isAdmin) {
+    if (isStaff) {
       // Admin sent message → notify both partners
       const partnerIds = (eventUsersResult.data || []).map(eu => eu.user_id).filter(Boolean)
       if (partnerIds.length > 0) {
