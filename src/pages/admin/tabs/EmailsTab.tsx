@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Loader2, ChevronDown, ChevronRight, Paperclip, Reply, Send, X, Tag, RefreshCw, Sparkles } from "lucide-react";
+import { Mail, Loader2, ChevronDown, ChevronRight, Paperclip, Reply, Send, X, Tag, RefreshCw, Sparkles, FileText } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor, { htmlToPlainText } from "@/components/admin/RichTextEditor";
 
@@ -62,6 +62,8 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   const [sending, setSending] = useState(false);
   const [recategorizing, setRecategorizing] = useState(false);
   const [signatureHtml, setSignatureHtml] = useState<string>("");
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string; subject: string | null; body_html: string }>>([]);
+  const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
 
   const reload = async () => {
     setLoading(true);
@@ -89,6 +91,18 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
       setSignatureHtml((data?.html as string) ?? "");
     })();
   }, []);
+
+  // Load shared reply templates once
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("gmail_reply_templates")
+        .select("id, name, subject, body_html")
+        .order("name", { ascending: true });
+      setTemplates((data as any) ?? []);
+    })();
+  }, []);
+
 
   // Auto-recategorize once on mount if uncategorized exist and vendors exist
   useEffect(() => {
@@ -172,6 +186,22 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setReplySubject(/^re:/i.test(subj) ? subj : `Re: ${subj}`);
     setReplyBody(signatureHtml ? `<p></p><p></p>${signatureHtml}` : "");
     setReplyInReplyTo(lastReceived?.gmail_message_id ?? null);
+  };
+
+  const insertTemplate = (tplId: string) => {
+    const tpl = templates.find(x => x.id === tplId);
+    if (!tpl) return;
+    setTemplateMenuOpen(false);
+    if (tpl.subject && !replySubject.trim()) setReplySubject(tpl.subject);
+    // Insert template body above the signature if present; otherwise prepend to existing body.
+    setReplyBody((prev) => {
+      const sigMarker = signatureHtml ? `<p></p><p></p>${signatureHtml}` : "";
+      if (sigMarker && prev.endsWith(sigMarker)) {
+        const above = prev.slice(0, prev.length - sigMarker.length);
+        return `${above}${tpl.body_html}${sigMarker}`;
+      }
+      return `${tpl.body_html}${prev}`;
+    });
   };
 
   const sendReply = async () => {
@@ -345,6 +375,32 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
             <div className="grid gap-2">
               <input value={replyTo} onChange={(e) => setReplyTo(e.target.value)} placeholder="To" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
               <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} placeholder="Subject" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
+              {templates.length > 0 && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setTemplateMenuOpen(v => !v)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground"
+                  >
+                    <FileText size={12} /> Insert template <ChevronDown size={11} />
+                  </button>
+                  {templateMenuOpen && (
+                    <div className="absolute left-0 top-9 w-72 max-h-72 overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-10">
+                      {templates.map(tpl => (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          onClick={() => insertTemplate(tpl.id)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/40 font-body text-sm border-b border-border/40 last:border-0"
+                        >
+                          <div className="text-foreground truncate">{tpl.name}</div>
+                          {tpl.subject && <div className="text-[11px] text-muted-foreground truncate">{tpl.subject}</div>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <RichTextEditor value={replyBody} onChange={setReplyBody} placeholder="Write your reply..." minHeight={160} />
             </div>
             <div className="flex justify-end">
