@@ -25,6 +25,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Record<string, EventParticipant>>({});
   const [currentEventUserId, setCurrentEventUserId] = useState<string | null>(null);
+  const [readState, setReadState] = useState<Record<string, string>>({});
 
   const handleSectionClick = (key: string) => {
     const tab = SECTION_TO_ADMIN_TAB[key];
@@ -69,9 +70,33 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
     onUnreadChange(0);
   };
 
+  const upsertReadState = async (euId: string | null) => {
+    if (!eventId || !euId) return;
+    const now = new Date().toISOString();
+    await supabase
+      .from("message_read_state")
+      .upsert(
+        { event_user_id: euId, event_id: eventId, last_read_at: now, updated_at: now },
+        { onConflict: "event_user_id" }
+      );
+  };
+
+  const loadReadState = async () => {
+    if (!eventId) return;
+    const { data } = await supabase
+      .from("message_read_state")
+      .select("event_user_id, last_read_at")
+      .eq("event_id", eventId);
+    if (data) {
+      const map: Record<string, string> = {};
+      data.forEach((r: any) => { map[r.event_user_id] = r.last_read_at; });
+      setReadState(map);
+    }
+  };
+
   useEffect(() => {
     if (!eventId) return;
-    Promise.all([loadParticipants(), fetchMessages()]).then(() => {
+    Promise.all([loadParticipants(), fetchMessages(), loadReadState()]).then(() => {
       markRead();
       setTimeout(() => scrollToBottom("instant"), 100);
     });
@@ -86,12 +111,33 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
         setMessages(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
         setTimeout(() => scrollToBottom(), 50);
         markRead();
+        upsertReadState(currentEventUserId);
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    const readChannel = supabase
+      .channel(`admin-message-read-state-${eventId}`)
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "message_read_state",
+        filter: `event_id=eq.${eventId}`,
+      }, payload => {
+        const row = (payload.new ?? payload.old) as any;
+        if (!row?.event_user_id) return;
+        setReadState(prev => ({ ...prev, [row.event_user_id]: row.last_read_at }));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(readChannel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, user?.id]);
+  }, [eventId, user?.id, currentEventUserId]);
+
+  useEffect(() => {
+    upsertReadState(currentEventUserId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEventUserId, eventId]);
 
   useEffect(() => { if (!loading) scrollToBottom("instant"); }, [loading]);
 
@@ -140,6 +186,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
           onReply={handleReply}
           onSectionClick={handleSectionClick}
           searchQuery={searchQuery}
+          readStateByEventUserId={readState}
         />
         <div ref={bottomRef} />
       </div>

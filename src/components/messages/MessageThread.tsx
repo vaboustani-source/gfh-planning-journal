@@ -27,6 +27,7 @@ interface MessageThreadProps {
   onReply?: (msg: Message) => void;
   onSectionClick?: (sectionKey: string) => void;
   searchQuery?: string;
+  readStateByEventUserId?: Record<string, string>;
 }
 
 export function MessageThread({
@@ -37,6 +38,7 @@ export function MessageThread({
   onReply,
   onSectionClick,
   searchQuery = "",
+  readStateByEventUserId = {},
 }: MessageThreadProps) {
   const trimmedQuery = searchQuery.trim().toLowerCase();
   const visibleMessages = useMemo(() => {
@@ -107,6 +109,17 @@ export function MessageThread({
 
   const messageById: Record<string, Message> = {};
   messages.forEach(m => { messageById[m.id] = m; });
+
+  // ID of the current user's most recent own message (for "Seen by" row).
+  let lastOwnMessageId: string | null = null;
+  if (currentEventUserId) {
+    for (let k = messages.length - 1; k >= 0; k--) {
+      if (messages[k].sender_event_user_id === currentEventUserId) {
+        lastOwnMessageId = messages[k].id;
+        break;
+      }
+    }
+  }
 
   return (
     <div className="py-2">
@@ -302,6 +315,49 @@ export function MessageThread({
                       </button>
                     </div>
                   )}
+
+                  {/* Seen by: only under current user's most recent own message */}
+                  {isMe && msg.id === lastOwnMessageId && (() => {
+                    const msgTime = new Date(msg.created_at).getTime();
+                    const seenBy = Object.values(participantsById)
+                      .filter(p => p.id !== currentEventUserId && p.id !== msg.sender_event_user_id)
+                      .filter(p => {
+                        const ts = readStateByEventUserId[p.id];
+                        return ts && new Date(ts).getTime() >= msgTime;
+                      });
+                    if (seenBy.length === 0) return null;
+                    return (
+                      <div
+                        className="flex items-center flex-wrap gap-x-1 gap-y-0.5 mt-1 pr-1 justify-end"
+                        style={{ fontSize: "11px", color: "#6B6B6B" }}
+                      >
+                        <span className="font-body mr-0.5">Seen by</span>
+                        {seenBy.map((p, idx) => {
+                          const firstName = (p.display_name ?? "").split(" ")[0] || "Unknown";
+                          return (
+                            <span key={p.id} className="inline-flex items-center gap-1 font-body">
+                              <span
+                                className="inline-flex items-center justify-center rounded-full"
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  backgroundColor: p.color ?? "#6B6B6B",
+                                }}
+                              >
+                                <span
+                                  className="font-display font-bold leading-none"
+                                  style={{ fontSize: "9px", color: "#FAF8F4" }}
+                                >
+                                  {initialOf(p.display_name ?? "?")}
+                                </span>
+                              </span>
+                              <span>{firstName}{idx < seenBy.length - 1 ? "," : ""}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
