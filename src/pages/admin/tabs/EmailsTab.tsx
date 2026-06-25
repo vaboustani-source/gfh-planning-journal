@@ -188,6 +188,22 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setReplyInReplyTo(lastReceived?.gmail_message_id ?? null);
   };
 
+  const insertTemplate = (tplId: string) => {
+    const tpl = templates.find(x => x.id === tplId);
+    if (!tpl) return;
+    setTemplateMenuOpen(false);
+    if (tpl.subject && !replySubject.trim()) setReplySubject(tpl.subject);
+    // Insert template body above the signature if present; otherwise prepend to existing body.
+    setReplyBody((prev) => {
+      const sigMarker = signatureHtml ? `<p></p><p></p>${signatureHtml}` : "";
+      if (sigMarker && prev.endsWith(sigMarker)) {
+        const above = prev.slice(0, prev.length - sigMarker.length);
+        return `${above}${tpl.body_html}${sigMarker}`;
+      }
+      return `${tpl.body_html}${prev}`;
+    });
+  };
+
   const sendReply = async () => {
     const plain = htmlToPlainText(replyBody);
     if (!replyFor || !replyTo.trim() || !plain.trim()) {
