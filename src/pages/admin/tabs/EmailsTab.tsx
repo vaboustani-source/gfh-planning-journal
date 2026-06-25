@@ -170,7 +170,7 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setReplyTo(extractAddress(lastReceived?.from_address || ""));
     const subj = (thread.subject || "").replace(/^\s*(re:\s*)+/i, "Re: ").trim();
     setReplySubject(/^re:/i.test(subj) ? subj : `Re: ${subj}`);
-    setReplyBody("");
+    setReplyBody(signatureHtml ? `<p></p><p></p>${signatureHtml}` : "");
     setReplyInReplyTo(lastReceived?.gmail_message_id ?? null);
   };
 
