@@ -13,9 +13,45 @@ function b64(s: string): string {
   const bytes = new TextEncoder().encode(s);
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
-  // Standard base64 with line breaks every 76 chars (per MIME RFC 2045)
   const raw = btoa(bin);
   return raw.replace(/(.{76})/g, "$1\r\n");
+}
+
+function b64Bytes(bytes: Uint8Array): string {
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  const raw = btoa(bin);
+  return raw.replace(/(.{76})/g, "$1\r\n");
+}
+
+function buildAlternative(body_text: string, body_html: string | null | undefined, boundary: string): string {
+  if (body_html && typeof body_html === "string" && body_html.trim()) {
+    return [
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/plain; charset="UTF-8"`,
+      `Content-Transfer-Encoding: base64`,
+      ``,
+      b64(body_text),
+      `--${boundary}`,
+      `Content-Type: text/html; charset="UTF-8"`,
+      `Content-Transfer-Encoding: base64`,
+      ``,
+      b64(body_html),
+      `--${boundary}--`,
+      ``,
+    ].join("\r\n");
+  }
+  return [
+    `Content-Type: text/plain; charset="UTF-8"`,
+    `Content-Transfer-Encoding: base64`,
+    ``,
+    b64(body_text),
+  ].join("\r\n");
 }
 
 Deno.serve(async (req) => {
@@ -35,10 +71,12 @@ Deno.serve(async (req) => {
     if (!GMAIL_ALLOWED_ROLES.includes(profile?.role ?? "")) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json();
-    const { event_id, gmail_thread_id, in_reply_to_message_id, to, subject, body_text, body_html } = body ?? {};
+    const { event_id, gmail_thread_id, in_reply_to_message_id, to, subject, body_text, body_html, attachments } = body ?? {};
     if (!event_id || !gmail_thread_id || !to || !body_text) {
       return new Response(JSON.stringify({ error: "event_id, gmail_thread_id, to, body_text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    const atts: Array<{ path: string; filename: string; mime_type?: string; size?: number }> = Array.isArray(attachments) ? attachments : [];
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: conn } = await admin.from("gmail_connections").select("*").eq("user_id", user.id).maybeSingle();
@@ -82,30 +120,64 @@ Deno.serve(async (req) => {
     if (references) baseHeaders.push(`References: ${references}`);
 
     let raw: string;
-    if (body_html && typeof body_html === "string" && body_html.trim()) {
-      const boundary = `=_gfh_${crypto.randomUUID().replace(/-/g, "")}`;
+    if (atts.length === 0) {
+      // Preserve existing behavior exactly.
+      if (body_html && typeof body_html === "string" && body_html.trim()) {
+        const boundary = `=_gfh_${crypto.randomUUID().replace(/-/g, "")}`;
+        const headers = [
+          ...baseHeaders,
+          `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        ];
+        const parts = [
+          `--${boundary}`,
+          `Content-Type: text/plain; charset="UTF-8"`,
+          `Content-Transfer-Encoding: base64`,
+          ``,
+          b64(body_text),
+          `--${boundary}`,
+          `Content-Type: text/html; charset="UTF-8"`,
+          `Content-Transfer-Encoding: base64`,
+          ``,
+          b64(body_html),
+          `--${boundary}--`,
+          ``,
+        ].join("\r\n");
+        raw = headers.join("\r\n") + "\r\n\r\n" + parts;
+      } else {
+        const headers = [...baseHeaders, `Content-Type: text/plain; charset="UTF-8"`];
+        raw = headers.join("\r\n") + "\r\n\r\n" + body_text;
+      }
+    } else {
+      // Build multipart/mixed: alternative body + attachment parts.
+      const mixedBoundary = `=_gfh_mixed_${crypto.randomUUID().replace(/-/g, "")}`;
+      const altBoundary = `=_gfh_alt_${crypto.randomUUID().replace(/-/g, "")}`;
       const headers = [
         ...baseHeaders,
-        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`,
       ];
-      const parts = [
-        `--${boundary}`,
-        `Content-Type: text/plain; charset="UTF-8"`,
-        `Content-Transfer-Encoding: base64`,
-        ``,
-        b64(body_text),
-        `--${boundary}`,
-        `Content-Type: text/html; charset="UTF-8"`,
-        `Content-Transfer-Encoding: base64`,
-        ``,
-        b64(body_html),
-        `--${boundary}--`,
-        ``,
-      ].join("\r\n");
-      raw = headers.join("\r\n") + "\r\n\r\n" + parts;
-    } else {
-      const headers = [...baseHeaders, `Content-Type: text/plain; charset="UTF-8"`];
-      raw = headers.join("\r\n") + "\r\n\r\n" + body_text;
+      const sections: string[] = [];
+      sections.push(`--${mixedBoundary}`);
+      sections.push(buildAlternative(body_text, body_html, altBoundary));
+
+      for (const a of atts) {
+        if (!a?.path || !a?.filename) continue;
+        const { data: dl, error: dlErr } = await admin.storage.from("email-attachments").download(a.path);
+        if (dlErr || !dl) throw new Error(`Could not download attachment ${a.filename}: ${dlErr?.message ?? "missing"}`);
+        const buf = new Uint8Array(await dl.arrayBuffer());
+        const mime = a.mime_type || "application/octet-stream";
+        const safeName = a.filename.replace(/"/g, "");
+        sections.push(`--${mixedBoundary}`);
+        sections.push([
+          `Content-Type: ${mime}; name="${safeName}"`,
+          `Content-Disposition: attachment; filename="${safeName}"`,
+          `Content-Transfer-Encoding: base64`,
+          ``,
+          b64Bytes(buf),
+        ].join("\r\n"));
+      }
+      sections.push(`--${mixedBoundary}--`);
+      sections.push(``);
+      raw = headers.join("\r\n") + "\r\n\r\n" + sections.join("\r\n");
     }
     const encoded = b64url(raw);
 
