@@ -186,6 +186,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
           onReply={handleReply}
           onSectionClick={handleSectionClick}
           searchQuery={searchQuery}
+          readStateByEventUserId={readState}
         />
         <div ref={bottomRef} />
       </div>
