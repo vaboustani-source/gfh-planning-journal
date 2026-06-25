@@ -76,6 +76,20 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
 
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [eventId]);
 
+  // Load current user's email signature once
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await (supabase as any)
+        .from("email_signatures")
+        .select("html")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setSignatureHtml((data?.html as string) ?? "");
+    })();
+  }, []);
+
   // Auto-recategorize once on mount if uncategorized exist and vendors exist
   useEffect(() => {
     if (loading) return;
