@@ -1060,6 +1060,27 @@ export type Database = {
           },
         ]
       }
+      email_signatures: {
+        Row: {
+          created_at: string
+          html: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          html?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          html?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           body: string

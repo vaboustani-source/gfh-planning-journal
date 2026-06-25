@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Loader2, ChevronDown, ChevronRight, Paperclip, Reply, Send, X, Tag, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import RichTextEditor, { htmlToPlainText } from "@/components/admin/RichTextEditor";
 
 interface Email {
   id: string;
@@ -60,6 +61,7 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   const [replyInReplyTo, setReplyInReplyTo] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [recategorizing, setRecategorizing] = useState(false);
+  const [signatureHtml, setSignatureHtml] = useState<string>("");
 
   const reload = async () => {
     setLoading(true);
@@ -73,6 +75,20 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   };
 
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [eventId]);
+
+  // Load current user's email signature once
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await (supabase as any)
+        .from("email_signatures")
+        .select("html")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setSignatureHtml((data?.html as string) ?? "");
+    })();
+  }, []);
 
   // Auto-recategorize once on mount if uncategorized exist and vendors exist
   useEffect(() => {
@@ -154,12 +170,13 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setReplyTo(extractAddress(lastReceived?.from_address || ""));
     const subj = (thread.subject || "").replace(/^\s*(re:\s*)+/i, "Re: ").trim();
     setReplySubject(/^re:/i.test(subj) ? subj : `Re: ${subj}`);
-    setReplyBody("");
+    setReplyBody(signatureHtml ? `<p></p><p></p>${signatureHtml}` : "");
     setReplyInReplyTo(lastReceived?.gmail_message_id ?? null);
   };
 
   const sendReply = async () => {
-    if (!replyFor || !replyTo.trim() || !replyBody.trim()) {
+    const plain = htmlToPlainText(replyBody);
+    if (!replyFor || !replyTo.trim() || !plain.trim()) {
       toast.error("Add a recipient and a message before sending.");
       return;
     }
@@ -172,7 +189,8 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
           in_reply_to_message_id: replyInReplyTo,
           to: replyTo,
           subject: replySubject,
-          body_text: replyBody,
+          body_text: plain,
+          body_html: replyBody,
         },
       });
       if (error) throw error;
@@ -327,7 +345,7 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
             <div className="grid gap-2">
               <input value={replyTo} onChange={(e) => setReplyTo(e.target.value)} placeholder="To" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
               <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} placeholder="Subject" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
-              <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} placeholder="Write your reply…" rows={6} className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40 resize-y" />
+              <RichTextEditor value={replyBody} onChange={setReplyBody} placeholder="Write your reply..." minHeight={160} />
             </div>
             <div className="flex justify-end">
               <button onClick={sendReply} disabled={sending} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sage text-white font-body text-sm hover:bg-sage-dark disabled:opacity-60">
