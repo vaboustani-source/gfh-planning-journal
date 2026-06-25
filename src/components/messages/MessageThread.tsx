@@ -38,6 +38,7 @@ export function MessageThread({
   onReply,
   onSectionClick,
   searchQuery = "",
+  readStateByEventUserId = {},
 }: MessageThreadProps) {
   const trimmedQuery = searchQuery.trim().toLowerCase();
   const visibleMessages = useMemo(() => {
