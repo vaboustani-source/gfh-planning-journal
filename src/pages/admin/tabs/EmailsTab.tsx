@@ -422,43 +422,74 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
           <div className="border-t border-border bg-background/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="font-body text-xs font-medium text-muted-foreground uppercase tracking-wide">Reply from Brandon's Gmail</p>
-              <button onClick={() => setReplyFor(null)} className="text-muted-foreground hover:text-foreground">
+              <button onClick={closeReply} className="text-muted-foreground hover:text-foreground">
                 <X size={14} />
               </button>
             </div>
             <div className="grid gap-2">
               <input value={replyTo} onChange={(e) => setReplyTo(e.target.value)} placeholder="To" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
               <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} placeholder="Subject" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
-              {templates.length > 0 && (
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setTemplateMenuOpen(v => !v)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground"
-                  >
-                    <FileText size={12} /> Insert template <ChevronDown size={11} />
-                  </button>
-                  {templateMenuOpen && (
-                    <div className="absolute left-0 top-9 w-72 max-h-72 overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-10">
-                      {templates.map(tpl => (
-                        <button
-                          key={tpl.id}
-                          type="button"
-                          onClick={() => insertTemplate(tpl.id)}
-                          className="w-full text-left px-3 py-2 hover:bg-muted/40 font-body text-sm border-b border-border/40 last:border-0"
-                        >
-                          <div className="text-foreground truncate">{tpl.name}</div>
-                          {tpl.subject && <div className="text-[11px] text-muted-foreground truncate">{tpl.subject}</div>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              <div className="flex flex-wrap items-center gap-2">
+                {templates.length > 0 && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setTemplateMenuOpen(v => !v)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground"
+                    >
+                      <FileText size={12} /> Insert template <ChevronDown size={11} />
+                    </button>
+                    {templateMenuOpen && (
+                      <div className="absolute left-0 top-9 w-72 max-h-72 overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-10">
+                        {templates.map(tpl => (
+                          <button
+                            key={tpl.id}
+                            type="button"
+                            onClick={() => insertTemplate(tpl.id)}
+                            className="w-full text-left px-3 py-2 hover:bg-muted/40 font-body text-sm border-b border-border/40 last:border-0"
+                          >
+                            <div className="text-foreground truncate">{tpl.name}</div>
+                            {tpl.subject && <div className="text-[11px] text-muted-foreground truncate">{tpl.subject}</div>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground cursor-pointer">
+                  {uploadingAttachments ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />}
+                  Attach files
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { handleAttachFiles(e.target.files); e.currentTarget.value = ""; }}
+                  />
+                </label>
+                {attachments.length > 0 && (
+                  <span className="font-body text-[11px] text-muted-foreground">
+                    {formatBytes(attachments.reduce((s, a) => s + a.size, 0))} of 20 MB
+                  </span>
+                )}
+              </div>
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map(a => (
+                    <span key={a.path} className="inline-flex items-center gap-1.5 rounded-full bg-sage/10 border border-sage/25 px-2.5 py-1 font-body text-[11px] text-sage-dark">
+                      <Paperclip size={10} />
+                      <span className="truncate max-w-[180px]">{a.filename}</span>
+                      <span className="text-muted-foreground">{formatBytes(a.size)}</span>
+                      <button onClick={() => removeAttachment(a.path)} className="text-muted-foreground hover:text-foreground" aria-label={`Remove ${a.filename}`}>
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
                 </div>
               )}
               <RichTextEditor value={replyBody} onChange={setReplyBody} placeholder="Write your reply..." minHeight={160} />
             </div>
             <div className="flex justify-end">
-              <button onClick={sendReply} disabled={sending} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sage text-white font-body text-sm hover:bg-sage-dark disabled:opacity-60">
+              <button onClick={sendReply} disabled={sending || uploadingAttachments} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sage text-white font-body text-sm hover:bg-sage-dark disabled:opacity-60">
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 Send reply
               </button>
