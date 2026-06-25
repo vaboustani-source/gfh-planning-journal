@@ -28,6 +28,7 @@ import SettingsContractTemplates from "./pages/admin/settings/SettingsContractTe
 import SettingsEmailCopy from "./pages/admin/settings/SettingsEmailCopy";
 import SettingsScheduledEmails from "./pages/admin/settings/SettingsScheduledEmails";
 import SettingsEmailTest from "./pages/admin/settings/SettingsEmailTest";
+import SettingsEmailTemplates from "./pages/admin/settings/SettingsEmailTemplates";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import PortalHistory from "./pages/portal/History";
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="contract-templates" element={<SettingsContractTemplates />} />
               <Route path="email-copy" element={<SettingsEmailCopy />} />
               <Route path="automated-emails" element={<SettingsScheduledEmails />} />
+              <Route path="email-templates" element={<SettingsEmailTemplates />} />
               <Route path="integrations" element={<SettingsIntegrations />} />
               <Route path="team" element={<SettingsTeamRoles />} />
               <Route path="email-test" element={<SettingsEmailTest />} />
