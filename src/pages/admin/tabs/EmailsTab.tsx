@@ -375,6 +375,32 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
             <div className="grid gap-2">
               <input value={replyTo} onChange={(e) => setReplyTo(e.target.value)} placeholder="To" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
               <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} placeholder="Subject" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
+              {templates.length > 0 && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setTemplateMenuOpen(v => !v)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground"
+                  >
+                    <FileText size={12} /> Insert template <ChevronDown size={11} />
+                  </button>
+                  {templateMenuOpen && (
+                    <div className="absolute left-0 top-9 w-72 max-h-72 overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-10">
+                      {templates.map(tpl => (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          onClick={() => insertTemplate(tpl.id)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/40 font-body text-sm border-b border-border/40 last:border-0"
+                        >
+                          <div className="text-foreground truncate">{tpl.name}</div>
+                          {tpl.subject && <div className="text-[11px] text-muted-foreground truncate">{tpl.subject}</div>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <RichTextEditor value={replyBody} onChange={setReplyBody} placeholder="Write your reply..." minHeight={160} />
             </div>
             <div className="flex justify-end">
