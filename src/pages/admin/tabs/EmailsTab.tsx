@@ -272,13 +272,16 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
           subject: replySubject,
           body_text: plain,
           body_html: replyBody,
+          attachments: attachments.length > 0 ? attachments : undefined,
         },
       });
       if (error) throw error;
       toast.success("Reply sent.");
+      const sentThread = replyFor;
       setReplyFor(null);
+      setAttachments([]);
       await reload();
-      setOpenThreads(prev => new Set(prev).add(replyFor));
+      if (sentThread) setOpenThreads(prev => new Set(prev).add(sentThread));
     } catch (e: any) {
       toast.error(e.message ?? "Could not send");
     } finally {
