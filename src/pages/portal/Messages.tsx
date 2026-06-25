@@ -20,6 +20,7 @@ export default function Messages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Record<string, EventParticipant>>({});
   const [currentEventUserId, setCurrentEventUserId] = useState<string | null>(null);
+  const [readState, setReadState] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
