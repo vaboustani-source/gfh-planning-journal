@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     const [senderResult, eventResult, eventUsersResult] = await Promise.all([
       supabase.from('users').select('role, first_name, last_name, email').eq('id', sender_id).single(),
       supabase.from('events').select('title').eq('id', event_id).single(),
-      supabase.from('event_users').select('user_id, role_in_event').eq('event_id', event_id),
+      supabase.from('event_users').select('id, user_id, role_in_event, display_name').eq('event_id', event_id),
     ])
 
     const sender = senderResult.data
@@ -61,9 +61,15 @@ Deno.serve(async (req) => {
     const now = new Date()
     const scheduledAt = new Date(now.getTime() + 10 * 60 * 1000) // now + 10 minutes
 
+    // Resolve @mentions and #sections for the email digest. The in-app thread keeps the raw [[@id]] markup.
+    const nameById = new Map((eventUsersResult.data || []).map((eu: any) => [eu.id, eu.display_name]))
+    const resolvedBody = String(message_body)
+      .replace(/\[\[@([0-9a-fA-F-]{8,})\]\]/g, (_m: string, id: string) => `@${nameById.get(id) ?? 'Unknown'}`)
+      .replace(/\[\[#([a-z0-9_-]+)\]\]/g, (_m: string, s: string) => `#${s}`)
+
     const messageEntry = {
       sender_name: senderName,
-      body: message_body,
+      body: resolvedBody,
       sent_at: now.toISOString(),
     }
 
