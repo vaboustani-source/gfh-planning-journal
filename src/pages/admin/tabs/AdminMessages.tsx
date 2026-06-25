@@ -25,6 +25,7 @@ export default function AdminMessages({ eventId, onUnreadChange }: { eventId: st
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Record<string, EventParticipant>>({});
   const [currentEventUserId, setCurrentEventUserId] = useState<string | null>(null);
+  const [readState, setReadState] = useState<Record<string, string>>({});
 
   const handleSectionClick = (key: string) => {
     const tab = SECTION_TO_ADMIN_TAB[key];
