@@ -198,6 +198,7 @@ export default function Messages() {
             onReply={handleReply}
             onSectionClick={handleSectionClick}
             searchQuery={searchQuery}
+            readStateByEventUserId={readState}
           />
           <div ref={bottomRef} />
         </div>
