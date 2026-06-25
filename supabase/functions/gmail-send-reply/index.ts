@@ -3,11 +3,19 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders, gmailApi, parseGmailMessage, refreshAccessToken, GMAIL_ALLOWED_ROLES } from "../_shared/gmail.ts";
 
 function b64url(s: string): string {
-  // UTF-8 safe base64url
   const bytes = new TextEncoder().encode(s);
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function b64(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  // Standard base64 with line breaks every 76 chars (per MIME RFC 2045)
+  const raw = btoa(bin);
+  return raw.replace(/(.{76})/g, "$1\r\n");
 }
 
 Deno.serve(async (req) => {
@@ -27,7 +35,7 @@ Deno.serve(async (req) => {
     if (!GMAIL_ALLOWED_ROLES.includes(profile?.role ?? "")) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json();
-    const { event_id, gmail_thread_id, in_reply_to_message_id, to, subject, body_text } = body ?? {};
+    const { event_id, gmail_thread_id, in_reply_to_message_id, to, subject, body_text, body_html } = body ?? {};
     if (!event_id || !gmail_thread_id || !to || !body_text) {
       return new Response(JSON.stringify({ error: "event_id, gmail_thread_id, to, body_text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -37,7 +45,6 @@ Deno.serve(async (req) => {
     if (!conn) return new Response(JSON.stringify({ error: "Gmail not connected" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const accessToken = await refreshAccessToken(conn.refresh_token);
 
-    // Look up RFC Message-Id + References from the most recent original message in the thread (for proper threading).
     let inReplyTo = "";
     let references = "";
     let subj = (subject || "").trim();
@@ -65,16 +72,41 @@ Deno.serve(async (req) => {
     if (!/^re:/i.test(subj)) subj = "Re: " + subj;
 
     const fromHeader = `Brandon <${conn.email_address}>`;
-    const headers = [
+    const baseHeaders = [
       `From: ${fromHeader}`,
       `To: ${to}`,
       `Subject: ${subj}`,
       `MIME-Version: 1.0`,
-      `Content-Type: text/plain; charset="UTF-8"`,
     ];
-    if (inReplyTo) headers.push(`In-Reply-To: ${inReplyTo}`);
-    if (references) headers.push(`References: ${references}`);
-    const raw = headers.join("\r\n") + "\r\n\r\n" + body_text;
+    if (inReplyTo) baseHeaders.push(`In-Reply-To: ${inReplyTo}`);
+    if (references) baseHeaders.push(`References: ${references}`);
+
+    let raw: string;
+    if (body_html && typeof body_html === "string" && body_html.trim()) {
+      const boundary = `=_gfh_${crypto.randomUUID().replace(/-/g, "")}`;
+      const headers = [
+        ...baseHeaders,
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      ];
+      const parts = [
+        `--${boundary}`,
+        `Content-Type: text/plain; charset="UTF-8"`,
+        `Content-Transfer-Encoding: base64`,
+        ``,
+        b64(body_text),
+        `--${boundary}`,
+        `Content-Type: text/html; charset="UTF-8"`,
+        `Content-Transfer-Encoding: base64`,
+        ``,
+        b64(body_html),
+        `--${boundary}--`,
+        ``,
+      ].join("\r\n");
+      raw = headers.join("\r\n") + "\r\n\r\n" + parts;
+    } else {
+      const headers = [...baseHeaders, `Content-Type: text/plain; charset="UTF-8"`];
+      raw = headers.join("\r\n") + "\r\n\r\n" + body_text;
+    }
     const encoded = b64url(raw);
 
     const sendRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
@@ -88,7 +120,6 @@ Deno.serve(async (req) => {
     }
     const sent = await sendRes.json();
 
-    // Fetch full sent message and store it
     const fullSent = await gmailApi(accessToken, `/messages/${sent.id}?format=full`);
     const p = parseGmailMessage(fullSent);
     await admin.from("project_emails").upsert({
@@ -100,7 +131,7 @@ Deno.serve(async (req) => {
       to_addresses: p.to_addresses ?? to,
       subject: p.subject ?? subj,
       body_text: p.body_text ?? body_text,
-      body_html: p.body_html,
+      body_html: p.body_html ?? (body_html || null),
       snippet: p.snippet,
       has_attachments: p.has_attachments,
       attachments: p.attachments,
