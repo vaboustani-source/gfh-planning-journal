@@ -3167,6 +3167,35 @@ export type Database = {
         }
         Relationships: []
       }
+      message_read_state: {
+        Row: {
+          event_id: string
+          event_user_id: string
+          last_read_at: string
+          updated_at: string
+        }
+        Insert: {
+          event_id: string
+          event_user_id: string
+          last_read_at?: string
+          updated_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_user_id?: string
+          last_read_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_read_state_event_user_id_fkey"
+            columns: ["event_user_id"]
+            isOneToOne: true
+            referencedRelation: "event_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reads: {
         Row: {
           event_user_id: string
