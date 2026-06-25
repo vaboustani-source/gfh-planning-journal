@@ -64,6 +64,8 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   const [signatureHtml, setSignatureHtml] = useState<string>("");
   const [templates, setTemplates] = useState<Array<{ id: string; name: string; subject: string | null; body_html: string }>>([]);
   const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{ path: string; filename: string; mime_type: string; size: number }>>([]);
+  const [uploadingAttachments, setUploadingAttachments] = useState(false);
 
   const reload = async () => {
     setLoading(true);
