@@ -110,6 +110,17 @@ export function MessageThread({
   const messageById: Record<string, Message> = {};
   messages.forEach(m => { messageById[m.id] = m; });
 
+  // ID of the current user's most recent own message (for "Seen by" row).
+  let lastOwnMessageId: string | null = null;
+  if (currentEventUserId) {
+    for (let k = messages.length - 1; k >= 0; k--) {
+      if (messages[k].sender_event_user_id === currentEventUserId) {
+        lastOwnMessageId = messages[k].id;
+        break;
+      }
+    }
+  }
+
   return (
     <div className="py-2">
       {visibleMessages.map((msg, i) => {
