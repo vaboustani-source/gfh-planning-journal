@@ -9,6 +9,7 @@ import {
 import { formatDistanceToNow, parseISO, differenceInDays, format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { MidweekBadge } from "@/components/admin/MidweekBadge";
+import { bodyToPlainText } from "@/lib/messageUtils";
 
 type ItemKind = "message" | "contract" | "form" | "milestone" | "mention" | "handoff";
 
@@ -132,7 +133,7 @@ export default function ActionQueue() {
             const isCouple = m.sender_id && coupleUserIds.has(m.sender_id);
             return {
               who: eu?.display_name || (isCouple ? "Couple" : "Brandon"),
-              body: (m.body || "").toString().replace(/<[^>]+>/g, "").trim(),
+              body: bodyToPlainText((m.body || "").toString().replace(/<[^>]+>/g, ""), euById as any),
               created_at: m.created_at!,
             };
           });
@@ -156,7 +157,7 @@ export default function ActionQueue() {
           id: `mention-${m.id}`, kind: "mention", event_id: m.event_id!,
           event_name: eventName(m.event_id!), wedding_date: eventWedding(m.event_id!),
           message_id: m.id, who: eu?.display_name || "Someone",
-          snippet: ((m.body || "").toString().replace(/<[^>]+>/g, "").trim()).slice(0, 140),
+          snippet: bodyToPlainText((m.body || "").toString().replace(/<[^>]+>/g, ""), euById as any).slice(0, 140),
           urgency: 1, created_at: m.created_at!,
         });
       });
