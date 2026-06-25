@@ -64,6 +64,8 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   const [signatureHtml, setSignatureHtml] = useState<string>("");
   const [templates, setTemplates] = useState<Array<{ id: string; name: string; subject: string | null; body_html: string }>>([]);
   const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{ path: string; filename: string; mime_type: string; size: number }>>([]);
+  const [uploadingAttachments, setUploadingAttachments] = useState(false);
 
   const reload = async () => {
     setLoading(true);
@@ -178,6 +180,19 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setOpenMessages(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
 
+  const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+
+  const formatBytes = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const closeReply = () => {
+    setReplyFor(null);
+    setAttachments([]);
+  };
+
   const openReply = (thread: { id: string; subject: string; messages: Email[] }) => {
     const lastReceived = [...thread.messages].reverse().find(m => (m.direction ?? "received") === "received") || thread.messages[thread.messages.length - 1];
     setReplyFor(thread.id);
@@ -186,6 +201,42 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setReplySubject(/^re:/i.test(subj) ? subj : `Re: ${subj}`);
     setReplyBody(signatureHtml ? `<p></p><p></p>${signatureHtml}` : "");
     setReplyInReplyTo(lastReceived?.gmail_message_id ?? null);
+    setAttachments([]);
+  };
+
+  const handleAttachFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const incoming = Array.from(files);
+    const currentTotal = attachments.reduce((s, a) => s + a.size, 0);
+    const addedTotal = incoming.reduce((s, f) => s + f.size, 0);
+    if (currentTotal + addedTotal > MAX_TOTAL_BYTES) {
+      toast.error("Attachments exceed the 20 MB total limit.");
+      return;
+    }
+    setUploadingAttachments(true);
+    try {
+      const uploaded: typeof attachments = [];
+      for (const file of incoming) {
+        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${eventId}/${crypto.randomUUID()}-${safe}`;
+        const { error } = await supabase.storage.from("email-attachments").upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+        if (error) throw error;
+        uploaded.push({ path, filename: file.name, mime_type: file.type || "application/octet-stream", size: file.size });
+      }
+      setAttachments(prev => [...prev, ...uploaded]);
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not upload attachment");
+    } finally {
+      setUploadingAttachments(false);
+    }
+  };
+
+  const removeAttachment = async (path: string) => {
+    setAttachments(prev => prev.filter(a => a.path !== path));
+    try { await supabase.storage.from("email-attachments").remove([path]); } catch { /* best effort */ }
   };
 
   const insertTemplate = (tplId: string) => {
@@ -221,13 +272,16 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
           subject: replySubject,
           body_text: plain,
           body_html: replyBody,
+          attachments: attachments.length > 0 ? attachments : undefined,
         },
       });
       if (error) throw error;
       toast.success("Reply sent.");
+      const sentThread = replyFor;
       setReplyFor(null);
+      setAttachments([]);
       await reload();
-      setOpenThreads(prev => new Set(prev).add(replyFor));
+      if (sentThread) setOpenThreads(prev => new Set(prev).add(sentThread));
     } catch (e: any) {
       toast.error(e.message ?? "Could not send");
     } finally {
@@ -368,43 +422,74 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
           <div className="border-t border-border bg-background/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="font-body text-xs font-medium text-muted-foreground uppercase tracking-wide">Reply from Brandon's Gmail</p>
-              <button onClick={() => setReplyFor(null)} className="text-muted-foreground hover:text-foreground">
+              <button onClick={closeReply} className="text-muted-foreground hover:text-foreground">
                 <X size={14} />
               </button>
             </div>
             <div className="grid gap-2">
               <input value={replyTo} onChange={(e) => setReplyTo(e.target.value)} placeholder="To" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
               <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} placeholder="Subject" className="w-full px-3 py-2 rounded-lg border border-border bg-card font-body text-sm focus:outline-none focus:ring-2 focus:ring-sage/40" />
-              {templates.length > 0 && (
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setTemplateMenuOpen(v => !v)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground"
-                  >
-                    <FileText size={12} /> Insert template <ChevronDown size={11} />
-                  </button>
-                  {templateMenuOpen && (
-                    <div className="absolute left-0 top-9 w-72 max-h-72 overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-10">
-                      {templates.map(tpl => (
-                        <button
-                          key={tpl.id}
-                          type="button"
-                          onClick={() => insertTemplate(tpl.id)}
-                          className="w-full text-left px-3 py-2 hover:bg-muted/40 font-body text-sm border-b border-border/40 last:border-0"
-                        >
-                          <div className="text-foreground truncate">{tpl.name}</div>
-                          {tpl.subject && <div className="text-[11px] text-muted-foreground truncate">{tpl.subject}</div>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              <div className="flex flex-wrap items-center gap-2">
+                {templates.length > 0 && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setTemplateMenuOpen(v => !v)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground"
+                    >
+                      <FileText size={12} /> Insert template <ChevronDown size={11} />
+                    </button>
+                    {templateMenuOpen && (
+                      <div className="absolute left-0 top-9 w-72 max-h-72 overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-10">
+                        {templates.map(tpl => (
+                          <button
+                            key={tpl.id}
+                            type="button"
+                            onClick={() => insertTemplate(tpl.id)}
+                            className="w-full text-left px-3 py-2 hover:bg-muted/40 font-body text-sm border-b border-border/40 last:border-0"
+                          >
+                            <div className="text-foreground truncate">{tpl.name}</div>
+                            {tpl.subject && <div className="text-[11px] text-muted-foreground truncate">{tpl.subject}</div>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 font-body text-xs text-foreground cursor-pointer">
+                  {uploadingAttachments ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />}
+                  Attach files
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { handleAttachFiles(e.target.files); e.currentTarget.value = ""; }}
+                  />
+                </label>
+                {attachments.length > 0 && (
+                  <span className="font-body text-[11px] text-muted-foreground">
+                    {formatBytes(attachments.reduce((s, a) => s + a.size, 0))} of 20 MB
+                  </span>
+                )}
+              </div>
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map(a => (
+                    <span key={a.path} className="inline-flex items-center gap-1.5 rounded-full bg-sage/10 border border-sage/25 px-2.5 py-1 font-body text-[11px] text-sage-dark">
+                      <Paperclip size={10} />
+                      <span className="truncate max-w-[180px]">{a.filename}</span>
+                      <span className="text-muted-foreground">{formatBytes(a.size)}</span>
+                      <button onClick={() => removeAttachment(a.path)} className="text-muted-foreground hover:text-foreground" aria-label={`Remove ${a.filename}`}>
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
                 </div>
               )}
               <RichTextEditor value={replyBody} onChange={setReplyBody} placeholder="Write your reply..." minHeight={160} />
             </div>
             <div className="flex justify-end">
-              <button onClick={sendReply} disabled={sending} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sage text-white font-body text-sm hover:bg-sage-dark disabled:opacity-60">
+              <button onClick={sendReply} disabled={sending || uploadingAttachments} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sage text-white font-body text-sm hover:bg-sage-dark disabled:opacity-60">
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 Send reply
               </button>
