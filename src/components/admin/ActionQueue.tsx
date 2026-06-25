@@ -352,6 +352,9 @@ function ActionCard({ item, eventName, onSent }: { item: QueueItem; eventName: s
         sender_event_user_id: eu?.id ?? null,
         body: draft.trim(),
       });
+      supabase.functions.invoke("enqueue-message-notification", {
+        body: { event_id: item.event_id, sender_id: user.id, message_body: draft.trim() },
+      }).catch(err => console.warn("Notification enqueue failed:", err));
       toast({ title: "Reply sent", description: `Sent to ${eventName}.` });
       setDraft(""); setShowDraft(false);
       onSent();
