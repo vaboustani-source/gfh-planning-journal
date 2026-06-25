@@ -61,6 +61,7 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   const [replyInReplyTo, setReplyInReplyTo] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [recategorizing, setRecategorizing] = useState(false);
+  const [signatureHtml, setSignatureHtml] = useState<string>("");
 
   const reload = async () => {
     setLoading(true);
