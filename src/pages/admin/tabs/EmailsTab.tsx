@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Loader2, ChevronDown, ChevronRight, Paperclip, Reply, Send, X, Tag, RefreshCw, Sparkles } from "lucide-react";
+import { Mail, Loader2, ChevronDown, ChevronRight, Paperclip, Reply, Send, X, Tag, RefreshCw, Sparkles, FileText } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor, { htmlToPlainText } from "@/components/admin/RichTextEditor";
 
