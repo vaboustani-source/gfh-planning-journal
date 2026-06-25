@@ -180,6 +180,19 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setOpenMessages(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
 
+  const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+
+  const formatBytes = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const closeReply = () => {
+    setReplyFor(null);
+    setAttachments([]);
+  };
+
   const openReply = (thread: { id: string; subject: string; messages: Email[] }) => {
     const lastReceived = [...thread.messages].reverse().find(m => (m.direction ?? "received") === "received") || thread.messages[thread.messages.length - 1];
     setReplyFor(thread.id);
@@ -188,6 +201,42 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
     setReplySubject(/^re:/i.test(subj) ? subj : `Re: ${subj}`);
     setReplyBody(signatureHtml ? `<p></p><p></p>${signatureHtml}` : "");
     setReplyInReplyTo(lastReceived?.gmail_message_id ?? null);
+    setAttachments([]);
+  };
+
+  const handleAttachFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const incoming = Array.from(files);
+    const currentTotal = attachments.reduce((s, a) => s + a.size, 0);
+    const addedTotal = incoming.reduce((s, f) => s + f.size, 0);
+    if (currentTotal + addedTotal > MAX_TOTAL_BYTES) {
+      toast.error("Attachments exceed the 20 MB total limit.");
+      return;
+    }
+    setUploadingAttachments(true);
+    try {
+      const uploaded: typeof attachments = [];
+      for (const file of incoming) {
+        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${eventId}/${crypto.randomUUID()}-${safe}`;
+        const { error } = await supabase.storage.from("email-attachments").upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+        if (error) throw error;
+        uploaded.push({ path, filename: file.name, mime_type: file.type || "application/octet-stream", size: file.size });
+      }
+      setAttachments(prev => [...prev, ...uploaded]);
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not upload attachment");
+    } finally {
+      setUploadingAttachments(false);
+    }
+  };
+
+  const removeAttachment = async (path: string) => {
+    setAttachments(prev => prev.filter(a => a.path !== path));
+    try { await supabase.storage.from("email-attachments").remove([path]); } catch { /* best effort */ }
   };
 
   const insertTemplate = (tplId: string) => {
