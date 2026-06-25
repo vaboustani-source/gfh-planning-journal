@@ -175,7 +175,8 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   };
 
   const sendReply = async () => {
-    if (!replyFor || !replyTo.trim() || !replyBody.trim()) {
+    const plain = htmlToPlainText(replyBody);
+    if (!replyFor || !replyTo.trim() || !plain.trim()) {
       toast.error("Add a recipient and a message before sending.");
       return;
     }
@@ -188,7 +189,8 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
           in_reply_to_message_id: replyInReplyTo,
           to: replyTo,
           subject: replySubject,
-          body_text: replyBody,
+          body_text: plain,
+          body_html: replyBody,
         },
       });
       if (error) throw error;
