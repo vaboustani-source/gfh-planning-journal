@@ -77,7 +77,7 @@ export async function sendEmail(params: SendEmailParams): Promise<ResendEmailRes
   const defaultReplyTo = 'experience@gilbertsvillefarmhouse.com';
 
   const payload = {
-    from: 'Gilbertsville Farmhouse <noreply@plan.gilbertsvillefarmhouse.com>',
+    from: 'Gilbertsville Farmhouse <noreply@notify.gilbertsvillefarmhouse.com>',
     to: Array.isArray(to) ? to : [to],
     subject,
     html,
