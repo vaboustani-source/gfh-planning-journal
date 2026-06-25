@@ -27,6 +27,7 @@ interface MessageThreadProps {
   onReply?: (msg: Message) => void;
   onSectionClick?: (sectionKey: string) => void;
   searchQuery?: string;
+  readStateByEventUserId?: Record<string, string>;
 }
 
 export function MessageThread({
