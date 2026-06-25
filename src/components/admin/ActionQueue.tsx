@@ -9,6 +9,7 @@ import {
 import { formatDistanceToNow, parseISO, differenceInDays, format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { MidweekBadge } from "@/components/admin/MidweekBadge";
+import { bodyToPlainText } from "@/lib/messageUtils";
 
 type ItemKind = "message" | "contract" | "form" | "milestone" | "mention" | "handoff";
 
