@@ -62,6 +62,8 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
   const [sending, setSending] = useState(false);
   const [recategorizing, setRecategorizing] = useState(false);
   const [signatureHtml, setSignatureHtml] = useState<string>("");
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string; subject: string | null; body_html: string }>>([]);
+  const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
 
   const reload = async () => {
     setLoading(true);
@@ -89,6 +91,18 @@ export default function EmailsTab({ eventId }: { eventId: string }) {
       setSignatureHtml((data?.html as string) ?? "");
     })();
   }, []);
+
+  // Load shared reply templates once
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("gmail_reply_templates")
+        .select("id, name, subject, body_html")
+        .order("name", { ascending: true });
+      setTemplates((data as any) ?? []);
+    })();
+  }, []);
+
 
   // Auto-recategorize once on mount if uncategorized exist and vendors exist
   useEffect(() => {
