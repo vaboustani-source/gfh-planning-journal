@@ -57,7 +57,7 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
           .select("guest_id, restriction, severity, applies_to_meals")
           .eq("event_id", eventId),
       ]);
-      if (mealsRes.data) setMeals(mealsRes.data.map((m: any) => ({ ...m, included_in_package: m.included_in_package ?? true })));
+      if (mealsRes.data) setMeals(mealsRes.data.map((m: any) => ({ ...m, included_in_package: m.included_in_package ?? true, doing_meal: m.doing_meal ?? true })));
       if (guestsRes.data) setGuests(guestsRes.data as any);
       if (dietRes.data) setDietaries(dietRes.data as any);
       setLoading(false);
