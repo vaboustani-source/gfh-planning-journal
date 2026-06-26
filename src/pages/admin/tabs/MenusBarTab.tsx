@@ -33,6 +33,7 @@ interface MealEvent {
   kids_count: number | null;
   vendor_count: number | null;
   included_in_package: boolean;
+  doing_meal: boolean;
   notes: string | null;
 }
 
@@ -56,7 +57,7 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
           .select("guest_id, restriction, severity, applies_to_meals")
           .eq("event_id", eventId),
       ]);
-      if (mealsRes.data) setMeals(mealsRes.data.map((m: any) => ({ ...m, included_in_package: m.included_in_package ?? true })));
+      if (mealsRes.data) setMeals(mealsRes.data.map((m: any) => ({ ...m, included_in_package: m.included_in_package ?? true, doing_meal: m.doing_meal ?? true })));
       if (guestsRes.data) setGuests(guestsRes.data as any);
       if (dietRes.data) setDietaries(dietRes.data as any);
       setLoading(false);
@@ -73,10 +74,10 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
   const addMeal = async () => {
     const { data } = await supabase
       .from("meal_events")
-      .insert({ event_id: eventId, meal_type: "New Meal", included_in_package: true })
+      .insert({ event_id: eventId, meal_type: "New Meal", included_in_package: true, doing_meal: true } as any)
       .select("*")
       .single();
-    if (data) setMeals(prev => [...prev, { ...data, included_in_package: data.included_in_package ?? true }]);
+    if (data) setMeals(prev => [...prev, { ...data, included_in_package: data.included_in_package ?? true, doing_meal: (data as any).doing_meal ?? true }]);
   };
 
   const deleteMeal = async (id: string) => {
@@ -168,9 +169,29 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={meal.included_in_package} onChange={e => updateMeal(meal.id, "included_in_package", e.target.checked)} className="accent-primary" />
-            <span className="font-body text-xs text-muted-foreground">Included in package</span>
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2">
+            <div className="flex flex-col">
+              <span className="font-body text-xs font-medium text-foreground">Doing this meal?</span>
+              <span className="font-body text-[10px] text-muted-foreground italic">Internal status, not shown to couples</span>
+            </div>
+            <div className="inline-flex rounded-md border border-border overflow-hidden" role="group" aria-label="Doing this meal?">
+              <button
+                type="button"
+                onClick={() => updateMeal(meal.id, "doing_meal", true)}
+                className={`px-3 py-1 font-body text-xs transition-colors ${meal.doing_meal ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                aria-pressed={meal.doing_meal === true}
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                onClick={() => updateMeal(meal.id, "doing_meal", false)}
+                className={`px-3 py-1 font-body text-xs transition-colors border-l border-border ${meal.doing_meal === false ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                aria-pressed={meal.doing_meal === false}
+              >
+                No
+              </button>
+            </div>
           </div>
           <div>
             <label className="font-body text-[10px] tracking-widest uppercase text-muted-foreground">Notes</label>

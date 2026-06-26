@@ -157,6 +157,7 @@ const FIELD_LABELS: Record<string, Record<string, string>> = {
     kids_count: "Kids count",
     vendor_count: "Vendor count",
     included_in_package: "Included in package",
+    doing_meal: "Doing this meal?",
     notes: "Notes",
   },
   guests: {

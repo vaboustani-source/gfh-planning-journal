@@ -2825,6 +2825,7 @@ export type Database = {
       meal_events: {
         Row: {
           adult_count: number | null
+          doing_meal: boolean | null
           event_id: string | null
           id: string
           included_in_package: boolean | null
@@ -2836,6 +2837,7 @@ export type Database = {
         }
         Insert: {
           adult_count?: number | null
+          doing_meal?: boolean | null
           event_id?: string | null
           id?: string
           included_in_package?: boolean | null
@@ -2847,6 +2849,7 @@ export type Database = {
         }
         Update: {
           adult_count?: number | null
+          doing_meal?: boolean | null
           event_id?: string | null
           id?: string
           included_in_package?: boolean | null
