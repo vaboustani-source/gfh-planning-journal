@@ -1,0 +1,1 @@
+ALTER TABLE public.meal_events ADD COLUMN IF NOT EXISTS doing_meal boolean DEFAULT true;
