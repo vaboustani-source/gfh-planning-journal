@@ -33,6 +33,7 @@ interface MealEvent {
   kids_count: number | null;
   vendor_count: number | null;
   included_in_package: boolean;
+  doing_meal: boolean;
   notes: string | null;
 }
 
