@@ -74,10 +74,10 @@ function MealEventsSubTab({ eventId }: { eventId: string }) {
   const addMeal = async () => {
     const { data } = await supabase
       .from("meal_events")
-      .insert({ event_id: eventId, meal_type: "New Meal", included_in_package: true })
+      .insert({ event_id: eventId, meal_type: "New Meal", included_in_package: true, doing_meal: true } as any)
       .select("*")
       .single();
-    if (data) setMeals(prev => [...prev, { ...data, included_in_package: data.included_in_package ?? true }]);
+    if (data) setMeals(prev => [...prev, { ...data, included_in_package: data.included_in_package ?? true, doing_meal: (data as any).doing_meal ?? true }]);
   };
 
   const deleteMeal = async (id: string) => {
