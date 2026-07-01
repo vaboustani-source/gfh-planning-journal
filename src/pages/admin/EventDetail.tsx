@@ -61,6 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Vendors & Services",
     items: [
       { id: "vendors", label: "Vendors" },
+      { id: "vendor-roster", label: "Vendor Roster" },
       { id: "experiences", label: "Experiences" },
       { id: "decor", label: "Décor" },
     ],
