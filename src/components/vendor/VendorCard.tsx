@@ -98,7 +98,10 @@ export function VendorCard({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [coiConfirmOpen, setCoiConfirmOpen] = useState(false);
   const [coiSending, setCoiSending] = useState(false);
+  const [checkinConfirmOpen, setCheckinConfirmOpen] = useState(false);
+  const [checkinSending, setCheckinSending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
 
   useEffect(() => { setDraft(vendor); }, [vendor]);
 
