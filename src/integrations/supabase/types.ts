@@ -2861,6 +2861,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_active: boolean
           map_image_url: string | null
           name: string
           section_key: string
@@ -2870,6 +2871,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_active?: boolean
           map_image_url?: string | null
           name: string
           section_key: string
@@ -2879,6 +2881,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_active?: boolean
           map_image_url?: string | null
           name?: string
           section_key?: string
@@ -3561,6 +3564,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      offsite_accommodations: {
+        Row: {
+          created_at: string
+          description: string | null
+          drive_time: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          sort_order: number
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          drive_time?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          drive_time?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
       }
       offsite_hotels: {
         Row: {
