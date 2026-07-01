@@ -20,6 +20,8 @@ export interface Vendor {
   brandon_notes: string | null;
   coi_requested?: boolean | null;
   coi_requested_at?: string | null;
+  checkin_sent?: boolean | null;
+  checkin_sent_at?: string | null;
 }
 
 export const FRIENDLY_CATEGORY: Record<string, string> = {
