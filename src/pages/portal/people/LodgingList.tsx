@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
-import { Check, Loader2, ChevronDown, Lock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Check, Loader2, ChevronDown, Lock, Upload, Map as MapIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LODGING_SECTIONS, type SectionPaymentMode } from "@/lib/lodgingConfig";
 import { toast } from "sonner";
 
 const db = supabase as any;
+
+interface LodgingSectionRow {
+  id: string;
+  section_key: string;
+  name: string;
+  map_image_url: string | null;
+}
+
 
 interface Room {
   id: string;
