@@ -264,6 +264,10 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sage/40 text-sage bg-background font-body text-sm hover:bg-sage/10 transition-colors">
             <ShieldCheck size={14} /> Request COI from all vendors
           </button>
+          <button onClick={() => setCheckinBulkOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sage/40 text-sage bg-background font-body text-sm hover:bg-sage/10 transition-colors">
+            <MailCheck size={14} /> Send check-in to all vendors
+          </button>
           <button onClick={() => setSocialModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-foreground font-body text-sm hover:bg-muted/50 transition-colors">
             <Share2 size={14} /> Export for Social
