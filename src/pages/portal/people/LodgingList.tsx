@@ -50,7 +50,7 @@ const guestName = (guest: GuestOption) => `${guest.first_name} ${guest.last_name
 export function LodgingList() {
   const { eventId } = usePortalData();
   const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = canEdit(profile?.role, "our_people");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [guests, setGuests] = useState<GuestOption[]>([]);
