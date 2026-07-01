@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Check, Loader2, ChevronDown, Lock, Upload, Map as MapIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LODGING_SECTIONS, type SectionPaymentMode } from "@/lib/lodgingConfig";
+import { canEdit } from "@/lib/permissions";
 import { toast } from "sonner";
 
 const db = supabase as any;
