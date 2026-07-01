@@ -7,6 +7,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Sender identity for the Vendor Check-In email. This one email type always
+// goes out from Brandon's shared Experience mailbox so vendor replies land
+// in the same inbox the estate team monitors. Do not reuse for other emails.
+const CHECKIN_FROM_NAME = "Brandon Woodcock";
+const CHECKIN_FROM_EMAIL = "experience@gilbertsvillefarmhouse.com";
+const CHECKIN_REPLY_TO = "experience@gilbertsvillefarmhouse.com";
+
+
 // Human labels for vendor.category. Mirrors FRIENDLY_CATEGORY in
 // src/components/vendor/VendorCard.tsx. Kept in sync manually.
 const CATEGORY_LABEL: Record<string, string> = {
@@ -215,12 +223,31 @@ Deno.serve(async (req) => {
       ? subject
       : `${subject} [VCK-${code}]`;
 
-    await sendEmail({
-      to: vendor.email,
-      subject: finalSubject,
-      html,
-      replyTo: directorEmail,
+    // Send directly through Resend so we can set the custom From header
+    // for this one email type. The shared sendEmail helper hardcodes the
+    // default "Gilbertsville Farmhouse <noreply@...>" sender, which we do
+    // not want for vendor check-ins.
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendKey) throw new Error("RESEND_API_KEY is not configured");
+    const resendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `${CHECKIN_FROM_NAME} <${CHECKIN_FROM_EMAIL}>`,
+        to: [vendor.email],
+        subject: finalSubject,
+        html,
+        reply_to: CHECKIN_REPLY_TO,
+      }),
     });
+    if (!resendRes.ok) {
+      const errBody = await resendRes.text();
+      throw new Error(`Resend API error (${resendRes.status}): ${errBody}`);
+    }
+
 
     await admin
       .from("vendors")
