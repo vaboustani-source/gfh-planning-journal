@@ -76,7 +76,7 @@ export function LodgingList() {
     let cancelled = false;
     (async () => {
       const [{ data: rData }, { data: aData }, { data: gData }] = await Promise.all([
-        supabase.from("lodging_rooms").select("id, room_name, room_type, nightly_rate, sort_order").order("sort_order", { ascending: true }),
+        supabase.from("lodging_rooms").select("id, room_name, room_type, nightly_rate, sort_order, bed_type, ada_compliant, floor").order("sort_order", { ascending: true }),
         supabase.from("lodging_assignments").select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays").eq("event_id", eventId),
         db.from("guests").select("id, first_name, last_name, email, rsvp_status, lodging_preference").eq("event_id", eventId).order("last_name").order("first_name"),
       ]);
