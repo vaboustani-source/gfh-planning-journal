@@ -211,7 +211,10 @@ Deno.serve(async (req) => {
       couple_names: coupleNames(event.partner1_name, event.partner2_name),
       event_director_name: directorName,
       event_director_cell: directorCell,
-      timeline_link: "link coming soon",
+      // Real weekend timeline URL for the couple's portal. Vendors receive a
+      // read-only view once shared; the estate team can also PDF-export it
+      // from the admin Timeline tab if a vendor cannot sign in.
+      timeline_link: `https://plan.gilbertsvillefarmhouse.com/portal/timeline?event=${event.id}`,
       checkin_code: code,
     };
 
