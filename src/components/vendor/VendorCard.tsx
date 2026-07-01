@@ -289,6 +289,15 @@ export function VendorCard({
                   <ShieldCheck size={12} /> Request COI
                 </button>
               )}
+              {showCheckinButton && (
+                <button
+                  onClick={() => canSendCheckin && setCheckinConfirmOpen(true)}
+                  disabled={!canSendCheckin}
+                  title={canSendCheckin ? "Send the check-in email to this vendor" : "Add an email address first"}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-body text-xs disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed">
+                  <MailCheck size={12} /> Send check-in
+                </button>
+              )}
               {/* Delete button — not for GF rows */}
               {!isGF && onDelete && !confirmingDelete && (
                 <button onClick={() => setConfirmingDelete(true)}
