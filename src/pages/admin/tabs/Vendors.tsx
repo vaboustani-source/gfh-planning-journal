@@ -83,6 +83,8 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const seeded = useRef(false);
   const [coiBulkOpen, setCoiBulkOpen] = useState(false);
   const [coiBulkProgress, setCoiBulkProgress] = useState<{ sent: number; total: number; current?: string } | null>(null);
+  const [checkinBulkOpen, setCheckinBulkOpen] = useState(false);
+  const [checkinBulkProgress, setCheckinBulkProgress] = useState<{ sent: number; total: number; current?: string } | null>(null);
 
   const eligibleForCoi = (v: Vendor) =>
     !!v.email && !!v.business_name && !(["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse");
