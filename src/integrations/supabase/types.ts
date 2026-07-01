@@ -1273,6 +1273,7 @@ export type Database = {
           arrival_date_note: string | null
           assigned_planner: string | null
           ceremony_location: string | null
+          checkin_code: string | null
           cocktail_hour_location: string | null
           count_at_30_days: number | null
           count_at_90_days: number | null
@@ -1311,6 +1312,7 @@ export type Database = {
           arrival_date_note?: string | null
           assigned_planner?: string | null
           ceremony_location?: string | null
+          checkin_code?: string | null
           cocktail_hour_location?: string | null
           count_at_30_days?: number | null
           count_at_90_days?: number | null
@@ -1349,6 +1351,7 @@ export type Database = {
           arrival_date_note?: string | null
           assigned_planner?: string | null
           ceremony_location?: string | null
+          checkin_code?: string | null
           cocktail_hour_location?: string | null
           count_at_30_days?: number | null
           count_at_90_days?: number | null
@@ -4437,6 +4440,8 @@ export type Database = {
           brandon_notes: string | null
           business_name: string | null
           category: string
+          checkin_sent: boolean
+          checkin_sent_at: string | null
           coi_received: boolean | null
           coi_requested: boolean
           coi_requested_at: string | null
@@ -4457,6 +4462,8 @@ export type Database = {
           brandon_notes?: string | null
           business_name?: string | null
           category: string
+          checkin_sent?: boolean
+          checkin_sent_at?: string | null
           coi_received?: boolean | null
           coi_requested?: boolean
           coi_requested_at?: string | null
@@ -4477,6 +4484,8 @@ export type Database = {
           brandon_notes?: string | null
           business_name?: string | null
           category?: string
+          checkin_sent?: boolean
+          checkin_sent_at?: string | null
           coi_received?: boolean | null
           coi_requested?: boolean
           coi_requested_at?: string | null

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical, ShieldCheck } from "lucide-react";
+import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical, ShieldCheck, MailCheck } from "lucide-react";
 import VendorFileUpload from "@/components/admin/VendorFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -20,6 +20,8 @@ export interface Vendor {
   brandon_notes: string | null;
   coi_requested?: boolean | null;
   coi_requested_at?: string | null;
+  checkin_sent?: boolean | null;
+  checkin_sent_at?: string | null;
 }
 
 export const FRIENDLY_CATEGORY: Record<string, string> = {
@@ -96,7 +98,10 @@ export function VendorCard({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [coiConfirmOpen, setCoiConfirmOpen] = useState(false);
   const [coiSending, setCoiSending] = useState(false);
+  const [checkinConfirmOpen, setCheckinConfirmOpen] = useState(false);
+  const [checkinSending, setCheckinSending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
 
   useEffect(() => { setDraft(vendor); }, [vendor]);
 
@@ -128,6 +133,35 @@ export function VendorCard({
   const coiRequestedLabel = vendor.coi_requested && vendor.coi_requested_at
     ? `COI requested ${new Date(vendor.coi_requested_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
     : vendor.coi_requested ? "COI requested" : null;
+
+  const canSendCheckin = !isGF && !!vendor.business_name && !!vendor.email;
+  const showCheckinButton = !isGF && !!vendor.business_name;
+
+  const sendCheckin = async () => {
+    setCheckinSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-vendor-checkin", {
+        body: { vendor_id: vendor.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Check-in sent");
+      await onUpdate(vendor.id, {
+        checkin_sent: true,
+        checkin_sent_at: new Date().toISOString(),
+      } as Partial<Vendor>);
+      setCheckinConfirmOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send check-in");
+    } finally {
+      setCheckinSending(false);
+    }
+  };
+
+  const checkinSentLabel = vendor.checkin_sent && vendor.checkin_sent_at
+    ? `Check-in sent · ${new Date(vendor.checkin_sent_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : vendor.checkin_sent ? "Check-in sent" : null;
+
 
   const saveAndClose = async () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -201,6 +235,11 @@ export function VendorCard({
                     <ShieldCheck size={8} /> {coiRequestedLabel}
                   </span>
                 )}
+                {checkinSentLabel && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sage/10 border border-sage/30 px-2 py-0.5 font-body text-[10px] text-sage">
+                    <MailCheck size={8} /> {checkinSentLabel}
+                  </span>
+                )}
               </div>
               {vendor.business_name ? (
                 <p className="font-body text-sm font-medium text-foreground">{vendor.business_name}</p>
@@ -248,6 +287,15 @@ export function VendorCard({
                   title={canRequestCoi ? "Email the Certificate of Insurance requirements to this vendor" : "Add an email address first"}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-body text-xs disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed">
                   <ShieldCheck size={12} /> Request COI
+                </button>
+              )}
+              {showCheckinButton && (
+                <button
+                  onClick={() => canSendCheckin && setCheckinConfirmOpen(true)}
+                  disabled={!canSendCheckin}
+                  title={canSendCheckin ? "Send the check-in email to this vendor" : "Add an email address first"}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-body text-xs disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed">
+                  <MailCheck size={12} /> Send check-in
                 </button>
               )}
               {/* Delete button — not for GF rows */}
@@ -316,6 +364,31 @@ export function VendorCard({
                 <button onClick={sendCoiRequest} disabled={coiSending}
                   className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
                   {coiSending ? "Sending..." : "Send request"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {checkinConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !checkinSending && setCheckinConfirmOpen(false)}>
+            <div className="bg-card rounded-xl border border-border shadow-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start gap-3 mb-3">
+                <div className="rounded-full bg-sage/15 p-2 text-sage shrink-0"><MailCheck size={18} /></div>
+                <div>
+                  <h3 className="font-display text-lg font-light text-foreground">Send vendor check-in?</h3>
+                  <p className="font-body text-sm text-muted-foreground mt-1">
+                    We will email the check-in note to <span className="text-foreground font-medium">{vendor.email}</span>{vendor.business_name ? <> at <span className="text-foreground font-medium">{vendor.business_name}</span></> : null}. Replies will land in the assigned Event Director's inbox.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button onClick={() => setCheckinConfirmOpen(false)} disabled={checkinSending}
+                  className="px-4 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground font-body text-sm transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+                <button onClick={sendCheckin} disabled={checkinSending}
+                  className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                  {checkinSending ? "Sending..." : "Send check-in"}
                 </button>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Share2, ShieldCheck } from "lucide-react";
+import { Plus, Share2, ShieldCheck, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
@@ -83,6 +83,8 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
   const seeded = useRef(false);
   const [coiBulkOpen, setCoiBulkOpen] = useState(false);
   const [coiBulkProgress, setCoiBulkProgress] = useState<{ sent: number; total: number; current?: string } | null>(null);
+  const [checkinBulkOpen, setCheckinBulkOpen] = useState(false);
+  const [checkinBulkProgress, setCheckinBulkProgress] = useState<{ sent: number; total: number; current?: string } | null>(null);
 
   const eligibleForCoi = (v: Vendor) =>
     !!v.email && !!v.business_name && !(["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse");
@@ -111,6 +113,35 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
     if (failures === 0) toast.success(`COI requests sent to ${targets.length} vendor${targets.length === 1 ? "" : "s"}`);
     else toast.error(`Sent ${targets.length - failures} of ${targets.length}. ${failures} failed.`);
     setTimeout(() => { setCoiBulkOpen(false); setCoiBulkProgress(null); }, 800);
+  };
+
+  const eligibleForCheckin = (v: Vendor) =>
+    !!v.email && !!v.business_name && !(["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse");
+
+  const sendCheckinToAll = async () => {
+    const targets = vendors.filter(eligibleForCheckin);
+    if (targets.length === 0) {
+      toast.error("No vendors with an email on file yet");
+      return;
+    }
+    setCheckinBulkProgress({ sent: 0, total: targets.length });
+    let failures = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const v = targets[i];
+      setCheckinBulkProgress({ sent: i, total: targets.length, current: v.business_name || "" });
+      try {
+        const { data, error } = await supabase.functions.invoke("send-vendor-checkin", { body: { vendor_id: v.id } });
+        if (error || (data as any)?.error) throw new Error(error?.message || (data as any)?.error);
+        setVendors(prev => prev.map(x => x.id === v.id ? { ...x, checkin_sent: true, checkin_sent_at: new Date().toISOString() } as Vendor : x));
+      } catch (e) {
+        failures++;
+        console.error("[checkin bulk]", v.business_name, e);
+      }
+    }
+    setCheckinBulkProgress({ sent: targets.length, total: targets.length });
+    if (failures === 0) toast.success(`Check-ins sent to ${targets.length} vendor${targets.length === 1 ? "" : "s"}`);
+    else toast.error(`Sent ${targets.length - failures} of ${targets.length}. ${failures} failed.`);
+    setTimeout(() => { setCheckinBulkOpen(false); setCheckinBulkProgress(null); }, 800);
   };
 
   const sensors = useSensors(
@@ -233,6 +264,10 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sage/40 text-sage bg-background font-body text-sm hover:bg-sage/10 transition-colors">
             <ShieldCheck size={14} /> Request COI from all vendors
           </button>
+          <button onClick={() => setCheckinBulkOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sage/40 text-sage bg-background font-body text-sm hover:bg-sage/10 transition-colors">
+            <MailCheck size={14} /> Send check-in to all vendors
+          </button>
           <button onClick={() => setSocialModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-foreground font-body text-sm hover:bg-muted/50 transition-colors">
             <Share2 size={14} /> Export for Social
@@ -350,6 +385,49 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
           </div>
         </div>
       )}
+
+      {checkinBulkOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !checkinBulkProgress && setCheckinBulkOpen(false)}>
+          <div className="bg-card rounded-xl border border-border shadow-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="rounded-full bg-sage/15 p-2 text-sage shrink-0"><MailCheck size={18} /></div>
+              <div>
+                <h3 className="font-display text-lg font-light text-foreground">Send check-in to all vendors</h3>
+                <p className="font-body text-sm text-muted-foreground mt-1">
+                  This will email the vendor check-in note to{" "}
+                  <span className="text-foreground font-medium">{vendors.filter(eligibleForCheckin).length}</span>{" "}
+                  vendor{vendors.filter(eligibleForCheckin).length === 1 ? "" : "s"} with an email on file.
+                  Vendors without an email will be skipped. Replies land in the Event Director's inbox.
+                </p>
+              </div>
+            </div>
+            {checkinBulkProgress && (
+              <div className="mt-4 rounded-md bg-muted/40 p-3">
+                <p className="font-body text-xs text-muted-foreground">
+                  Sending {checkinBulkProgress.sent} of {checkinBulkProgress.total}
+                  {checkinBulkProgress.current ? ` · ${checkinBulkProgress.current}` : ""}
+                </p>
+                <div className="h-1.5 mt-2 rounded-full bg-border overflow-hidden">
+                  <div className="h-full bg-sage transition-all"
+                    style={{ width: `${(checkinBulkProgress.sent / Math.max(checkinBulkProgress.total, 1)) * 100}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <button onClick={() => setCheckinBulkOpen(false)} disabled={!!checkinBulkProgress}
+                className="px-4 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground font-body text-sm transition-colors disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={sendCheckinToAll} disabled={!!checkinBulkProgress}
+                className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                {checkinBulkProgress ? "Sending..." : "Send to all"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
 
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>

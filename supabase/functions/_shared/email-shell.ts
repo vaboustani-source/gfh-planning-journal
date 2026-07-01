@@ -142,6 +142,12 @@ const FALLBACKS: Record<string, TemplateRow> = {
     body: 'Hello {{business_name}},\n\nThank you for being part of an upcoming celebration at Gilbertsville Farmhouse. Before your team arrives on the estate, we need a current Certificate of Insurance on file. The exact requirements are below.\n\nIn order for a third-party vendor to operate on our venue, we require a Certificate of Insurance evidencing the following:\n- Commercial General Liability $1,000,000 per occurrence / $2,000,000 aggregate\n- Name the "Gilbertsville Farmhouse, Inc. and Sharon & Aldo Boustani", and its officers, employees, agents, and volunteers added as additional insured with respect to specific project/service/event.\n- Automobile Liability $1,000,000 CSL (if applicable)\n\nAsk your insurance agent to email the certificate to Experience@gilbertsvillefarmhouse.com. The certificate is due prior to the actual work start date.\n\nIf you have any questions, just reply to this note and we will help.',
     cta_label: null,
   },
+  vendor_checkin: {
+    subject: 'GFH Vendor Check-In, {{couple_names}} [VCK-{{checkin_code}}]',
+    heading: 'Vendor Check-In',
+    body: 'Hey {{vendor_contact_first_name}},\n\nI am reaching out as the Event Director for Gilbertsville Farmhouse to coordinate the wedding of {{couple_names}}. You are listed as their {{vendor_role}} for the event. I wanted to check in with you on a few items below to make sure we are on the same page. My direct cell is {{event_director_cell}}, text or call me any time on the day of.\n\nPlease reply to this email with the following, and see the attached weekend timeline ({{timeline_link}}):\n\n- How many people will be coming, and their names?\n- If you will be here during dinner service on either day, does anyone have a dietary restriction or allergen?\n- Do you need anything set up by our team?\n- What time will you be arriving and leaving? (If more than the wedding day, let me know those days too.)\n- Feel free to text me in the days before the event to confirm you are all set.\n\nAny questions or concerns, let us work them out ahead of time so the day is smooth. Thank you, can not wait to see you!\n\n{{event_director_name}}',
+    cta_label: null,
+  },
 }
 
 function escapeHtml(s: string): string {
