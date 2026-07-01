@@ -7,6 +7,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Sender identity for the Vendor Check-In email. This one email type always
+// goes out from Brandon's shared Experience mailbox so vendor replies land
+// in the same inbox the estate team monitors. Do not reuse for other emails.
+const CHECKIN_FROM_NAME = "Brandon Woodcock";
+const CHECKIN_FROM_EMAIL = "experience@gilbertsvillefarmhouse.com";
+const CHECKIN_REPLY_TO = "experience@gilbertsvillefarmhouse.com";
+
+
 // Human labels for vendor.category. Mirrors FRIENDLY_CATEGORY in
 // src/components/vendor/VendorCard.tsx. Kept in sync manually.
 const CATEGORY_LABEL: Record<string, string> = {
