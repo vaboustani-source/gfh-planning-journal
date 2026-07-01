@@ -23,6 +23,47 @@ Deno.serve(async (req) => {
 
     const accessToken = await refreshAccessToken(conn.refresh_token);
 
+    // Phase 3 fix: auto-file any inbound thread whose subject carries a
+    // [VCK-<code>] token that matches an events.checkin_code. Without this
+    // sweep, vendor replies on threads no one has manually filed would
+    // never reach parse-vendor-checkin. Idempotent: skip threads already in
+    // filed_threads. Runs before the main sync so newly filed threads get
+    // pulled and parsed in the same tick.
+    try {
+      const search = await gmailApi(accessToken, `/messages?maxResults=100&q=${encodeURIComponent("subject:[VCK-")}`);
+      const hits: Array<{ id: string; threadId: string }> = search.messages ?? [];
+      const threadIds = [...new Set(hits.map((h) => h.threadId))];
+      if (threadIds.length) {
+        const { data: alreadyFiled } = await admin
+          .from("filed_threads")
+          .select("gmail_thread_id")
+          .in("gmail_thread_id", threadIds);
+        const filedSet = new Set((alreadyFiled ?? []).map((r: any) => r.gmail_thread_id));
+        for (const tid of threadIds) {
+          if (filedSet.has(tid)) continue;
+          try {
+            const meta = await gmailApi(accessToken, `/threads/${tid}?format=metadata&metadataHeaders=Subject`);
+            const firstMsg = (meta.messages || [])[0];
+            const subj = (firstMsg?.payload?.headers || []).find((h: any) => h.name.toLowerCase() === "subject")?.value || "";
+            const m = subj.match(/\[VCK-([A-Z0-9]{4,10})\]/i);
+            if (!m) continue;
+            const code = m[1].toUpperCase();
+            const { data: ev } = await admin.from("events").select("id").eq("checkin_code", code).maybeSingle();
+            if (!ev) continue;
+            await admin.from("filed_threads").insert({
+              gmail_thread_id: tid,
+              event_id: ev.id,
+              filed_by: conn.user_id,
+            } as any);
+          } catch (e) {
+            console.error("[gmail-sync-filed] VCK auto-file failed", tid, e);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[gmail-sync-filed] VCK sweep failed", e);
+    }
+
     const { data: filed } = await admin.from("filed_threads").select("*");
     if (!filed || !filed.length) {
       return new Response(JSON.stringify({ ok: true, threads: 0, new_messages: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
