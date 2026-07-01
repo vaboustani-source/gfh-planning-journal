@@ -235,6 +235,11 @@ export function VendorCard({
                     <ShieldCheck size={8} /> {coiRequestedLabel}
                   </span>
                 )}
+                {checkinSentLabel && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sage/10 border border-sage/30 px-2 py-0.5 font-body text-[10px] text-sage">
+                    <MailCheck size={8} /> {checkinSentLabel}
+                  </span>
+                )}
               </div>
               {vendor.business_name ? (
                 <p className="font-body text-sm font-medium text-foreground">{vendor.business_name}</p>
