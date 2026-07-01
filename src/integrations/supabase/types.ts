@@ -4435,11 +4435,100 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_checkin_responses: {
+        Row: {
+          arrival: string | null
+          at_dinner: boolean | null
+          attendee_names: string[] | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          departure: string | null
+          dietary_allergens: string | null
+          event_id: string
+          gmail_message_id: string | null
+          gmail_thread_id: string | null
+          headcount: number | null
+          id: string
+          needs_review: boolean
+          parse_confidence: number | null
+          parsed_at: string | null
+          raw_text: string | null
+          setup_needs: string | null
+          status: string
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          arrival?: string | null
+          at_dinner?: boolean | null
+          attendee_names?: string[] | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          departure?: string | null
+          dietary_allergens?: string | null
+          event_id: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
+          headcount?: number | null
+          id?: string
+          needs_review?: boolean
+          parse_confidence?: number | null
+          parsed_at?: string | null
+          raw_text?: string | null
+          setup_needs?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          arrival?: string | null
+          at_dinner?: boolean | null
+          attendee_names?: string[] | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          departure?: string | null
+          dietary_allergens?: string | null
+          event_id?: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
+          headcount?: number | null
+          id?: string
+          needs_review?: boolean
+          parse_confidence?: number | null
+          parsed_at?: string | null
+          raw_text?: string | null
+          setup_needs?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_checkin_responses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_checkin_responses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendors: {
         Row: {
           brandon_notes: string | null
           business_name: string | null
           category: string
+          checkin_parsed_at: string | null
+          checkin_replied_at: string | null
           checkin_sent: boolean
           checkin_sent_at: string | null
           coi_received: boolean | null
@@ -4462,6 +4551,8 @@ export type Database = {
           brandon_notes?: string | null
           business_name?: string | null
           category: string
+          checkin_parsed_at?: string | null
+          checkin_replied_at?: string | null
           checkin_sent?: boolean
           checkin_sent_at?: string | null
           coi_received?: boolean | null
@@ -4484,6 +4575,8 @@ export type Database = {
           brandon_notes?: string | null
           business_name?: string | null
           category?: string
+          checkin_parsed_at?: string | null
+          checkin_replied_at?: string | null
           checkin_sent?: boolean
           checkin_sent_at?: string | null
           coi_received?: boolean | null
