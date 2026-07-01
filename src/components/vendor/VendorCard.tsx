@@ -134,6 +134,35 @@ export function VendorCard({
     ? `COI requested ${new Date(vendor.coi_requested_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
     : vendor.coi_requested ? "COI requested" : null;
 
+  const canSendCheckin = !isGF && !!vendor.business_name && !!vendor.email;
+  const showCheckinButton = !isGF && !!vendor.business_name;
+
+  const sendCheckin = async () => {
+    setCheckinSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-vendor-checkin", {
+        body: { vendor_id: vendor.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Check-in sent");
+      await onUpdate(vendor.id, {
+        checkin_sent: true,
+        checkin_sent_at: new Date().toISOString(),
+      } as Partial<Vendor>);
+      setCheckinConfirmOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send check-in");
+    } finally {
+      setCheckinSending(false);
+    }
+  };
+
+  const checkinSentLabel = vendor.checkin_sent && vendor.checkin_sent_at
+    ? `Check-in sent · ${new Date(vendor.checkin_sent_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : vendor.checkin_sent ? "Check-in sent" : null;
+
+
   const saveAndClose = async () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     onSaveStart?.();
