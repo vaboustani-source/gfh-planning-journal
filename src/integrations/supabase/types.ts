@@ -4530,6 +4530,7 @@ export type Database = {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
       }
+      is_internal_staff: { Args: { _uid: string }; Returns: boolean }
       lb_ensure_block_for_event: {
         Args: { _event_id: string }
         Returns: string
