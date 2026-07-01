@@ -223,12 +223,31 @@ Deno.serve(async (req) => {
       ? subject
       : `${subject} [VCK-${code}]`;
 
-    await sendEmail({
-      to: vendor.email,
-      subject: finalSubject,
-      html,
-      replyTo: directorEmail,
+    // Send directly through Resend so we can set the custom From header
+    // for this one email type. The shared sendEmail helper hardcodes the
+    // default "Gilbertsville Farmhouse <noreply@...>" sender, which we do
+    // not want for vendor check-ins.
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendKey) throw new Error("RESEND_API_KEY is not configured");
+    const resendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `${CHECKIN_FROM_NAME} <${CHECKIN_FROM_EMAIL}>`,
+        to: [vendor.email],
+        subject: finalSubject,
+        html,
+        reply_to: CHECKIN_REPLY_TO,
+      }),
     });
+    if (!resendRes.ok) {
+      const errBody = await resendRes.text();
+      throw new Error(`Resend API error (${resendRes.status}): ${errBody}`);
+    }
+
 
     await admin
       .from("vendors")
