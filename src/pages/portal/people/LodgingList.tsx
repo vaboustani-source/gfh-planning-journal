@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Check, Loader2, ChevronDown, Lock, Upload, Map as MapIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LODGING_SECTIONS, type SectionPaymentMode } from "@/lib/lodgingConfig";
+import { canEdit } from "@/lib/permissions";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -49,7 +50,7 @@ const guestName = (guest: GuestOption) => `${guest.first_name} ${guest.last_name
 export function LodgingList() {
   const { eventId } = usePortalData();
   const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = canEdit(profile?.role, "our_people");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [guests, setGuests] = useState<GuestOption[]>([]);
