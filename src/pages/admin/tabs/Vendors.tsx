@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Share2, ShieldCheck } from "lucide-react";
+import { Plus, Share2, ShieldCheck, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAutosaveStatus } from "@/hooks/useAutosaveStatus";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
