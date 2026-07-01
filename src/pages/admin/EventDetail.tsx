@@ -326,6 +326,7 @@ export default function EventDetail() {
             {activeTab === "milestones" && <MilestonesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "checklist" && <ChecklistTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "vendors" && <VendorsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+            {activeTab === "vendor-roster" && <VendorRosterTab eventId={event.id} />}
             {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "decor" && <DecorTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "experiences" && <ExperiencesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
