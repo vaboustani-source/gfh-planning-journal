@@ -398,6 +398,41 @@ export type Database = {
           },
         ]
       }
+      change_history: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_items: {
         Row: {
           completed_at: string | null
@@ -2819,6 +2854,36 @@ export type Database = {
           room_name?: string
           room_type?: string
           sort_order?: number | null
+        }
+        Relationships: []
+      }
+      lodging_sections: {
+        Row: {
+          created_at: string
+          id: string
+          map_image_url: string | null
+          name: string
+          section_key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          map_image_url?: string | null
+          name: string
+          section_key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          map_image_url?: string | null
+          name?: string
+          section_key?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
