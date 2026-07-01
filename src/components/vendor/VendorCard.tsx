@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical, ShieldCheck } from "lucide-react";
+import { Building2, Instagram, FileCheck2, ChevronDown, ChevronUp, Pencil, Check, X, Save, Trash2, GripVertical, ShieldCheck, MailCheck } from "lucide-react";
 import VendorFileUpload from "@/components/admin/VendorFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
