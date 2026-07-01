@@ -369,6 +369,31 @@ export function VendorCard({
             </div>
           </div>
         )}
+        {checkinConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !checkinSending && setCheckinConfirmOpen(false)}>
+            <div className="bg-card rounded-xl border border-border shadow-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start gap-3 mb-3">
+                <div className="rounded-full bg-sage/15 p-2 text-sage shrink-0"><MailCheck size={18} /></div>
+                <div>
+                  <h3 className="font-display text-lg font-light text-foreground">Send vendor check-in?</h3>
+                  <p className="font-body text-sm text-muted-foreground mt-1">
+                    We will email the check-in note to <span className="text-foreground font-medium">{vendor.email}</span>{vendor.business_name ? <> at <span className="text-foreground font-medium">{vendor.business_name}</span></> : null}. Replies will land in the assigned Event Director's inbox.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button onClick={() => setCheckinConfirmOpen(false)} disabled={checkinSending}
+                  className="px-4 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground font-body text-sm transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+                <button onClick={sendCheckin} disabled={checkinSending}
+                  className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                  {checkinSending ? "Sending..." : "Send check-in"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
