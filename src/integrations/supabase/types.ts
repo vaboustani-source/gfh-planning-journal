@@ -2835,6 +2835,9 @@ export type Database = {
       }
       lodging_rooms: {
         Row: {
+          ada_compliant: boolean
+          bed_type: string | null
+          floor: string | null
           id: string
           nightly_rate: number | null
           room_name: string
@@ -2842,6 +2845,9 @@ export type Database = {
           sort_order: number | null
         }
         Insert: {
+          ada_compliant?: boolean
+          bed_type?: string | null
+          floor?: string | null
           id?: string
           nightly_rate?: number | null
           room_name: string
@@ -2849,6 +2855,9 @@ export type Database = {
           sort_order?: number | null
         }
         Update: {
+          ada_compliant?: boolean
+          bed_type?: string | null
+          floor?: string | null
           id?: string
           nightly_rate?: number | null
           room_name?: string
