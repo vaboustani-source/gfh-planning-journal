@@ -24,6 +24,7 @@ import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
 import OurPeopleTab from "./tabs/OurPeopleTab";
 import EmailsTab from "./tabs/EmailsTab";
+import VendorRosterTab from "./tabs/VendorRosterTab";
 import Rsvp from "../portal/Rsvp";
 import { LifecycleBadge } from "@/components/admin/HandoffPanel";
 import { MidweekBadge } from "@/components/admin/MidweekBadge";
