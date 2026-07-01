@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
-import { useAuth } from "@/hooks/useAuth";
-import { Check, Loader2, ChevronDown, Lock, Upload, Map as MapIcon } from "lucide-react";
+import { Check, Loader2, ChevronDown, Lock, Map as MapIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LODGING_SECTIONS, type SectionPaymentMode } from "@/lib/lodgingConfig";
-import { canEdit } from "@/lib/permissions";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -49,8 +47,6 @@ const guestName = (guest: GuestOption) => `${guest.first_name} ${guest.last_name
 
 export function LodgingList() {
   const { eventId } = usePortalData();
-  const { profile } = useAuth();
-  const isAdmin = canEdit(profile?.role, "our_people");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [guests, setGuests] = useState<GuestOption[]>([]);
@@ -65,7 +61,6 @@ export function LodgingList() {
   const [sectionRows, setSectionRows] = useState<Record<string, LodgingSectionRow>>({});
   const [mapUrls, setMapUrls] = useState<Record<string, string>>({});
   const [mapOpen, setMapOpen] = useState<Record<string, boolean>>({});
-  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
 
   // Refs to avoid stale closures and prevent refetch during edits
@@ -148,40 +143,6 @@ export function LodgingList() {
   const toggleMap = useCallback((key: string) => {
     setMapOpen(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
-
-  const handleMapUpload = useCallback(async (sectionKey: string, sectionName: string, file: File) => {
-    if (!isAdmin) return;
-    const row = sectionRows[sectionKey];
-    if (!row) return;
-    setUploadingKey(sectionKey);
-    try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const path = `${sectionKey}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("lodging-maps").upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
-
-      const { error: updErr } = await db.from("lodging_sections").update({ map_image_url: path }).eq("id", row.id);
-      if (updErr) throw updErr;
-
-      const wasReplace = !!row.map_image_url;
-      await db.from("change_history").insert({
-        table_name: "lodging_sections",
-        record_id: row.id,
-        action: `${wasReplace ? "Replaced" : "Uploaded"} map for ${sectionName}`,
-        changed_by: profile?.id ?? null,
-      });
-
-      const { data: signed } = await supabase.storage.from("lodging-maps").createSignedUrl(path, 60 * 60 * 24);
-      setSectionRows(prev => ({ ...prev, [sectionKey]: { ...row, map_image_url: path } }));
-      if (signed?.signedUrl) setMapUrls(prev => ({ ...prev, [sectionKey]: signed.signedUrl }));
-      setMapOpen(prev => ({ ...prev, [sectionKey]: true }));
-      toast.success(`${wasReplace ? "Map replaced" : "Map uploaded"}`);
-    } catch (e: any) {
-      toast.error(e?.message || "Couldn't upload map");
-    } finally {
-      setUploadingKey(null);
-    }
-  }, [isAdmin, sectionRows, profile?.id]);
 
 
 
