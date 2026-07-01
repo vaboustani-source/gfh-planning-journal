@@ -81,12 +81,40 @@ Deno.serve(async (req) => {
         if (newRows.length) {
           await admin.from("project_emails").upsert(newRows, { onConflict: "gmail_message_id" });
           totalNew += newRows.length;
+
+          // Phase 2: auto-parse vendor check-in replies.
+          // Any newly synced inbound message whose subject carries a
+          // [VCK-<code>] token matching an events.checkin_code is queued
+          // through parse-vendor-checkin. Already-parsed messages are
+          // skipped by that function via the unique gmail_message_id.
+          for (const nr of newRows) {
+            if (nr.direction !== "received") continue;
+            const subj = nr.subject || "";
+            const m = subj.match(/\[VCK-([A-Z0-9]{4,10})\]/i);
+            if (!m) continue;
+            const code = m[1].toUpperCase();
+            const { data: ev } = await admin.from("events").select("id, checkin_code").eq("checkin_code", code).maybeSingle();
+            if (!ev) continue;
+            try {
+              await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/parse-vendor-checkin`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                },
+                body: JSON.stringify({ gmail_message_id: nr.gmail_message_id }),
+              });
+            } catch (pErr) {
+              console.error("[gmail-sync-filed] parse-vendor-checkin dispatch failed", nr.gmail_message_id, pErr);
+            }
+          }
         }
         await admin.from("filed_threads").update({ last_synced_at: new Date().toISOString() }).eq("id", f.id);
       } catch (e) {
         errors.push(`${f.gmail_thread_id}: ${String(e instanceof Error ? e.message : e)}`);
       }
     }
+
 
     // Retro-categorize: re-match any previously-uncategorized emails per event
     let recategorized = 0;
