@@ -115,6 +115,35 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
     setTimeout(() => { setCoiBulkOpen(false); setCoiBulkProgress(null); }, 800);
   };
 
+  const eligibleForCheckin = (v: Vendor) =>
+    !!v.email && !!v.business_name && !(["venue", "caterer"].includes(v.category) && v.business_name === "Gilbertsville Farmhouse");
+
+  const sendCheckinToAll = async () => {
+    const targets = vendors.filter(eligibleForCheckin);
+    if (targets.length === 0) {
+      toast.error("No vendors with an email on file yet");
+      return;
+    }
+    setCheckinBulkProgress({ sent: 0, total: targets.length });
+    let failures = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const v = targets[i];
+      setCheckinBulkProgress({ sent: i, total: targets.length, current: v.business_name || "" });
+      try {
+        const { data, error } = await supabase.functions.invoke("send-vendor-checkin", { body: { vendor_id: v.id } });
+        if (error || (data as any)?.error) throw new Error(error?.message || (data as any)?.error);
+        setVendors(prev => prev.map(x => x.id === v.id ? { ...x, checkin_sent: true, checkin_sent_at: new Date().toISOString() } as Vendor : x));
+      } catch (e) {
+        failures++;
+        console.error("[checkin bulk]", v.business_name, e);
+      }
+    }
+    setCheckinBulkProgress({ sent: targets.length, total: targets.length });
+    if (failures === 0) toast.success(`Check-ins sent to ${targets.length} vendor${targets.length === 1 ? "" : "s"}`);
+    else toast.error(`Sent ${targets.length - failures} of ${targets.length}. ${failures} failed.`);
+    setTimeout(() => { setCheckinBulkOpen(false); setCheckinBulkProgress(null); }, 800);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
