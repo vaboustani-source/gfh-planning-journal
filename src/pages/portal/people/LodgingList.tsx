@@ -125,6 +125,65 @@ export function LodgingList() {
     return () => { cancelled = true; };
   }, [eventId]);
 
+  // Load lodging_sections rows and signed URLs for any uploaded maps
+  const loadSections = useCallback(async () => {
+    const { data } = await db.from("lodging_sections").select("id, section_key, name, map_image_url");
+    const rows = (data ?? []) as LodgingSectionRow[];
+    const byKey: Record<string, LodgingSectionRow> = {};
+    rows.forEach(r => { byKey[r.section_key] = r; });
+    setSectionRows(byKey);
+
+    const urls: Record<string, string> = {};
+    await Promise.all(rows.map(async r => {
+      if (!r.map_image_url) return;
+      const { data: signed } = await supabase.storage.from("lodging-maps").createSignedUrl(r.map_image_url, 60 * 60 * 24);
+      if (signed?.signedUrl) urls[r.section_key] = signed.signedUrl;
+    }));
+    setMapUrls(urls);
+  }, []);
+
+  useEffect(() => { loadSections(); }, [loadSections]);
+
+  const toggleMap = useCallback((key: string) => {
+    setMapOpen(prev => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  const handleMapUpload = useCallback(async (sectionKey: string, sectionName: string, file: File) => {
+    if (!isAdmin) return;
+    const row = sectionRows[sectionKey];
+    if (!row) return;
+    setUploadingKey(sectionKey);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const path = `${sectionKey}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("lodging-maps").upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+
+      const { error: updErr } = await db.from("lodging_sections").update({ map_image_url: path }).eq("id", row.id);
+      if (updErr) throw updErr;
+
+      const wasReplace = !!row.map_image_url;
+      await db.from("change_history").insert({
+        table_name: "lodging_sections",
+        record_id: row.id,
+        action: `${wasReplace ? "Replaced" : "Uploaded"} map for ${sectionName}`,
+        changed_by: profile?.id ?? null,
+      });
+
+      const { data: signed } = await supabase.storage.from("lodging-maps").createSignedUrl(path, 60 * 60 * 24);
+      setSectionRows(prev => ({ ...prev, [sectionKey]: { ...row, map_image_url: path } }));
+      if (signed?.signedUrl) setMapUrls(prev => ({ ...prev, [sectionKey]: signed.signedUrl }));
+      setMapOpen(prev => ({ ...prev, [sectionKey]: true }));
+      toast.success(`${wasReplace ? "Map replaced" : "Map uploaded"}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Couldn't upload map");
+    } finally {
+      setUploadingKey(null);
+    }
+  }, [isAdmin, sectionRows, profile?.id]);
+
+
+
   const flashSaved = useCallback(() => {
     setSaveStatus("saved");
     if (savedTimer.current) clearTimeout(savedTimer.current);
