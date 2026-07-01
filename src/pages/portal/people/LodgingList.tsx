@@ -354,6 +354,55 @@ export function LodgingList() {
 
               <CollapsibleContent>
                 <div className="border-t border-border">
+                  {(mapUrls[section.key] || isAdmin) && (
+                    <div className="px-5 py-3 border-b border-border flex flex-wrap items-center gap-4">
+                      {mapUrls[section.key] && (
+                        <button
+                          type="button"
+                          onClick={() => toggleMap(section.key)}
+                          className="inline-flex items-center gap-1.5 font-body text-xs text-sage-dark hover:text-foreground transition-colors underline underline-offset-4 decoration-sage/40 hover:decoration-foreground/60"
+                          aria-expanded={!!mapOpen[section.key]}
+                        >
+                          <MapIcon size={12} />
+                          {mapOpen[section.key] ? "Hide map" : "View map"}
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <label className="inline-flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer ml-auto">
+                          {uploadingKey === section.key ? (
+                            <><Loader2 size={12} className="animate-spin" /> Uploading…</>
+                          ) : (
+                            <><Upload size={12} /> {sectionRows[section.key]?.map_image_url ? "Replace map" : "Upload map"}</>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={uploadingKey === section.key}
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              e.target.value = "";
+                              if (f) handleMapUpload(section.key, section.title, f);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  )}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-out ${mapUrls[section.key] && mapOpen[section.key] ? "max-h-[2400px] opacity-100" : "max-h-0 opacity-0"}`}
+                  >
+                    {mapUrls[section.key] && (
+                      <div className="px-5 py-4 border-b border-border bg-muted/10">
+                        <img
+                          src={mapUrls[section.key]}
+                          alt={`${section.title} property map`}
+                          className="w-full h-auto rounded-lg border border-border"
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="px-5 py-3 bg-muted/20 border-b border-border">
                     <p className="font-body text-xs text-muted-foreground uppercase tracking-widest mb-2">Payment for this section</p>
                     <div className="flex flex-wrap gap-2">
