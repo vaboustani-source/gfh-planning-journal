@@ -48,6 +48,8 @@ const guestName = (guest: GuestOption) => `${guest.first_name} ${guest.last_name
 
 export function LodgingList() {
   const { eventId } = usePortalData();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [guests, setGuests] = useState<GuestOption[]>([]);
@@ -59,6 +61,11 @@ export function LodgingList() {
   const [sectionModes, setSectionModes] = useState<Record<string, SectionPaymentMode>>({
     hearth_village: "mixed", farmhouse: "mixed", grove: "mixed", victoria: "mixed",
   });
+  const [sectionRows, setSectionRows] = useState<Record<string, LodgingSectionRow>>({});
+  const [mapUrls, setMapUrls] = useState<Record<string, string>>({});
+  const [mapOpen, setMapOpen] = useState<Record<string, boolean>>({});
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+
 
   // Refs to avoid stale closures and prevent refetch during edits
   const assignmentsRef = useRef<Assignment[]>([]);
