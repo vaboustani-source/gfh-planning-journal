@@ -386,6 +386,49 @@ export default function VendorsTab({ eventId, onNavigateNext }: { eventId: strin
         </div>
       )}
 
+      {checkinBulkOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !checkinBulkProgress && setCheckinBulkOpen(false)}>
+          <div className="bg-card rounded-xl border border-border shadow-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="rounded-full bg-sage/15 p-2 text-sage shrink-0"><MailCheck size={18} /></div>
+              <div>
+                <h3 className="font-display text-lg font-light text-foreground">Send check-in to all vendors</h3>
+                <p className="font-body text-sm text-muted-foreground mt-1">
+                  This will email the vendor check-in note to{" "}
+                  <span className="text-foreground font-medium">{vendors.filter(eligibleForCheckin).length}</span>{" "}
+                  vendor{vendors.filter(eligibleForCheckin).length === 1 ? "" : "s"} with an email on file.
+                  Vendors without an email will be skipped. Replies land in the Event Director's inbox.
+                </p>
+              </div>
+            </div>
+            {checkinBulkProgress && (
+              <div className="mt-4 rounded-md bg-muted/40 p-3">
+                <p className="font-body text-xs text-muted-foreground">
+                  Sending {checkinBulkProgress.sent} of {checkinBulkProgress.total}
+                  {checkinBulkProgress.current ? ` · ${checkinBulkProgress.current}` : ""}
+                </p>
+                <div className="h-1.5 mt-2 rounded-full bg-border overflow-hidden">
+                  <div className="h-full bg-sage transition-all"
+                    style={{ width: `${(checkinBulkProgress.sent / Math.max(checkinBulkProgress.total, 1)) * 100}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <button onClick={() => setCheckinBulkOpen(false)} disabled={!!checkinBulkProgress}
+                className="px-4 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground font-body text-sm transition-colors disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={sendCheckinToAll} disabled={!!checkinBulkProgress}
+                className="px-4 py-2 rounded-md bg-sage text-white font-body text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                {checkinBulkProgress ? "Sending..." : "Send to all"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
       <AdminStickyFooter status={status} onSave={() => {}} onSaveAndContinue={() => onNavigateNext?.()} />
     </div>
   );
