@@ -24,6 +24,7 @@ import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
 import OurPeopleTab from "./tabs/OurPeopleTab";
 import EmailsTab from "./tabs/EmailsTab";
+import VendorRosterTab from "./tabs/VendorRosterTab";
 import Rsvp from "../portal/Rsvp";
 import { LifecycleBadge } from "@/components/admin/HandoffPanel";
 import { MidweekBadge } from "@/components/admin/MidweekBadge";
@@ -61,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Vendors & Services",
     items: [
       { id: "vendors", label: "Vendors" },
+      { id: "vendor-roster", label: "Vendor Roster" },
       { id: "experiences", label: "Experiences" },
       { id: "decor", label: "Décor" },
     ],
@@ -324,6 +326,7 @@ export default function EventDetail() {
             {activeTab === "milestones" && <MilestonesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "checklist" && <ChecklistTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "vendors" && <VendorsTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+            {activeTab === "vendor-roster" && <VendorRosterTab eventId={event.id} />}
             {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "decor" && <DecorTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "experiences" && <ExperiencesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
