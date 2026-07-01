@@ -9,6 +9,7 @@ const LIBRARIES = [
   { slug: "decor-rentals", label: "Décor Rentals" },
   { slug: "experiences", label: "Experiences" },
   { slug: "layouts", label: "Table Layouts" },
+  { slug: "lodging", label: "Lodging" },
   { slug: "resources", label: "Resources" },
   { slug: "forms", label: "Forms" },
   { slug: "contract-templates", label: "Contract Templates" },

@@ -29,6 +29,7 @@ import SettingsEmailCopy from "./pages/admin/settings/SettingsEmailCopy";
 import SettingsScheduledEmails from "./pages/admin/settings/SettingsScheduledEmails";
 import SettingsEmailTest from "./pages/admin/settings/SettingsEmailTest";
 import SettingsEmailTemplates from "./pages/admin/settings/SettingsEmailTemplates";
+import SettingsLodging from "./pages/admin/settings/SettingsLodging";
 import PreviewPortalLayout from "./pages/admin/PreviewPortalLayout";
 import PortalLayout from "./pages/portal/PortalLayout";
 import PortalHistory from "./pages/portal/History";
@@ -124,6 +125,7 @@ const App = () => (
               <Route path="integrations" element={<SettingsIntegrations />} />
               <Route path="team" element={<SettingsTeamRoles />} />
               <Route path="email-test" element={<SettingsEmailTest />} />
+              <Route path="lodging" element={<SettingsLodging />} />
             </Route>
             <Route
               path="/admin/account"
