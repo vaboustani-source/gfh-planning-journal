@@ -355,39 +355,17 @@ export function LodgingList() {
 
               <CollapsibleContent>
                 <div className="border-t border-border">
-                  {(mapUrls[section.key] || isAdmin) && (
+                  {mapUrls[section.key] && (
                     <div className="px-5 py-3 border-b border-border flex flex-wrap items-center gap-4">
-                      {mapUrls[section.key] && (
-                        <button
-                          type="button"
-                          onClick={() => toggleMap(section.key)}
-                          className="inline-flex items-center gap-1.5 font-body text-xs text-sage-dark hover:text-foreground transition-colors underline underline-offset-4 decoration-sage/40 hover:decoration-foreground/60"
-                          aria-expanded={!!mapOpen[section.key]}
-                        >
-                          <MapIcon size={12} />
-                          {mapOpen[section.key] ? "Hide map" : "View map"}
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <label className="inline-flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer ml-auto">
-                          {uploadingKey === section.key ? (
-                            <><Loader2 size={12} className="animate-spin" /> Uploading…</>
-                          ) : (
-                            <><Upload size={12} /> {sectionRows[section.key]?.map_image_url ? "Replace map" : "Upload map"}</>
-                          )}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            disabled={uploadingKey === section.key}
-                            onChange={e => {
-                              const f = e.target.files?.[0];
-                              e.target.value = "";
-                              if (f) handleMapUpload(section.key, section.title, f);
-                            }}
-                          />
-                        </label>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleMap(section.key)}
+                        className="inline-flex items-center gap-1.5 font-body text-xs text-sage-dark hover:text-foreground transition-colors underline underline-offset-4 decoration-sage/40 hover:decoration-foreground/60"
+                        aria-expanded={!!mapOpen[section.key]}
+                      >
+                        <MapIcon size={12} />
+                        {mapOpen[section.key] ? "Hide map" : "View map"}
+                      </button>
                     </div>
                   )}
                   <div
