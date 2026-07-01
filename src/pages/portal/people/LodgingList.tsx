@@ -385,7 +385,20 @@ export function LodgingList() {
                     return (
                       <div key={room.id} className={`px-5 py-4 ${idx < guestRooms.length - 1 ? "border-b border-border" : ""}`}>
                         <div className="flex items-center justify-between mb-3">
-                          <p className="font-display text-sm font-light text-foreground">{room.room_name}</p>
+                          <div>
+                            <p className="font-display text-sm font-light text-foreground">{room.room_name}</p>
+                            {(() => {
+                              const r = room as typeof room & { floor?: string | null; bed_type?: string | null; ada_compliant?: boolean | null };
+                              const parts: string[] = [];
+                              if (r.floor) parts.push(`${r.floor} floor`);
+                              if (r.bed_type) parts.push(r.bed_type);
+                              if (r.ada_compliant) parts.push("ADA compliant");
+                              if (parts.length === 0) return null;
+                              return (
+                                <p className="font-body text-xs text-muted-foreground mt-0.5">{parts.join(" · ")}</p>
+                              );
+                            })()}
+                          </div>
                           {!isAssigned && (
                             <span className="font-body text-[10px] text-muted-foreground/60 italic">Available</span>
                           )}
