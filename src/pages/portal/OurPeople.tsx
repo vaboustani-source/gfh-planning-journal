@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { LodgingList } from "./people/LodgingList";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { OffsiteAccommodationsSection } from "@/components/lodging/OffsiteAccommodationsSection";
+import { RecommendedNearbyStays } from "@/components/lodging/RecommendedNearbyStays";
 import { usePortalData } from "@/hooks/usePortalData";
 import GuestList from "@/components/people/GuestList";
 import { PeopleSubTabs, PeopleSubTab } from "@/components/people/PeopleSubTabs";
@@ -58,6 +59,7 @@ export default function OurPeople() {
             <div className="space-y-10">
               <LodgingList />
               {eventId && <OffsiteAccommodationsSection eventId={eventId} variant="portal" />}
+              <RecommendedNearbyStays />
             </div>
           )}
 
