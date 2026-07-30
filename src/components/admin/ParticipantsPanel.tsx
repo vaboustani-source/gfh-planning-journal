@@ -211,15 +211,51 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
 
   const isProtected = (role: string) => ["partner_1", "partner_2", "couple", "coordinator"].includes(role);
 
+  const hasRegistered = (slot: 1 | 2) =>
+    participants.some(p =>
+      p.role_in_event === (slot === 1 ? "partner_1" : "partner_2") || p.role_in_event === "couple"
+    );
+
+  const pendingRows = ([1, 2] as const)
+    .map(slot => ({
+      slot,
+      name: slot === 1 ? pending.p1Name : pending.p2Name,
+      email: slot === 1 ? pending.p1Email : pending.p2Email,
+    }))
+    .filter(r => (r.name || r.email) && !hasRegistered(r.slot));
+
+  const handleSavePending = async () => {
+    if (!editPending) return;
+    const email = editPending.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    setSavingPending(true);
+    const payload = editPending.slot === 1
+      ? { pending_partner1_name: editPending.name.trim() || null, pending_partner1_email: email || null }
+      : { pending_partner2_name: editPending.name.trim() || null, pending_partner2_email: email || null };
+    const { error } = await supabase.from("events").update(payload).eq("id", eventId);
+    setSavingPending(false);
+    if (error) {
+      toast.error(error.message || "Could not save partner details");
+      return;
+    }
+    await fetchPending();
+    setEditPending(null);
+    toast.success("Partner details updated");
+  };
+
   return (
     <div className="rounded-xl bg-card border border-border p-6 space-y-4">
       <p className="font-display text-lg font-light text-foreground">Participants</p>
 
       {loading ? (
         <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
-      ) : participants.length === 0 ? (
+      ) : participants.length === 0 && pendingRows.length === 0 ? (
         <p className="font-body text-sm text-muted-foreground">No participants yet.</p>
       ) : (
+
         <div className="space-y-2">
           {participants.map(p => (
             <div key={p.id} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors group">
