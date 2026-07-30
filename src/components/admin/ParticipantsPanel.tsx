@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Check, ChevronDown, Loader2, Mail, Lock } from "lucide-react";
+import { Plus, Trash2, Check, ChevronDown, Loader2, Mail, Lock, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import AddParticipantModal from "./AddParticipantModal";
 import TabAccessDrawer from "./TabAccessDrawer";
 import { getSetPasswordUrl } from "@/lib/authUrls";
@@ -88,8 +92,29 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [accessFor, setAccessFor] = useState<Participant | null>(null);
   const [partnerNames, setPartnerNames] = useState<{ p1: string; p2: string }>({ p1: "", p2: "" });
+  const [pending, setPending] = useState<{ p1Name: string; p1Email: string; p2Name: string; p2Email: string }>({
+    p1Name: "", p1Email: "", p2Name: "", p2Email: "",
+  });
+  const [editPending, setEditPending] = useState<null | { slot: 1 | 2; name: string; email: string }>(null);
+  const [savingPending, setSavingPending] = useState(false);
+
+  const fetchPending = async () => {
+    const { data } = await supabase
+      .from("events")
+      .select("pending_partner1_name, pending_partner1_email, pending_partner2_name, pending_partner2_email")
+      .eq("id", eventId)
+      .maybeSingle();
+    setPending({
+      p1Name: data?.pending_partner1_name || "",
+      p1Email: data?.pending_partner1_email || "",
+      p2Name: data?.pending_partner2_name || "",
+      p2Email: data?.pending_partner2_email || "",
+    });
+  };
 
   const fetchParticipants = async () => {
+    void fetchPending();
+
     const { data: euData } = await supabase
       .from("event_users")
       .select("id, user_id, role_in_event, access_tier, tab_access")
@@ -186,17 +211,74 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
 
   const isProtected = (role: string) => ["partner_1", "partner_2", "couple", "coordinator"].includes(role);
 
+  const hasRegistered = (slot: 1 | 2) =>
+    participants.some(p =>
+      p.role_in_event === (slot === 1 ? "partner_1" : "partner_2") || p.role_in_event === "couple"
+    );
+
+  const pendingRows = ([1, 2] as const)
+    .map(slot => ({
+      slot,
+      name: slot === 1 ? pending.p1Name : pending.p2Name,
+      email: slot === 1 ? pending.p1Email : pending.p2Email,
+    }))
+    .filter(r => (r.name || r.email) && !hasRegistered(r.slot));
+
+  const handleSavePending = async () => {
+    if (!editPending) return;
+    const email = editPending.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    setSavingPending(true);
+    const payload = editPending.slot === 1
+      ? { pending_partner1_name: editPending.name.trim() || null, pending_partner1_email: email || null }
+      : { pending_partner2_name: editPending.name.trim() || null, pending_partner2_email: email || null };
+    const { error } = await supabase.from("events").update(payload).eq("id", eventId);
+    setSavingPending(false);
+    if (error) {
+      toast.error(error.message || "Could not save partner details");
+      return;
+    }
+    await fetchPending();
+    setEditPending(null);
+    toast.success("Partner details updated");
+  };
+
   return (
     <div className="rounded-xl bg-card border border-border p-6 space-y-4">
       <p className="font-display text-lg font-light text-foreground">Participants</p>
 
       {loading ? (
         <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
-      ) : participants.length === 0 ? (
+      ) : participants.length === 0 && pendingRows.length === 0 ? (
         <p className="font-body text-sm text-muted-foreground">No participants yet.</p>
       ) : (
+
         <div className="space-y-2">
+          {pendingRows.map(r => (
+            <div key={`pending-${r.slot}`} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors group">
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-sm text-foreground truncate">{r.name || r.email}</p>
+                <p className="font-body text-[11px] text-muted-foreground truncate">
+                  Partner{r.email ? ` · ${r.email}` : ""}
+                </p>
+              </div>
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border border-gold/30 bg-gold/10 text-muted-foreground">
+                Invite pending
+              </span>
+              <button
+                onClick={() => setEditPending({ slot: r.slot, name: r.name, email: r.email })}
+                title="Edit partner details"
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1"
+              >
+                <Pencil size={13} />
+              </button>
+            </div>
+          ))}
           {participants.map(p => (
+
             <div key={p.id} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors group">
               <div className="flex-1 min-w-0">
                 <p className="font-body text-sm text-foreground truncate">
@@ -283,6 +365,43 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
           }}
         />
       )}
+
+      <Dialog open={!!editPending} onOpenChange={(o) => { if (!o) setEditPending(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl font-light">Edit partner details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="pending-name" className="font-body text-xs">Name</Label>
+              <Input
+                id="pending-name"
+                value={editPending?.name || ""}
+                onChange={(e) => setEditPending(p => p ? { ...p, name: e.target.value } : p)}
+                className="font-body"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pending-email" className="font-body text-xs">Email</Label>
+              <Input
+                id="pending-email"
+                type="email"
+                placeholder="Add an email address"
+                value={editPending?.email || ""}
+                onChange={(e) => setEditPending(p => p ? { ...p, email: e.target.value } : p)}
+                className="font-body"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditPending(null)} className="font-body">Cancel</Button>
+            <Button onClick={handleSavePending} disabled={savingPending} className="font-body">
+              {savingPending ? <Loader2 size={14} className="animate-spin" /> : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
