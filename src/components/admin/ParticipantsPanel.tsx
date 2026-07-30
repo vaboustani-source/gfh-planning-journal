@@ -92,8 +92,29 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [accessFor, setAccessFor] = useState<Participant | null>(null);
   const [partnerNames, setPartnerNames] = useState<{ p1: string; p2: string }>({ p1: "", p2: "" });
+  const [pending, setPending] = useState<{ p1Name: string; p1Email: string; p2Name: string; p2Email: string }>({
+    p1Name: "", p1Email: "", p2Name: "", p2Email: "",
+  });
+  const [editPending, setEditPending] = useState<null | { slot: 1 | 2; name: string; email: string }>(null);
+  const [savingPending, setSavingPending] = useState(false);
+
+  const fetchPending = async () => {
+    const { data } = await supabase
+      .from("events")
+      .select("pending_partner1_name, pending_partner1_email, pending_partner2_name, pending_partner2_email")
+      .eq("id", eventId)
+      .maybeSingle();
+    setPending({
+      p1Name: data?.pending_partner1_name || "",
+      p1Email: data?.pending_partner1_email || "",
+      p2Name: data?.pending_partner2_name || "",
+      p2Email: data?.pending_partner2_email || "",
+    });
+  };
 
   const fetchParticipants = async () => {
+    void fetchPending();
+
     const { data: euData } = await supabase
       .from("event_users")
       .select("id, user_id, role_in_event, access_tier, tab_access")
