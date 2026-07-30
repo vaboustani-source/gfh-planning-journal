@@ -257,7 +257,28 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
       ) : (
 
         <div className="space-y-2">
+          {pendingRows.map(r => (
+            <div key={`pending-${r.slot}`} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors group">
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-sm text-foreground truncate">{r.name || r.email}</p>
+                <p className="font-body text-[11px] text-muted-foreground truncate">
+                  Partner{r.email ? ` · ${r.email}` : ""}
+                </p>
+              </div>
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border border-gold/30 bg-gold/10 text-muted-foreground">
+                Invite pending
+              </span>
+              <button
+                onClick={() => setEditPending({ slot: r.slot, name: r.name, email: r.email })}
+                title="Edit partner details"
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1"
+              >
+                <Pencil size={13} />
+              </button>
+            </div>
+          ))}
           {participants.map(p => (
+
             <div key={p.id} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors group">
               <div className="flex-1 min-w-0">
                 <p className="font-body text-sm text-foreground truncate">
