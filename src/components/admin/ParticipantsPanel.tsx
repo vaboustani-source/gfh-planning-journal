@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Check, ChevronDown, Loader2, Mail, Lock } from "lucide-react";
+import { Plus, Trash2, Check, ChevronDown, Loader2, Mail, Lock, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import AddParticipantModal from "./AddParticipantModal";
 import TabAccessDrawer from "./TabAccessDrawer";
 import { getSetPasswordUrl } from "@/lib/authUrls";
