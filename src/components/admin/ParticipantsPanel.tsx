@@ -365,6 +365,43 @@ export default function ParticipantsPanel({ eventId }: { eventId: string }) {
           }}
         />
       )}
+
+      <Dialog open={!!editPending} onOpenChange={(o) => { if (!o) setEditPending(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl font-light">Edit partner details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="pending-name" className="font-body text-xs">Name</Label>
+              <Input
+                id="pending-name"
+                value={editPending?.name || ""}
+                onChange={(e) => setEditPending(p => p ? { ...p, name: e.target.value } : p)}
+                className="font-body"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pending-email" className="font-body text-xs">Email</Label>
+              <Input
+                id="pending-email"
+                type="email"
+                placeholder="Add an email address"
+                value={editPending?.email || ""}
+                onChange={(e) => setEditPending(p => p ? { ...p, email: e.target.value } : p)}
+                className="font-body"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditPending(null)} className="font-body">Cancel</Button>
+            <Button onClick={handleSavePending} disabled={savingPending} className="font-body">
+              {savingPending ? <Loader2 size={14} className="animate-spin" /> : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
