@@ -30,7 +30,13 @@ interface Assignment {
   assigned_guest_name: string;
   assigned_guest_email: string;
   host_pays: boolean;
+  cot_approved: boolean;
+  third_guest_name: string;
+  payment_status: string | null;
 }
+
+const PAID_STATUSES = new Set(["paid", "deposit_paid", "covered"]);
+const fmtFee = (n?: number) => (n && n > 0 ? `$${Math.round(n).toLocaleString()}` : "$150");
 
 interface GuestOption {
   id: string;
@@ -52,6 +58,7 @@ export function LodgingList() {
   const [guests, setGuests] = useState<GuestOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [cotFees, setCotFees] = useState<Record<string, number>>({});
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     hearth_village: true, farmhouse: true, grove: true, victoria: true,
   });
@@ -77,7 +84,7 @@ export function LodgingList() {
     (async () => {
       const [{ data: rData }, { data: aData }, { data: gData }] = await Promise.all([
         supabase.from("lodging_rooms").select("id, room_name, room_type, nightly_rate, sort_order, bed_type, ada_compliant, floor").order("sort_order", { ascending: true }),
-        supabase.from("lodging_assignments").select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays").eq("event_id", eventId),
+        supabase.from("lodging_assignments").select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays, cot_approved, third_guest_name, payment_status").eq("event_id", eventId),
         db.from("guests").select("id, first_name, last_name, email, rsvp_status, lodging_preference").eq("event_id", eventId).order("last_name").order("first_name"),
       ]);
       if (cancelled) return;
@@ -92,10 +99,11 @@ export function LodgingList() {
         const placeholders = missingRooms.map(r => ({
           event_id: eventId, room_id: r.id,
           assigned_guest_name: null, assigned_guest_email: null, host_pays: false,
+          cot_approved: false, third_guest_name: null,
         }));
         const { data: inserted } = await supabase
           .from("lodging_assignments").insert(placeholders)
-          .select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays");
+          .select("id, room_id, assigned_guest_name, assigned_guest_email, host_pays, cot_approved, third_guest_name, payment_status");
         if (inserted) allAssignments = [...allAssignments, ...inserted];
       }
 
@@ -105,6 +113,9 @@ export function LodgingList() {
         assigned_guest_name: a.assigned_guest_name ?? "",
         assigned_guest_email: a.assigned_guest_email ?? "",
         host_pays: a.host_pays ?? false,
+        cot_approved: a.cot_approved ?? false,
+        third_guest_name: a.third_guest_name ?? "",
+        payment_status: a.payment_status ?? null,
       })));
 
       const modes: Record<string, SectionPaymentMode> = {};
@@ -146,6 +157,15 @@ export function LodgingList() {
 
 
 
+  useEffect(() => {
+    if (!eventId) return;
+    db.rpc("lb_cot_fees_for_event", { _event_id: eventId }).then(({ data }: { data: { room_id: string; cot_fee: number }[] | null }) => {
+      const map: Record<string, number> = {};
+      for (const r of data ?? []) map[r.room_id] = Number(r.cot_fee);
+      setCotFees(map);
+    });
+  }, [eventId]);
+
   const flashSaved = useCallback(() => {
     setSaveStatus("saved");
     if (savedTimer.current) clearTimeout(savedTimer.current);
@@ -166,6 +186,8 @@ export function LodgingList() {
       assigned_guest_name: a.assigned_guest_name || null,
       assigned_guest_email: a.assigned_guest_email || null,
       host_pays: a.host_pays,
+      cot_approved: a.cot_approved,
+      third_guest_name: a.cot_approved ? (a.third_guest_name || null) : null,
     };
     pendingCount.current += 1;
     setSaveStatus("saving");
@@ -199,11 +221,11 @@ export function LodgingList() {
     }, delay);
   }, [persistRow]);
 
-  const updateText = useCallback((roomId: string, field: "assigned_guest_name" | "assigned_guest_email", value: string) => {
+  const updateText = useCallback((roomId: string, field: "assigned_guest_name" | "assigned_guest_email" | "third_guest_name", value: string) => {
     applyAssignments(prev => {
       const exists = prev.find(a => a.room_id === roomId);
       if (exists) return prev.map(a => a.room_id === roomId ? { ...a, [field]: value } : a);
-      return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: false, [field]: value }];
+      return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: false, cot_approved: false, third_guest_name: "", payment_status: null, [field]: value }];
     });
     scheduleSave(roomId, 500);
   }, [applyAssignments, scheduleSave]);
@@ -219,7 +241,7 @@ export function LodgingList() {
           assigned_guest_email: match?.email ?? a.assigned_guest_email,
         } : a);
       }
-      return [{ id: "", room_id: roomId, assigned_guest_name: value, assigned_guest_email: match?.email ?? "", host_pays: false }, ...prev];
+      return [{ id: "", room_id: roomId, assigned_guest_name: value, assigned_guest_email: match?.email ?? "", host_pays: false, cot_approved: false, third_guest_name: "", payment_status: null }, ...prev];
     });
     scheduleSave(roomId, 500);
   }, [applyAssignments, guests, scheduleSave]);
@@ -230,12 +252,22 @@ export function LodgingList() {
     applyAssignments(prev => {
       const exists = prev.find(a => a.room_id === roomId);
       if (exists) return prev.map(a => a.room_id === roomId ? { ...a, host_pays: hostPays } : a);
-      return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: hostPays }];
+      return [...prev, { id: "", room_id: roomId, assigned_guest_name: "", assigned_guest_email: "", host_pays: hostPays, cot_approved: false, third_guest_name: "", payment_status: null }];
     });
     // Cancel any pending debounced save for this row, save immediately
     if (saveTimers.current[roomId]) { clearTimeout(saveTimers.current[roomId]); delete saveTimers.current[roomId]; }
     persistRow(roomId, () => {
       applyAssignments(prev => prev.map(a => a.room_id === roomId ? { ...a, host_pays: prevVal } : a));
+    });
+  }, [applyAssignments, persistRow]);
+
+  const setCotApproved = useCallback((roomId: string, approved: boolean) => {
+    const prevVal = assignmentsRef.current.find(a => a.room_id === roomId)?.cot_approved ?? false;
+    if (prevVal === approved) return;
+    applyAssignments(prev => prev.map(a => a.room_id === roomId ? { ...a, cot_approved: approved } : a));
+    if (saveTimers.current[roomId]) { clearTimeout(saveTimers.current[roomId]); delete saveTimers.current[roomId]; }
+    persistRow(roomId, () => {
+      applyAssignments(prev => prev.map(a => a.room_id === roomId ? { ...a, cot_approved: prevVal } : a));
     });
   }, [applyAssignments, persistRow]);
 
@@ -455,6 +487,50 @@ export function LodgingList() {
                             </div>
                           </div>
                         )}
+                        {isAssigned && (() => {
+                          const locked = PAID_STATUSES.has(a?.payment_status ?? "");
+                          const fee = fmtFee(cotFees[room.id]);
+                          const on = !!a?.cot_approved;
+                          return (
+                            <div className="mt-3 rounded-lg border border-border/70 bg-background/60 px-3 py-2.5">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="font-body text-xs text-foreground">3rd guest in this room</p>
+                                  <p className="font-body text-[11px] text-muted-foreground">
+                                    {locked
+                                      ? "This reservation is paid. Message us to add or remove a cot."
+                                      : on
+                                        ? `A cot will be set up. ${fee} is added to ${a?.host_pays ? "your" : "the guest's"} reservation.`
+                                        : `Adds a cot for a third guest. ${fee} for the stay. Guests can't add this themselves.`}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={on}
+                                  aria-label="Approve a 3rd guest cot for this room"
+                                  disabled={locked}
+                                  onClick={() => setCotApproved(room.id, !on)}
+                                  className={`relative h-6 w-11 shrink-0 rounded-full p-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-primary" : "bg-muted border border-border"}`}
+                                >
+                                  <span className={`block h-5 w-5 rounded-full bg-card shadow transition-transform ${on ? "translate-x-5" : "translate-x-0"}`} />
+                                </button>
+                              </div>
+                              {on && (
+                                <input
+                                  type="text"
+                                  value={a?.third_guest_name ?? ""}
+                                  onChange={e => updateText(room.id, "third_guest_name", e.target.value)}
+                                  placeholder="3rd guest's name (for check-in)"
+                                  maxLength={120}
+                                  autoComplete="off"
+                                  disabled={locked}
+                                  className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors disabled:opacity-60"
+                                />
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

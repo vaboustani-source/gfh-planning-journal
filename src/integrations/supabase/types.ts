@@ -4069,6 +4069,7 @@ export type Database = {
           assigned_guest_email: string | null
           assigned_guest_name: string | null
           brandon_notes: string | null
+          cot_approved: boolean
           deposit_paid_at: string | null
           event_id: string | null
           final_paid_at: string | null
@@ -4086,11 +4087,13 @@ export type Database = {
           room_id: string | null
           stripe_payment_intent_id: string | null
           stripe_session_id: string | null
+          third_guest_name: string | null
         }
         Insert: {
           assigned_guest_email?: string | null
           assigned_guest_name?: string | null
           brandon_notes?: string | null
+          cot_approved?: boolean
           deposit_paid_at?: string | null
           event_id?: string | null
           final_paid_at?: string | null
@@ -4108,11 +4111,13 @@ export type Database = {
           room_id?: string | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          third_guest_name?: string | null
         }
         Update: {
           assigned_guest_email?: string | null
           assigned_guest_name?: string | null
           brandon_notes?: string | null
+          cot_approved?: boolean
           deposit_paid_at?: string | null
           event_id?: string | null
           final_paid_at?: string | null
@@ -4130,6 +4135,7 @@ export type Database = {
           room_id?: string | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          third_guest_name?: string | null
         }
         Relationships: [
           {

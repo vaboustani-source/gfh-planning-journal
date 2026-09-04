@@ -28,7 +28,13 @@ interface Assignment {
   invoice_1_sent: boolean | null;
   invoice_2_sent: boolean | null;
   invoice_final_sent: boolean | null;
+  payment_status?: string | null;
+  cot_approved?: boolean | null;
+  third_guest_name?: string | null;
 }
+
+const PAID_STATUSES = new Set(["paid", "deposit_paid", "covered"]);
+const fmtFee = (n?: number) => (n && n > 0 ? `$${Math.round(n).toLocaleString()}` : "$150");
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   unassigned: { label: "Available", cls: "text-muted-foreground italic" },
@@ -44,6 +50,15 @@ function getStatus(a?: Assignment) {
 
 export default function LodgingTab({ eventId, onNavigateNext }: { eventId: string; onNavigateNext?: () => void }) {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [cotFees, setCotFees] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!eventId) return;
+    (supabase as any).rpc("lb_cot_fees_for_event", { _event_id: eventId }).then(({ data }: { data: { room_id: string; cot_fee: number }[] | null }) => {
+      const map: Record<string, number> = {};
+      for (const r of data ?? []) map[r.room_id] = Number(r.cot_fee);
+      setCotFees(map);
+    });
+  }, [eventId]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -84,6 +99,7 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
       return [...prev, {
         id: "", room_id: roomId, event_id: eventId,
         assigned_guest_name: null, assigned_guest_email: null, host_pays: false,
+        cot_approved: false, third_guest_name: null,
         payment_method: null, payment_completed_date: null, brandon_notes: null,
         invoice_1_sent: false, invoice_2_sent: false, invoice_final_sent: false,
         [field]: value,
@@ -253,6 +269,36 @@ export default function LodgingTab({ eventId, onNavigateNext }: { eventId: strin
                                 <input type="date" value={a?.payment_completed_date ?? ""} onChange={e => handleFieldChange(room.id, "payment_completed_date", e.target.value || null)} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors" />
                               </div>
                             </div>
+                            {(() => {
+                              const locked = PAID_STATUSES.has(a?.payment_status ?? "");
+                              const on = !!a?.cot_approved;
+                              return (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                                  <div className="flex items-center justify-between sm:col-span-1">
+                                    <div>
+                                      <p className="font-body text-xs text-foreground">3rd guest / cot</p>
+                                      <p className="font-body text-[10px] text-muted-foreground">
+                                        {locked ? (on ? "On · paid, change via lodging app" : "Off · paid, add via lodging app") : on ? `On · ${fmtFee(cotFees[room.id])}` : `Off · ${fmtFee(cotFees[room.id])} if added`}
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={on}
+                                      disabled={locked}
+                                      onClick={() => handleFieldChange(room.id, "cot_approved", !on)}
+                                      className={`relative h-6 w-11 rounded-full p-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-sage" : "bg-muted border border-border"}`}
+                                    >
+                                      <span className={`block h-5 w-5 rounded-full bg-card shadow transition-transform ${on ? "translate-x-5" : "translate-x-0"}`} />
+                                    </button>
+                                  </div>
+                                  <div className="space-y-1 sm:col-span-2">
+                                    <label className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">3rd Guest Name</label>
+                                    <input type="text" value={a?.third_guest_name ?? ""} disabled={!on} onChange={e => handleFieldChange(room.id, "third_guest_name", e.target.value || null)} placeholder="Name for the check-in roster" className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors disabled:opacity-50" />
+                                  </div>
+                                </div>
+                              );
+                            })()}
                             <div className="flex flex-wrap gap-4">
                               {([
                                 { field: "invoice_1_sent" as const, label: "Invoice 1" },
