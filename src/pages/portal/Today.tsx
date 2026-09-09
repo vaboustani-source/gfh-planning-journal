@@ -20,6 +20,7 @@ interface Milestone {
   id: string;
   title: string;
   target_date: string | null;
+  couple_due_date: string | null;
   status: string | null;
 }
 
@@ -167,7 +168,8 @@ function MilestonesCard({ milestones }: { milestones: Milestone[] }) {
       <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-4">Coming Up</p>
       <div className="space-y-3">
         {milestones.map((m, i) => {
-          const d = daysAway(m.target_date);
+          const due = m.couple_due_date ?? m.target_date;
+          const d = daysAway(due);
           return (
             <div key={m.id} className="flex items-start gap-3">
               <div className="mt-1.5 shrink-0 flex flex-col items-center">
@@ -177,7 +179,7 @@ function MilestonesCard({ milestones }: { milestones: Milestone[] }) {
               <div className="min-w-0 flex-1">
                 <p className="font-body text-sm text-foreground leading-snug">{m.title}</p>
                 <p className="font-body text-[10px] text-muted-foreground mt-0.5">
-                  {formatDate(m.target_date)}
+                  {formatDate(due)}
                   {d !== null && d > 0 && ` · ${d} days away`}
                 </p>
               </div>
@@ -280,7 +282,7 @@ export default function Today() {
         .in("section", CHECKLIST_SECTIONS)
         .order("sort_order", { ascending: true }),
       supabase.from("milestones")
-        .select("id, title, target_date, status")
+        .select("id, title, target_date, couple_due_date, status")
         .eq("event_id", effectiveEventId)
         .order("sort_order", { ascending: true }),
       supabase.from("ceremony_details")

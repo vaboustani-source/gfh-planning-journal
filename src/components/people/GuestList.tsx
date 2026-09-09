@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle, ClipboardPaste, FileSpreadsheet } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, FileUp, X, UtensilsCrossed, Info, AlertTriangle, ClipboardPaste } from "lucide-react";
 import { toast } from "sonner";
 import DietaryEntriesEditor from "@/components/dietary/DietaryEntriesEditor";
 import { SEVERITY_BADGE } from "@/lib/dietary";
@@ -20,7 +20,46 @@ interface ImportRow {
   side: string;
   relationship: string;
   notes: string;
+  is_plus_one: boolean;
+  source: string;
   exclude: boolean;
+}
+
+const SIDE_VALUES = ["partner_1", "partner_2", "both", "other"] as const;
+const RELATIONSHIP_VALUES = ["immediate_family", "extended_family", "wedding_party", "friend", "coworker", "other"] as const;
+const asSide = (v: string) => (SIDE_VALUES as readonly string[]).includes(v) ? v : null;
+const asRelationship = (v: string) => (RELATIONSHIP_VALUES as readonly string[]).includes(v) ? v : null;
+
+// Shape returned by the ai-guest-import edge function
+interface AiGuestRow {
+  first_name: string; last_name: string; email: string; phone: string;
+  is_child: boolean; is_plus_one: boolean; plus_one_of: string;
+  lodging_preference: "on_site" | "off_site" | "undecided";
+  rsvp_status: "invited" | "confirmed" | "declined" | "maybe";
+  side: string; relationship: string; notes: string; source: string;
+}
+interface AiImportResult {
+  layout_summary: string;
+  guests: AiGuestRow[];
+  skipped: { source: string; reason: string }[];
+}
+
+// Break a big paste into batches the organizer can handle in one request.
+// Header lines (the first few) are repeated at the top of every batch for context.
+const AI_BATCH_LINES = 90;
+function splitForAi(text: string): string[] {
+  const lines = text.split(/\r?\n/);
+  if (lines.length <= AI_BATCH_LINES + 20) return [text];
+  const headerCount = Math.min(3, lines.length);
+  const header = lines.slice(0, headerCount);
+  const body = lines.slice(headerCount);
+  const batches: string[] = [];
+  for (let i = 0; i < body.length; i += AI_BATCH_LINES) {
+    const chunk = body.slice(i, i + AI_BATCH_LINES);
+    const prefix = i === 0 ? header : ["(first lines repeated for context, do not import twice)", ...header];
+    batches.push([...prefix, ...chunk].join("\n"));
+  }
+  return batches;
 }
 
 const CSV_HEADERS = ["First", "Last", "Email", "Phone", "Lodging", "Adult or Child", "RSVP", "Side", "Relationship", "Notes"];
@@ -51,11 +90,6 @@ function parseCsv(text: string): string[][] {
   return rows.filter(r => r.some(c => c.trim().length > 0));
 }
 
-function findEmail(s: string): string | null {
-  const m = s.match(/[^\s,;<>"']+@[^\s,;<>"']+\.[^\s,;<>"']+/);
-  return m ? m[0] : null;
-}
-
 function blankImportRow(partial: Partial<ImportRow> = {}): ImportRow {
   return {
     first_name: "",
@@ -68,35 +102,11 @@ function blankImportRow(partial: Partial<ImportRow> = {}): ImportRow {
     side: "",
     relationship: "",
     notes: "",
+    is_plus_one: false,
+    source: "",
     exclude: false,
     ...partial,
   };
-}
-
-// Parse a single pasted line into an import row.
-// Splits on tabs first, then commas. Falls back to email detection by regex.
-function parseQuickLine(raw: string): ImportRow {
-  const line = raw.trim();
-  const parts = (line.includes("\t") ? line.split("\t") : line.split(","))
-    .map(p => p.trim());
-  // Pull out any email from the whole line if columns don't line up
-  const detectedEmail = findEmail(line) ?? "";
-  const emailIdx = parts.findIndex(p => EMAIL_RE.test(p));
-  let first = "", last = "", email = "", phone = "";
-  if (emailIdx >= 0) {
-    email = parts[emailIdx];
-    const before = parts.slice(0, emailIdx);
-    const after = parts.slice(emailIdx + 1);
-    first = before[0] ?? "";
-    last = before.slice(1).join(" ").trim() || (before.length === 1 ? "" : "");
-    phone = after[0] ?? "";
-  } else {
-    first = parts[0] ?? "";
-    last = parts[1] ?? "";
-    email = detectedEmail;
-    phone = parts[2] ?? "";
-  }
-  return blankImportRow({ first_name: first, last_name: last, email, phone });
 }
 
 function normalizeLodging(v: string): "on_site" | "off_site" | "undecided" {
@@ -117,6 +127,15 @@ function normalizeRsvp(v: string): "invited" | "confirmed" | "declined" | "maybe
   if (s === "declined" || s === "no") return "declined";
   if (s === "maybe") return "maybe";
   return "invited";
+}
+
+// True when the pasted text is our own CSV template (exact header row).
+// Those are parsed locally and instantly; anything else goes through the organizer.
+function looksLikeTemplate(grid: string[][]): boolean {
+  if (grid.length < 2) return false;
+  const headers = grid[0].map(h => h.trim().toLowerCase());
+  const wanted = CSV_HEADERS.map(h => h.toLowerCase());
+  return wanted.every(w => headers.includes(w));
 }
 
 // Map a parsed CSV grid (header row + data rows) into ImportRows.
@@ -243,11 +262,14 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
-  const [importMode, setImportMode] = useState<null | "quick" | "csv">(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [parsedRows, setParsedRows] = useState<ImportRow[] | null>(null);
   const [importing, setImporting] = useState(false);
-  const csvInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importHint, setImportHint] = useState("");
+  const [organizing, setOrganizing] = useState<string | null>(null);
+  const [organizeResult, setOrganizeResult] = useState<{ summary: string[]; skipped: { source: string; reason: string }[] } | null>(null);
   const [dietaryByGuest, setDietaryByGuest] = useState<Record<string, { count: number; topSeverity: string | null; hasProximity: boolean }>>({});
 
   useEffect(() => { if (eventId) load(); }, [eventId]);
@@ -338,26 +360,81 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     const a = document.createElement("a"); a.href = url; a.download = "guest-list.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
-  const openQuick = () => { setImportText(""); setParsedRows(null); setImportMode("quick"); };
-  const openCsv = () => { setParsedRows(null); setImportMode("csv"); setTimeout(() => csvInputRef.current?.click(), 0); };
-  const closeImport = () => { setImportMode(null); setParsedRows(null); setImportText(""); };
+  const openImport = () => { setImportText(""); setImportHint(""); setParsedRows(null); setOrganizeResult(null); setImportOpen(true); };
+  const closeImport = () => { setImportOpen(false); setParsedRows(null); setImportText(""); setImportHint(""); setOrganizeResult(null); setOrganizing(null); };
 
-  const handleQuickParse = () => {
-    const lines = importText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) { toast.error("Paste at least one guest first"); return; }
-    setParsedRows(lines.map(parseQuickLine));
+  const aiRowToImportRow = (g: AiGuestRow): ImportRow => {
+    const notes = [g.notes?.trim(), g.is_plus_one && g.plus_one_of ? `Plus-one of ${g.plus_one_of}.` : ""]
+      .filter(Boolean).join(" ");
+    return blankImportRow({
+      first_name: (g.first_name ?? "").trim(),
+      last_name: (g.last_name ?? "").trim(),
+      email: (g.email ?? "").trim(),
+      phone: (g.phone ?? "").trim(),
+      lodging_preference: g.lodging_preference ?? "undecided",
+      is_child: !!g.is_child,
+      rsvp_status: g.rsvp_status ?? "invited",
+      side: asSide(g.side) ?? "",
+      relationship: asRelationship(g.relationship) ?? "",
+      notes,
+      is_plus_one: !!g.is_plus_one,
+      source: g.source ?? "",
+    });
   };
 
-  const handleCsvFile = async (file: File) => {
+  // One button for every kind of list. Our own template is parsed locally;
+  // everything else is organized server-side.
+  const handleOrganize = async () => {
+    const text = importText.trim();
+    if (!text) { toast.error("Paste your list or upload a file first"); return; }
+
+    // Fast path: the exact CSV template
     try {
-      const text = await file.text();
       const grid = parseCsv(text);
-      if (grid.length < 2) { toast.error("CSV looks empty. Include a header row and at least one guest."); return; }
-      const rows = csvRowsToImportRows(grid);
-      if (rows.length === 0) { toast.error("No data rows found"); return; }
+      if (looksLikeTemplate(grid)) {
+        const rows = csvRowsToImportRows(grid);
+        if (rows.length === 0) { toast.error("No guest rows found under the header"); return; }
+        setOrganizeResult(null);
+        setParsedRows(rows);
+        return;
+      }
+    } catch { /* fall through to the organizer */ }
+
+    const batches = splitForAi(text);
+    const rows: ImportRow[] = [];
+    const summary: string[] = [];
+    const skipped: { source: string; reason: string }[] = [];
+    try {
+      for (let i = 0; i < batches.length; i++) {
+        setOrganizing(batches.length > 1 ? `Organizing part ${i + 1} of ${batches.length}…` : "Organizing your list…");
+        const { data, error } = await supabase.functions.invoke("ai-guest-import", {
+          body: { event_id: eventId, text: batches[i], hint: importHint.trim() || undefined },
+        });
+        if (error) throw new Error(error.message || "Could not organize the list");
+        if (data?.error) throw new Error(data.error);
+        const result = data as AiImportResult;
+        (result.guests ?? []).forEach(g => rows.push(aiRowToImportRow(g)));
+        if (result.layout_summary) summary.push(result.layout_summary);
+        (result.skipped ?? []).forEach(sk => skipped.push(sk));
+      }
+      if (rows.length === 0) { toast.error("We could not find any guests in that text"); return; }
+      setOrganizeResult({ summary, skipped });
       setParsedRows(rows);
     } catch (err: any) {
-      toast.error(`Could not read CSV: ${err?.message ?? "unknown error"}`);
+      toast.error(err?.message ?? "Could not organize the list");
+    } finally {
+      setOrganizing(null);
+    }
+  };
+
+  const handleFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      if (!text.trim()) { toast.error("That file looks empty"); return; }
+      setImportText(text);
+      toast.success(`Loaded ${file.name}. Click Organize when ready.`);
+    } catch (err: any) {
+      toast.error(`Could not read file: ${err?.message ?? "unknown error"}`);
     }
   };
 
@@ -373,6 +450,10 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     () => new Set(guests.map(g => (g.email ?? "").trim().toLowerCase()).filter(Boolean)),
     [guests]
   );
+  const existingNames = useMemo(
+    () => new Set(guests.map(g => `${g.first_name} ${g.last_name}`.trim().toLowerCase().replace(/\s+/g, " ")).filter(Boolean)),
+    [guests]
+  );
 
   const rowErrors = useMemo(() => {
     if (!parsedRows) return [] as { error: string | null; duplicate: boolean }[];
@@ -381,19 +462,22 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       let error: string | null = null;
       if (!r.first_name.trim()) error = "First name required";
       else if (!r.last_name.trim()) error = "Last name required";
-      else if (!r.email.trim()) error = "Email required";
-      else if (!EMAIL_RE.test(r.email.trim())) error = "Email looks invalid";
-      const key = r.email.trim().toLowerCase();
+      else if (r.email.trim() && !EMAIL_RE.test(r.email.trim())) error = "Email looks invalid";
+      // Duplicates: match on email when there is one, otherwise on the full name.
+      const emailKey = r.email.trim().toLowerCase();
+      const nameKey = `${r.first_name.trim()} ${r.last_name.trim()}`.toLowerCase().replace(/\s+/g, " ");
+      const key = emailKey ? `email:${emailKey}` : (nameKey.trim() && r.first_name.trim().toLowerCase() !== "guest" ? `name:${nameKey}` : "");
       let duplicate = false;
       if (key) {
-        if (existingEmails.has(key)) duplicate = true;
+        if (emailKey && existingEmails.has(emailKey)) duplicate = true;
+        if (!emailKey && existingNames.has(nameKey)) duplicate = true;
         const first = seen.get(key);
         if (first !== undefined && first !== idx) duplicate = true;
         if (!seen.has(key)) seen.set(key, idx);
       }
       return { error, duplicate };
     });
-  }, [parsedRows, existingEmails]);
+  }, [parsedRows, existingEmails, existingNames]);
 
   const updateRow = (idx: number, patch: Partial<ImportRow>) => {
     setParsedRows(prev => prev ? prev.map((r, i) => i === idx ? { ...r, ...patch } : r) : prev);
@@ -427,14 +511,15 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       ...emptyGuest(eventId, isAdmin),
       first_name: r.first_name.trim(),
       last_name: r.last_name.trim(),
-      email: r.email.trim(),
+      email: r.email.trim() || null,
       phone: r.phone.trim() || null,
       lodging_preference: r.lodging_preference,
       is_child: r.is_child,
       rsvp_status: r.rsvp_status,
-      side: r.side || null,
-      relationship: r.relationship || null,
-      notes: r.notes || null,
+      side: asSide(r.side.trim().toLowerCase()),
+      relationship: asRelationship(r.relationship.trim().toLowerCase()),
+      notes: r.notes.trim() || null,
+      is_plus_one: r.is_plus_one,
     }));
     const { error } = await db.from("guests").insert(payload);
     setImporting(false);
@@ -491,23 +576,19 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
             </button>
           ))}
         </div>
-        <button onClick={openQuick}
+        <button onClick={openImport}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
-          <ClipboardPaste size={14} /> Quick Import
-        </button>
-        <button onClick={openCsv}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">
-          <FileSpreadsheet size={14} /> Import CSV
+          <ClipboardPaste size={14} /> Import Guests
         </button>
         <input
-          ref={csvInputRef}
+          ref={fileInputRef}
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
           className="hidden"
           onChange={async (e) => {
             const f = e.target.files?.[0];
-            if (f) await handleCsvFile(f);
-            if (csvInputRef.current) csvInputRef.current.value = "";
+            if (f) await handleFile(f);
+            if (fileInputRef.current) fileInputRef.current.value = "";
           }}
         />
         {isAdmin && (
@@ -523,60 +604,78 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       </div>
 
       {/* Import panel */}
-      {importMode && (
+      {importOpen && (
         <div className="bg-white border border-border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-display text-lg">
-              {importMode === "quick" ? "Quick Import" : "Import CSV"}
-            </h3>
+            <h3 className="font-display text-lg">Import guests</h3>
             <button onClick={closeImport}><X size={16} /></button>
           </div>
 
-          {importMode === "quick" && !parsedRows && (
+          {!parsedRows && (
             <>
               <div className="rounded-lg bg-sage/10 border border-sage/20 px-3 py-2.5 space-y-1">
-                <p className="font-body text-xs font-semibold text-foreground">One guest per line, in this order:</p>
-                <p className="font-body text-xs text-foreground">First, Last, Email, Phone (phone optional)</p>
-                <p className="font-body text-[11px] text-muted-foreground italic">
-                  Tabs or commas both work. Example: Jane, Smith, jane@example.com, 555-123-4567
+                <p className="font-body text-xs font-semibold text-foreground">Paste your list, or upload a file. Any layout works.</p>
+                <p className="font-body text-xs text-foreground">
+                  In Google Sheets or Excel, select the cells (header row included), copy, and paste below. Address lists, lodging sheets, RSVP trackers, or a plain list of names are all fine.
                 </p>
                 <p className="font-body text-[11px] text-muted-foreground">
-                  Email is required. You will be able to review and fix every row before anything is saved.
+                  Households like "Edgardo and Maria Kramer" become one row per person. Room assignments, nights, and addresses are kept in each guest's notes. You review every row before anything is saved.
                 </p>
               </div>
               <textarea
                 value={importText}
                 onChange={e => setImportText(e.target.value)}
-                rows={8}
-                placeholder={"Jane, Smith, jane@example.com, 555-123-4567\nJohn, Doe, john@example.com"}
+                rows={10}
+                placeholder={"Edgardo and Maria Kramer\t58 Mallard Road\tManhasset\tNY\t11030\nKayla Luna and Guest\t42-08 205th Street\tBayside\tNY\t11361"}
                 className="w-full p-3 rounded-md border border-input bg-background font-body text-sm font-mono"
+                disabled={!!organizing}
               />
-              <div className="flex justify-end gap-2">
-                <button onClick={closeImport} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40">Cancel</button>
-                <button onClick={handleQuickParse} className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">Review</button>
+              <input
+                value={importHint}
+                onChange={e => setImportHint(e.target.value)}
+                placeholder={`Optional note, for example "this is the on-site lodging list" or "everyone here is on the bride's side"`}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background font-body text-sm"
+                disabled={!!organizing}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => fileInputRef.current?.click()} disabled={!!organizing}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border font-body text-sm hover:bg-muted/40 disabled:opacity-50">
+                    <FileUp size={14} /> Upload a file
+                  </button>
+                  <button onClick={downloadCsvTemplate} disabled={!!organizing}
+                    className="px-3 py-1.5 rounded-md font-body text-xs text-muted-foreground hover:text-foreground disabled:opacity-50">
+                    Download a blank template
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  {organizing && <span className="font-body text-xs text-muted-foreground animate-pulse">{organizing}</span>}
+                  <button onClick={closeImport} disabled={!!organizing} className="px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-muted/40 disabled:opacity-50">Cancel</button>
+                  <button onClick={handleOrganize} disabled={!!organizing || !importText.trim()}
+                    className="px-4 py-2 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark disabled:opacity-50 disabled:cursor-not-allowed">
+                    {organizing ? "Working…" : "Organize"}
+                  </button>
+                </div>
               </div>
             </>
           )}
 
-          {importMode === "csv" && !parsedRows && (
-            <div className="rounded-lg bg-sage/10 border border-sage/20 px-3 py-3 space-y-2">
-              <p className="font-body text-sm text-foreground">
-                Upload a .csv file with a header row. Supported columns (case-insensitive):
-              </p>
-              <p className="font-body text-xs text-muted-foreground">
-                {CSV_HEADERS.join(", ")}
-              </p>
-              <p className="font-body text-[11px] text-muted-foreground italic">
-                Email is required for every row. Quoted fields and commas inside values are handled.
-              </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button onClick={() => csvInputRef.current?.click()} className="px-3 py-1.5 rounded-md bg-sage text-primary-foreground font-body text-sm hover:bg-sage-dark">
-                  Choose CSV file
-                </button>
-                <button onClick={downloadCsvTemplate} className="px-3 py-1.5 rounded-md border border-border font-body text-sm hover:bg-muted/40">
-                  Download CSV template
-                </button>
-              </div>
+          {parsedRows && organizeResult && (
+            <div className="rounded-lg bg-cream-dark/30 border border-border px-4 py-3 space-y-2">
+              <p className="font-body text-xs font-semibold text-foreground">How we read your sheet</p>
+              {organizeResult.summary.map((sm, i) => (
+                <p key={i} className="font-body text-xs text-foreground">{sm}</p>
+              ))}
+              {organizeResult.skipped.length > 0 && (
+                <details className="font-body text-xs text-muted-foreground">
+                  <summary className="cursor-pointer">{organizeResult.skipped.length} line{organizeResult.skipped.length === 1 ? "" : "s"} skipped</summary>
+                  <ul className="mt-1 space-y-0.5 list-disc pl-4">
+                    {organizeResult.skipped.map((sk, i) => (
+                      <li key={i}><span className="text-foreground">{sk.source}</span>: {sk.reason}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           )}
 
@@ -890,6 +989,7 @@ function ReviewGrid({
               <th className="px-2 py-2">Phone</th>
               <th className="px-2 py-2">Lodging</th>
               <th className="px-2 py-2">Type</th>
+              <th className="px-2 py-2">Notes</th>
               <th className="px-2 py-2">Status</th>
               <th className="px-2 py-2 w-10"></th>
             </tr>
@@ -900,10 +1000,12 @@ function ReviewGrid({
               const bad = !!v.error;
               const dup = v.duplicate;
               return (
-                <tr key={i} className={`border-t border-border ${bad ? "bg-red-50" : dup ? "bg-amber-50" : ""}`}>
+                <tr key={i} title={r.source ? `From: ${r.source}` : undefined}
+                  className={`border-t border-border ${bad ? "bg-red-50" : dup ? "bg-amber-50" : ""}`}>
                   <td className="px-2 py-1.5">
                     <input value={r.first_name} onChange={e => onUpdate(i, { first_name: e.target.value })}
                       className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                    {r.is_plus_one && <span className="ml-1 text-[10px] text-muted-foreground">+1</span>}
                   </td>
                   <td className="px-2 py-1.5">
                     <input value={r.last_name} onChange={e => onUpdate(i, { last_name: e.target.value })}
@@ -933,6 +1035,10 @@ function ReviewGrid({
                       <option value="adult">Adult</option>
                       <option value="child">Child</option>
                     </select>
+                  </td>
+                  <td className="px-2 py-1.5 min-w-[180px]">
+                    <input value={r.notes} onChange={e => onUpdate(i, { notes: e.target.value })} title={r.notes}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
                   </td>
                   <td className="px-2 py-1.5">
                     {bad ? (

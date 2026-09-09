@@ -30,6 +30,7 @@ interface Milestone {
   timeframe_label: string | null;
   status: string | null;
   sort_order: number | null;
+  couple_due_date: string | null;
 }
 
 function PlanningJourney({ eventId }: { eventId: string }) {
@@ -41,7 +42,7 @@ function PlanningJourney({ eventId }: { eventId: string }) {
     const load = async () => {
       const { data } = await supabase
         .from("milestones")
-        .select("id, title, timeframe_label, status, sort_order")
+        .select("id, title, timeframe_label, status, sort_order, couple_due_date")
         .eq("event_id", eventId)
         .order("sort_order", { ascending: true });
       if (data) setMilestones(data);
@@ -82,8 +83,13 @@ function PlanningJourney({ eventId }: { eventId: string }) {
                 </div>
                 <div className="pt-0.5">
                   <p className={`font-body text-sm ${done ? "text-muted-foreground" : isActive ? "text-foreground font-medium" : "text-muted-foreground"}`}>{m.title}</p>
-                  {m.timeframe_label && (
-                    <p className={`font-body text-[11px] ${isActive ? "text-sage" : "text-muted-foreground"}`}>{m.timeframe_label}</p>
+                  {(m.timeframe_label || (!done && m.couple_due_date)) && (
+                    <p className={`font-body text-[11px] ${isActive ? "text-sage" : "text-muted-foreground"}`}>
+                      {m.timeframe_label}
+                      {!done && m.couple_due_date && (
+                        <>{m.timeframe_label ? " · " : ""}Due {new Date(m.couple_due_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</>
+                      )}
+                    </p>
                   )}
                 </div>
               </div>

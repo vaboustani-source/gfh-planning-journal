@@ -9,6 +9,7 @@ interface Milestone {
   title: string;
   timeframe_label: string | null;
   target_date: string | null;
+  couple_due_date: string | null;
   owner: string | null;
   status: string | null;
   completed_date: string | null;
@@ -160,6 +161,11 @@ export default function MilestonesTab({ eventId, onNavigateNext }: { eventId: st
                     <span className="flex items-center gap-1">
                       <Clock size={9} />
                       {fmtDate(m.target_date)}
+                    </span>
+                  )}
+                  {m.couple_due_date && m.couple_due_date !== m.target_date && (
+                    <span className="flex items-center gap-1 text-sage" title="The date the couple sees. The internal due date gives them 3 weeks of grace.">
+                      Couple sees {fmtDate(m.couple_due_date)}
                     </span>
                   )}
                   {m.owner && (

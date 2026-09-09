@@ -4865,6 +4865,7 @@ export type Database = {
       milestones: {
         Row: {
           completed_date: string | null
+          couple_due_date: string | null
           created_at: string | null
           event_id: string | null
           id: string
