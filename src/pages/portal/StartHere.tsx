@@ -19,8 +19,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { RSVP_ENABLED } from "@/lib/featureFlags";
-import { HOW_WE_WORK_SECTIONS, HOW_WE_WORK_INTRO } from "@/content/howWeWork";
-import { HowWeWorkSections } from "@/pages/portal/HowWeWork";
+import { HOW_WE_WORK_INTRO } from "@/content/howWeWork";
+import { HowWeWorkTiles } from "@/pages/portal/HowWeWork";
 
 /* ── Welcome video URL ─────────────────────────
    Paste a Loom or YouTube embed URL below to show a welcome video.
@@ -97,12 +97,6 @@ const COMPACT_LINKS: CompactLink[] = [
   { to: "/portal/insurance", label: "Wedding Insurance", description: "recommended in your contract, with two ways to buy." },
   { to: "/portal/notes", label: "Notes", description: "a place for your own notes." },
 ];
-
-const HOW_WE_WORK_LINKS: CompactLink[] = HOW_WE_WORK_SECTIONS.map((s) => ({
-  to: `#${s.slug}`,
-  label: s.title,
-  description: s.blurb,
-}));
 
 const FIRST_STEPS: StepLink[] = [
   { to: "/portal/messages", label: "Say hello in Messages so we have a thread going." },
@@ -226,20 +220,6 @@ export default function StartHere() {
           </div>
         </section>
 
-        {/* How we work */}
-        <section className="mb-12">
-          <h2 className="font-display text-xl font-light text-foreground mb-4">
-            How we work
-          </h2>
-          <div className="rounded-xl border border-border bg-card p-5 md:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
-              {HOW_WE_WORK_LINKS.map((link) => (
-                <CompactLinkItem key={link.to} {...link} />
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* First steps */}
         <section className="mb-12">
           <h2 className="font-display text-xl font-light text-foreground mb-3">
@@ -257,14 +237,15 @@ export default function StartHere() {
           </div>
         </section>
 
-        {/* How we work, in full */}
-        <section id="how-we-work" className="mb-12 pt-10 border-t border-border scroll-mt-24">
-          <div className="mb-8">
-            <p className="font-body text-xs tracking-widest uppercase text-muted-foreground mb-3">Service expectations</p>
-            <h2 className="font-display text-3xl font-light text-foreground mb-3">How We Work</h2>
-            <p className="font-body text-base text-muted-foreground leading-relaxed max-w-2xl">{HOW_WE_WORK_INTRO}</p>
-          </div>
-          <HowWeWorkSections embedded />
+        {/* How we work: one tile per topic, opens one at a time */}
+        <section id="how-we-work" className="mb-12 scroll-mt-24">
+          <h2 className="font-display text-xl font-light text-foreground mb-2">
+            How we work
+          </h2>
+          <p className="font-body text-sm text-muted-foreground mb-4 leading-relaxed max-w-2xl">
+            {HOW_WE_WORK_INTRO} Tap a topic to read it. Each one starts with the three things to know.
+          </p>
+          <HowWeWorkTiles />
         </section>
 
         {/* Closing */}

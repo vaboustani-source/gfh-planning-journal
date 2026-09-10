@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { BookOpen } from "lucide-react";
+import {
+  BookOpen, Users, UtensilsCrossed, Leaf, CalendarCheck, BedDouble, Palette, Briefcase,
+  Truck, CalendarDays, MessageSquare, Sparkles, HelpCircle, MessageCircleQuestion, Receipt,
+  ArrowRight, ArrowLeft, Check,
+} from "lucide-react";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   HOW_WE_WORK_SECTIONS, HOW_WE_WORK_INTRO, HOW_WE_WORK_CLOSING, RATES,
   type Block, type ListItem,
@@ -101,100 +106,158 @@ function EditorialTable({ columns, rows, pillColumn }: { columns: string[]; rows
   );
 }
 
-/* ── Sections (embeddable) ─────────────────────── */
+/* ── Tiles: one section at a time ─────────────── */
 
-export function HowWeWorkSections({ embedded = false }: { embedded?: boolean }) {
+const ICONS: Record<string, React.ElementType> = {
+  "our-roles": Users,
+  "food-beverage": UtensilsCrossed,
+  "dietary-needs": Leaf,
+  "weekend-coordination": CalendarCheck,
+  "resort-coordination": BedDouble,
+  "design": Palette,
+  "vendors": Briefcase,
+  "load-in-hours": Truck,
+  "two-dates": CalendarDays,
+  "one-voice": MessageSquare,
+  "what-to-expect": Sparkles,
+  "who-to-ask": HelpCircle,
+  "common-questions": MessageCircleQuestion,
+  "rates": Receipt,
+};
+
+export function HowWeWorkTiles() {
   const location = useLocation();
-  const [active, setActive] = useState<string>(HOW_WE_WORK_SECTIONS[0].slug);
-  const reduceMotion = useMemo(
-    () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
-    [],
-  );
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
 
-  const jumpTo = (slug: string) => {
-    const el = document.getElementById(slug);
-    if (!el) return;
-    el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-    if (history.replaceState) history.replaceState(null, "", `#${slug}`);
-  };
-
-  // Landing on #slug scrolls to that section once the page has rendered.
+  // Landing on #slug (from an old link or a redirect) opens that section.
   useEffect(() => {
     const slug = location.hash.replace(/^#/, "");
-    if (!slug || !HOW_WE_WORK_SECTIONS.some(s => s.slug === slug)) return;
-    const t = window.setTimeout(() => jumpTo(slug), 80);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (slug && HOW_WE_WORK_SECTIONS.some(s => s.slug === slug)) setOpenSlug(slug);
   }, [location.hash]);
 
-  // Highlight the section in view on the jump bar.
-  useEffect(() => {
-    if (embedded) return;
-    const els = HOW_WE_WORK_SECTIONS.map(s => document.getElementById(s.slug)).filter((e): e is HTMLElement => !!e);
-    if (els.length === 0 || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver((entries) => {
-      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0]) setActive(visible[0].target.id);
-    }, { rootMargin: "-30% 0px -60% 0px", threshold: 0 });
-    els.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, [embedded]);
+  const open = (slug: string) => {
+    setOpenSlug(slug);
+    if (history.replaceState) history.replaceState(null, "", `#${slug}`);
+  };
+  const close = () => {
+    setOpenSlug(null);
+    if (history.replaceState) history.replaceState(null, "", location.pathname);
+  };
+
+  const idx = HOW_WE_WORK_SECTIONS.findIndex(s => s.slug === openSlug);
+  const section = idx >= 0 ? HOW_WE_WORK_SECTIONS[idx] : null;
+  const prev = idx > 0 ? HOW_WE_WORK_SECTIONS[idx - 1] : null;
+  const next = idx >= 0 && idx < HOW_WE_WORK_SECTIONS.length - 1 ? HOW_WE_WORK_SECTIONS[idx + 1] : null;
+  const Icon = section ? (ICONS[section.slug] ?? BookOpen) : BookOpen;
 
   return (
     <>
-      {!embedded && (
-        <nav aria-label="Sections" className="sticky top-0 z-10 -mx-5 px-5 lg:-mx-8 lg:px-8 py-3 mb-8 bg-background/95 backdrop-blur border-b border-border print:hidden">
-          <div className="hidden md:flex flex-wrap gap-x-5 gap-y-1">
-            {HOW_WE_WORK_SECTIONS.map((s) => (
-              <button
-                key={s.slug}
-                type="button"
-                onClick={() => jumpTo(s.slug)}
-                className={`font-body text-[11px] tracking-widest uppercase py-1 border-b transition-colors ${
-                  active === s.slug ? "text-foreground border-gold" : "text-muted-foreground border-transparent hover:text-foreground"
-                }`}
-              >
-                {s.title}
-              </button>
-            ))}
-          </div>
-          <select
-            aria-label="Jump to a section"
-            className="md:hidden w-full px-3 py-2 rounded-md border border-input bg-background font-body text-sm"
-            value={active}
-            onChange={(e) => { setActive(e.target.value); jumpTo(e.target.value); }}
-          >
-            {HOW_WE_WORK_SECTIONS.map((s) => <option key={s.slug} value={s.slug}>{s.title}</option>)}
-          </select>
-        </nav>
-      )}
-
-      <div className="space-y-16">
-        {HOW_WE_WORK_SECTIONS.map((s, idx) => (
-          <section key={s.slug} id={s.slug} className="scroll-mt-24">
-            <div className="flex items-baseline gap-3 mb-1">
-              <span className="font-body text-[11px] tracking-widest uppercase text-muted-foreground">{String(idx + 1).padStart(2, "0")}</span>
-              <h2 className="font-display text-2xl font-light text-foreground">{s.title}</h2>
-              {s.draft && (
-                <span className="font-body text-[10px] tracking-widest uppercase rounded-full bg-gold/30 text-foreground px-2 py-0.5">Drafted for review</span>
-              )}
-            </div>
-            <p className="font-body text-sm text-muted-foreground mb-5">{s.blurb}</p>
-            <div className="space-y-4">
-              {s.blocks.map((b, i) => <BlockView key={i} block={b} />)}
-            </div>
-          </section>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {HOW_WE_WORK_SECTIONS.map((s, i) => {
+          const TileIcon = ICONS[s.slug] ?? BookOpen;
+          return (
+            <button
+              key={s.slug}
+              type="button"
+              onClick={() => open(s.slug)}
+              className="group text-left rounded-xl border border-border bg-card p-4 hover:border-sage/50 hover:shadow-card transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            >
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 w-9 h-9 rounded-full bg-sage/10 border border-sage/20 flex items-center justify-center">
+                  <TileIcon size={16} className="text-sage" strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-body text-[10px] tracking-widest text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+                    <h3 className="font-display text-lg font-light text-foreground leading-tight">{s.title}</h3>
+                    <ArrowRight size={13} className="ml-auto text-muted-foreground group-hover:text-sage group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                  <p className="font-body text-xs text-muted-foreground mt-0.5">{s.blurb}</p>
+                  {s.facts && s.facts.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
+                      {s.facts.map((f) => (
+                        <span key={f} className="font-body text-[11px] rounded-full bg-muted px-2 py-0.5 text-foreground whitespace-nowrap">{f}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="text-center pt-16">
-        <p className="font-body text-sm italic text-muted-foreground leading-relaxed">{HOW_WE_WORK_CLOSING}</p>
-      </div>
+      <Sheet open={!!section} onOpenChange={(o) => { if (!o) close(); }}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-0">
+          {section && (
+            <div className="px-6 py-6 sm:px-8 sm:py-8">
+              <SheetHeader className="text-left space-y-2 mb-5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-sage/10 border border-sage/20 flex items-center justify-center">
+                    <Icon size={15} className="text-sage" strokeWidth={1.75} />
+                  </div>
+                  <span className="font-body text-[11px] tracking-widest uppercase text-muted-foreground">
+                    How we work · {idx + 1} of {HOW_WE_WORK_SECTIONS.length}
+                  </span>
+                  {section.draft && (
+                    <span className="font-body text-[10px] tracking-widest uppercase rounded-full bg-gold/30 text-foreground px-2 py-0.5">Drafted for review</span>
+                  )}
+                </div>
+                <SheetTitle className="font-display text-3xl font-light text-foreground">{section.title}</SheetTitle>
+                <SheetDescription className="font-body text-sm text-muted-foreground">{section.blurb}</SheetDescription>
+              </SheetHeader>
+
+              {/* Key points: the section in a glance */}
+              <div className="rounded-xl bg-sage/10 border border-sage/20 p-4 mb-6">
+                <p className="font-body text-[11px] tracking-widest uppercase text-sage mb-2">Key points</p>
+                <ul className="space-y-2">
+                  {section.keyPoints.map((pt, i) => (
+                    <li key={i} className="flex items-start gap-2 font-body text-sm text-foreground leading-relaxed">
+                      <Check size={15} className="text-sage mt-0.5 shrink-0" strokeWidth={2} />
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+                {section.facts && section.facts.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {section.facts.map((f) => (
+                      <span key={f} className="font-body text-[11px] rounded-full bg-background border border-border px-2 py-0.5 text-foreground">{f}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <p className="font-body text-[11px] tracking-widest uppercase text-muted-foreground mb-3">The full text</p>
+              <div className="space-y-4">
+                {section.blocks.map((b, i) => <BlockView key={i} block={b} />)}
+              </div>
+
+              {/* Previous / next */}
+              <div className="flex items-center justify-between gap-3 mt-8 pt-5 border-t border-border">
+                {prev ? (
+                  <button type="button" onClick={() => open(prev.slug)} className="inline-flex items-center gap-1.5 font-body text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <ArrowLeft size={14} /> {prev.title}
+                  </button>
+                ) : <span />}
+                {next ? (
+                  <button type="button" onClick={() => open(next.slug)} className="inline-flex items-center gap-1.5 font-body text-sm text-foreground hover:text-sage transition-colors">
+                    {next.title} <ArrowRight size={14} />
+                  </button>
+                ) : (
+                  <button type="button" onClick={close} className="font-body text-sm text-foreground hover:text-sage transition-colors">Done</button>
+                )}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <p className="font-body text-sm italic text-muted-foreground text-center pt-6">{HOW_WE_WORK_CLOSING}</p>
     </>
   );
 }
 
-/* ── Standalone page (kept for direct links; the portal route redirects to Start Here) ── */
+/* ── Standalone page (the portal route redirects to Start Here) ── */
 
 export default function HowWeWork() {
   return (
@@ -208,7 +271,7 @@ export default function HowWeWork() {
           <h1 className="font-display text-4xl font-light text-foreground mb-4">How We Work</h1>
           <p className="font-body text-base text-muted-foreground leading-relaxed max-w-2xl">{HOW_WE_WORK_INTRO}</p>
         </div>
-        <HowWeWorkSections />
+        <HowWeWorkTiles />
       </div>
     </div>
   );

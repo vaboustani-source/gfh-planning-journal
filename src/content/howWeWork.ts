@@ -26,6 +26,10 @@ export interface Section {
   blurb: string;
   /** True when the copy was drafted for Victoria to approve, not taken from the document. */
   draft?: boolean;
+  /** Three lines at most. The whole section in a glance, shown before the full text. */
+  keyPoints: string[];
+  /** Short number chips shown on the tile, e.g. "$100/hr calls". */
+  facts?: string[];
   blocks: Block[];
 }
 
@@ -59,6 +63,11 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "our-roles",
     title: "Our Roles",
     blurb: "three roles, one principle.",
+    keyPoints: [
+      "Three roles: the Culinary Team, your Weekend Event Coordinator, your Resort Coordinator.",
+      "Planning time is allocated. Anything beyond it is billed hourly and told to you first.",
+      "This document goes with your agreement so nothing is a surprise.",
+    ],
     blocks: [
       { type: "p", text: "Your weekend is supported by three roles: our culinary team, your Weekend Event Coordinator, and your Resort Coordinator. The scope of each role is laid out below." },
       { type: "p", text: "We have developed our planning protocol with a nurturing approach. Our standard planning allocation has been defined with one goal in mind: that you have an easy and successful planning process with us. If responsibilities exceed the allocated planning time or expectations, there is an option to add it at a billed per-hour rate. What falls outside it is available, billed simply and told to you in advance." },
@@ -70,6 +79,12 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "food-beverage",
     title: "Food & Beverage",
     blurb: "how we design and bill your menu.",
+    keyPoints: [
+      "Five steps: intro call, your selections, confirmation meeting, tasting, final menu.",
+      "Pricing is set. Market-price items are confirmed at 30 days.",
+      "One final revision after the tasting is included.",
+    ],
+    facts: ["$100/hr extra calls", "$50/revision", "3 tasting dates", "10 seatings each"],
     blocks: [
       { type: "p", text: "Our kitchen builds your menu with you. This is one of the great pleasures of the weekend, and we've designed the process to feel that way." },
       { type: "heading", text: "How your menu comes together" },
@@ -94,6 +109,12 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "dietary-needs",
     title: "Dietary Needs",
     blurb: "how every restriction is met.",
+    keyPoints: [
+      "All dietary needs are due with the final guest list, 30 days out.",
+      "Guests just tell a server. The kitchen has already prepared for them.",
+      "If many guests share one need, we may shift the whole menu.",
+    ],
+    facts: ["Due at 30 days"],
     blocks: [
       { type: "p", text: "Every allergy and restriction shared with us by the 30-day mark is accommodated. A guest with a dietary need should never feel like an exception at your table. Here is how we make that true:" },
       { type: "ul", items: [
@@ -108,6 +129,12 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "weekend-coordination",
     title: "Weekend Coordination",
     blurb: "your direct contact for event execution.",
+    keyPoints: [
+      "Runs the weekend events so your family doesn't have to.",
+      "Three planning calls: post-booking, 90 days, 30 days.",
+      "Executes your wedding. Planning it belongs to your planner.",
+    ],
+    facts: ["3 calls included", "$100/hr extra calls", "$50/revision"],
     blocks: [
       { type: "p", text: "Your Weekend Event Coordinator runs the weekend events. They are the person who knows where everything is, when everything happens, and who is responsible for it. This allows for a responsibility-free weekend for you and your families." },
       { type: "heading", text: "Included in your Weekend Event Coordination fee" },
@@ -132,6 +159,12 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "resort-coordination",
     title: "Resort Coordination",
     blurb: "the estate and your guests, complimentary.",
+    keyPoints: [
+      "Complimentary with your estate buyout.",
+      "Lodging and guest services for up to 122 on-site guests, all weekend.",
+      "Anything beyond scope is quoted before work begins.",
+    ],
+    facts: ["Complimentary", "Up to 122 on-site guests"],
     blocks: [
       { type: "p", text: "Your Resort Coordinator is included with your estate buyout, with our compliments. They are your point of contact for everything about the property itself: lodging, grounds, spaces, on-site experiences, and the logistics of the land." },
       { type: "heading", text: "Included, complimentary" },
@@ -152,6 +185,12 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "design",
     title: "Design",
     blurb: "what we execute, and what we don't create.",
+    keyPoints: [
+      "Design is not included. We execute your designer's vision.",
+      "Anything above reach goes up on our scissor lift, never a ladder.",
+      "Friday 11 to 6 is set-up. Thursday adds $500. No lift on Saturday.",
+    ],
+    facts: ["$260/day lift", "Fri 11–6 set-up", "Thu +$500"],
     blocks: [
       { type: "p", lead: "Design is not included in any of our offerings.", text: "Florals, tablescapes, styling, and the visual world of your wedding belong to your designer or planner. We will execute their vision beautifully and as instructed within our scope of work: we do not create it." },
       { type: "p", lead: "Anything installed above reach", text: "(ceiling florals, draping, overhead lighting and the like) must be installed using our scissor lift and never a ladder. This ensures safety and efficiency for all vendors and our staff to execute their projects in a safe and timely manner. The lift is $260 per day. If your team is still installing after hours, the on-site manager rate while the lift is in use is $200 per hour rather than the usual $150." },
@@ -169,6 +208,11 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "vendors",
     title: "Vendors",
     blurb: "our recommendations, your relationships.",
+    keyPoints: [
+      "We'll tell you honestly who we've loved working with.",
+      "You hire directly. The contract and the relationship are yours.",
+    ],
+    facts: ["Recommendations free"],
     blocks: [
       { type: "p", text: "After years of weekends here, we have cultivated a list of trusted partners that we recommend for your event." },
       { type: "ul", items: [
@@ -182,6 +226,12 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "load-in-hours",
     title: "Load-In & Hours",
     blurb: "the windows, the lift, the golf cart.",
+    keyPoints: [
+      "Thursday 9 to 5 at a $500 supervision fee. Sunday until 2 is included.",
+      "After hours a manager stays: $150/hr, or $200/hr with the lift in use.",
+      "Golf carts are rented outside. Your planner's insurance must cover it.",
+    ],
+    facts: ["Thu 9–5", "Sun until 2", "$150–200/hr after"],
     blocks: [
       { type: "p", text: "Whenever a vendor is working on the estate, one of our managers is on site with them." },
       { type: "ul", items: [
@@ -197,6 +247,12 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "two-dates",
     title: "The Two Dates",
     blurb: "sixty days and thirty days.",
+    keyPoints: [
+      "60 days out: menus, layouts, and details are final.",
+      "30 days out: guest list, dietary needs, and market prices are final.",
+      "We remind you before both dates.",
+    ],
+    facts: ["60 days", "30 days"],
     blocks: [
       { type: "heading", text: "Your planning hub" },
       { type: "p", text: "Your planning portal is private, convenient access to every tool you need to plan your event. Log in as often as you like, adjust selections, update details, and leave notes. This portal is designed to feel like planning home base, housing everything you're coordinating." },
@@ -209,6 +265,11 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "one-voice",
     title: "One Voice",
     blurb: "who we take direction from.",
+    keyPoints: [
+      "One designated voice, named in writing.",
+      "One answer per decision. Once it reaches us in writing, we act on it.",
+      "We don't take changes from anyone else, however well meant.",
+    ],
     blocks: [
       { type: "heading", text: "Who we take direction from" },
       { type: "ul", items: [
@@ -226,6 +287,10 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "what-to-expect",
     title: "What to Expect",
     blurb: "service for your guests, and for you.",
+    keyPoints: [
+      "Guests: check-in help, stocked coolers, shuttle, a manager at all hours.",
+      "You: your coordinator all weekend, plus a guest services member on wedding day.",
+    ],
     blocks: [
       { type: "p", text: "Two sides of the same weekend. What the estate does for the people you bring here, and what makes it possible for us to do it well." },
       { type: "cards", cards: [
@@ -248,6 +313,11 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "who-to-ask",
     title: "Who to Ask",
     blurb: "your go-to people, by question.",
+    keyPoints: [
+      "Culinary Team: menu, tastings, dietary.",
+      "Weekend Event Coordinator: timeline, vendors, day-of, the lift.",
+      "Resort Coordinator: lodging, reservations, experiences, the land.",
+    ],
     blocks: [
       { type: "p", text: "Three roles, each with a clear scope. Bring the question to the person who owns it and you'll have your answer faster." },
       { type: "table", columns: ["Role", "Ask them about", "Not their scope"], rows: [
@@ -263,6 +333,10 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "common-questions",
     title: "Common Questions",
     blurb: "quick answers, and who owns them.",
+    keyPoints: [
+      "Nineteen quick answers, each with the person who owns it.",
+    ],
+    facts: ["19 questions"],
     draft: true,
     blocks: [
       { type: "p", text: "Short answers to the questions every couple asks. Each one names who owns it." },
@@ -293,6 +367,10 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     slug: "rates",
     title: "The Rates",
     blurb: "every fee in one place.",
+    keyPoints: [
+      "Every fee in one table. Nothing is billed without telling you first.",
+    ],
+    facts: ["$100/hr calls", "$50/revision", "$150–200/hr after hours", "$260/day lift"],
     blocks: [
       { type: "p", text: "Every figure in this document, in one place. Nothing here is billed without telling you first." },
       { type: "rates" },
