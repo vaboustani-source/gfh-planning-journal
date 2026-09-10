@@ -40,7 +40,7 @@ export const RATES: Rate[] = [
   { item: "After-hours manager", rate: "$150 / hour", when: "Thursday after 5:00 PM. Sunday after 2:00 PM." },
   { item: "After-hours manager, scissor lift in use", rate: "$200 / hour", when: "Replaces the $150 rate while the lift is in use" },
   { item: "Scissor lift", rate: "$260 / day", when: "Any elevated installation. Friday only." },
-  { item: "Thursday design set-up supervision", rate: "$500", when: "A second set-up day, 9:00 AM to 5:00 PM" },
+  { item: "Thursday set-up supervision", rate: "$500", when: "9:00 AM to 5:00 PM. After 5:00 PM the hourly manager rate applies." },
   { item: "Sunday breakdown beyond 2:00 PM", rate: "Supervision charges apply", when: "Standard after-hours manager rate" },
   { item: "Planner golf cart", rate: "Rented through an outside provider", when: "Certificate of insurance must cover its use" },
   { item: "Market-price menu items", rate: "Market", when: "Confirmed 30 days before the wedding" },
@@ -158,7 +158,7 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
       { type: "heading", text: "Set-up and breakdown windows" },
       { type: "ul", items: [
         { lead: "Friday set-up: 11:00 AM to 6:00 PM,", text: "during operating hours only. All elevated installations must be completed on Friday." },
-        { lead: "Thursday set-up, if a second day is required: 9:00 AM to 5:00 PM,", text: "at a $500 supervision fee." },
+        { lead: "Thursday set-up, if a second day is required: 9:00 AM to 5:00 PM,", text: "at a $500 supervision fee. After 5:00 PM, the after-hours manager rate applies: $150 per hour, or $200 per hour while the lift is in use." },
         { lead: "No scissor lift installation work on Saturday.", text: "" },
         { lead: "Sunday breakdown: 8:00 AM to 2:00 PM.", text: "Additional hours of supervision are charged." },
         { lead: "Work should not disrupt events in progress on the property.", text: "Power tools while events are underway are prohibited. We recommend managing your time to work around those events." },
@@ -185,7 +185,7 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
     blocks: [
       { type: "p", text: "Whenever a vendor is working on the estate, one of our managers is on site with them." },
       { type: "ul", items: [
-        { lead: "Thursday load-in: 9:00 AM to 5:00 PM, included.", text: "Your designer, florist, and production teams are welcome all day at no charge. After 5:00 PM, a manager remains on site at $150 per hour." },
+        { lead: "Thursday load-in: 9:00 AM to 5:00 PM, at a $500 supervision fee.", text: "Your designer, florist, and production teams are welcome all day. After 5:00 PM, a manager remains on site at $150 per hour, or $200 per hour while the scissor lift is in use." },
         { lead: "Sunday load-out: through 2:00 PM, included.", text: "After 2:00 PM, the same $150 per hour applies." },
         { lead: "When the scissor lift is in use after hours,", text: "the manager rate is $200 per hour instead. The lift itself is $260 per day." },
         { lead: "Getting around.", text: "Planners and florists who want their own transportation across the estate rent a golf cart on site through outside services. Your planner's certificate of insurance must cover its use." },
@@ -276,9 +276,9 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
         ["Can our coordinator help pick our vendors?", "They execute the weekend; they don't plan it. Vendor sourcing belongs to your planner. We're glad to share feedback on vendors we've worked with.", "Weekend Coordinator"],
         ["Do you do the florals and design?", "No. Design is not included in any offering. We execute your designer's vision as instructed.", "Your Planner"],
         ["Can our florist hang things from the ceiling?", "Yes, on our scissor lift, never a ladder: $260 per day, Friday only between 11:00 AM and 6:00 PM. After hours with the lift in use, the manager rate is $200 per hour.", "Weekend Coordinator"],
-        ["Can our design team set up on Thursday?", "Yes, 9:00 AM to 5:00 PM, at a $500 supervision fee. Elevated installations must still be finished on Friday.", "Weekend Coordinator"],
+        ["Can our design team set up on Thursday?", "Yes, 9:00 AM to 5:00 PM, at a $500 supervision fee. After 5:00 PM it is $150 per hour, or $200 with the lift in use. Elevated installations must still be finished on Friday.", "Weekend Coordinator"],
         ["Can our planner have a golf cart?", "Yes, rented on site through an outside provider. Their certificate of insurance must cover it.", "Weekend Coordinator"],
-        ["Can vendors stay past 5:00 on Thursday, or past 2:00 on Sunday?", "A manager stays on site at $150 per hour, confirmed with you first.", "Weekend Coordinator"],
+        ["Can vendors stay past 5:00 on Thursday, or past 2:00 on Sunday?", "A manager stays on site at $150 per hour, or $200 per hour while the scissor lift is in use, confirmed with you first.", "Weekend Coordinator"],
         ["Where does everyone sleep?", "Your Resort Coordinator assigns guesthouses for up to 122 on-site guests.", "Resort Coordinator"],
         ["How do guests get around the property?", "A shuttle runs across the estate all weekend, during and between events.", "Resort Coordinator"],
         ["Do we need wedding insurance?", "It is recommended in your agreement. See the Wedding Insurance page for two ways to buy.", "Weekend Coordinator"],
