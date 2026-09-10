@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { BookOpen } from "lucide-react";
 import {
   HOW_WE_WORK_SECTIONS, HOW_WE_WORK_INTRO, HOW_WE_WORK_CLOSING, RATES,
@@ -101,9 +101,9 @@ function EditorialTable({ columns, rows, pillColumn }: { columns: string[]; rows
   );
 }
 
-/* ── Page ─────────────────────────────────────── */
+/* ── Sections (embeddable) ─────────────────────── */
 
-export default function HowWeWork() {
+export function HowWeWorkSections({ embedded = false }: { embedded?: boolean }) {
   const location = useLocation();
   const [active, setActive] = useState<string>(HOW_WE_WORK_SECTIONS[0].slug);
   const reduceMotion = useMemo(
@@ -118,17 +118,18 @@ export default function HowWeWork() {
     if (history.replaceState) history.replaceState(null, "", `#${slug}`);
   };
 
-  // Landing on /how-we-work#slug scrolls to that section once the page has rendered.
+  // Landing on #slug scrolls to that section once the page has rendered.
   useEffect(() => {
     const slug = location.hash.replace(/^#/, "");
-    if (!slug) return;
-    const t = window.setTimeout(() => jumpTo(slug), 50);
+    if (!slug || !HOW_WE_WORK_SECTIONS.some(s => s.slug === slug)) return;
+    const t = window.setTimeout(() => jumpTo(slug), 80);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.hash]);
 
   // Highlight the section in view on the jump bar.
   useEffect(() => {
+    if (embedded) return;
     const els = HOW_WE_WORK_SECTIONS.map(s => document.getElementById(s.slug)).filter((e): e is HTMLElement => !!e);
     if (els.length === 0 || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver((entries) => {
@@ -137,22 +138,11 @@ export default function HowWeWork() {
     }, { rootMargin: "-30% 0px -60% 0px", threshold: 0 });
     els.forEach(el => io.observe(el));
     return () => io.disconnect();
-  }, []);
+  }, [embedded]);
 
   return (
-    <div className="max-w-5xl mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
-      <div className="animate-fade-up">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen size={16} className="text-sage" strokeWidth={1.75} />
-            <p className="font-body text-xs tracking-widest uppercase text-muted-foreground">Service expectations</p>
-          </div>
-          <h1 className="font-display text-4xl font-light text-foreground mb-4">How We Work</h1>
-          <p className="font-body text-base text-muted-foreground leading-relaxed max-w-2xl">{HOW_WE_WORK_INTRO}</p>
-        </div>
-
-        {/* Jump bar */}
+    <>
+      {!embedded && (
         <nav aria-label="Sections" className="sticky top-0 z-10 -mx-5 px-5 lg:-mx-8 lg:px-8 py-3 mb-8 bg-background/95 backdrop-blur border-b border-border print:hidden">
           <div className="hidden md:flex flex-wrap gap-x-5 gap-y-1">
             {HOW_WE_WORK_SECTIONS.map((s) => (
@@ -177,31 +167,56 @@ export default function HowWeWork() {
             {HOW_WE_WORK_SECTIONS.map((s) => <option key={s.slug} value={s.slug}>{s.title}</option>)}
           </select>
         </nav>
+      )}
 
-        {/* Sections */}
-        <div className="space-y-16">
-          {HOW_WE_WORK_SECTIONS.map((s, idx) => (
-            <section key={s.slug} id={s.slug} className="scroll-mt-24">
-              <div className="flex items-baseline gap-3 mb-1">
-                <span className="font-body text-[11px] tracking-widest uppercase text-muted-foreground">{String(idx + 1).padStart(2, "0")}</span>
-                <h2 className="font-display text-2xl font-light text-foreground">{s.title}</h2>
-                {s.draft && (
-                  <span className="font-body text-[10px] tracking-widest uppercase rounded-full bg-gold/30 text-foreground px-2 py-0.5">Drafted for review</span>
-                )}
-              </div>
-              <p className="font-body text-sm text-muted-foreground mb-5">{s.blurb}</p>
-              <div className="space-y-4">
-                {s.blocks.map((b, i) => <BlockView key={i} block={b} />)}
-              </div>
-            </section>
-          ))}
-        </div>
+      <div className="space-y-16">
+        {HOW_WE_WORK_SECTIONS.map((s, idx) => (
+          <section key={s.slug} id={s.slug} className="scroll-mt-24">
+            <div className="flex items-baseline gap-3 mb-1">
+              <span className="font-body text-[11px] tracking-widest uppercase text-muted-foreground">{String(idx + 1).padStart(2, "0")}</span>
+              <h2 className="font-display text-2xl font-light text-foreground">{s.title}</h2>
+              {s.draft && (
+                <span className="font-body text-[10px] tracking-widest uppercase rounded-full bg-gold/30 text-foreground px-2 py-0.5">Drafted for review</span>
+              )}
+            </div>
+            <p className="font-body text-sm text-muted-foreground mb-5">{s.blurb}</p>
+            <div className="space-y-4">
+              {s.blocks.map((b, i) => <BlockView key={i} block={b} />)}
+            </div>
+          </section>
+        ))}
+      </div>
 
-        {/* Closing */}
-        <div className="text-center pt-16">
-          <p className="font-body text-sm italic text-muted-foreground leading-relaxed">{HOW_WE_WORK_CLOSING}</p>
+      <div className="text-center pt-16">
+        <p className="font-body text-sm italic text-muted-foreground leading-relaxed">{HOW_WE_WORK_CLOSING}</p>
+      </div>
+    </>
+  );
+}
+
+/* ── Standalone page (kept for direct links; the portal route redirects to Start Here) ── */
+
+export default function HowWeWork() {
+  return (
+    <div className="max-w-5xl mx-auto px-5 py-8 lg:px-8 lg:py-10 pb-32">
+      <div className="animate-fade-up">
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <BookOpen size={16} className="text-sage" strokeWidth={1.75} />
+            <p className="font-body text-xs tracking-widest uppercase text-muted-foreground">Service expectations</p>
+          </div>
+          <h1 className="font-display text-4xl font-light text-foreground mb-4">How We Work</h1>
+          <p className="font-body text-base text-muted-foreground leading-relaxed max-w-2xl">{HOW_WE_WORK_INTRO}</p>
         </div>
+        <HowWeWorkSections />
       </div>
     </div>
   );
+}
+
+/** Old link target. Sends couples to Start Here, keeping any #section. */
+export function HowWeWorkRedirect() {
+  const location = useLocation();
+  const hash = location.hash || "#how-we-work";
+  return <Navigate to={{ pathname: "../start", hash }} replace relative="path" />;
 }

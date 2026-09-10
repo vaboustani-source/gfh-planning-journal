@@ -55,7 +55,7 @@ import PortalForms from "./pages/portal/Forms";
 import Documents from "./pages/portal/Documents";
 import Contracts from "./pages/portal/Contracts";
 import Insurance from "./pages/portal/Insurance";
-import HowWeWork from "./pages/portal/HowWeWork";
+import { HowWeWorkRedirect } from "./pages/portal/HowWeWork";
 import Rsvp from "./pages/portal/Rsvp";
 import PublicRsvp from "./pages/PublicRsvp";
 import NotFound from "./pages/NotFound";
@@ -240,7 +240,7 @@ const App = () => (
               <Route path="documents" element={<Documents />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="insurance" element={<Insurance />} />
-              <Route path="how-we-work" element={<HowWeWork />} />
+              <Route path="how-we-work" element={<HowWeWorkRedirect />} />
               <Route path="rsvp" element={<Rsvp />} />
               <Route path="history" element={<PortalHistory />} />
             </Route>
@@ -275,7 +275,7 @@ const App = () => (
               <Route path="documents" element={<Documents />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="insurance" element={<Insurance />} />
-              <Route path="how-we-work" element={<HowWeWork />} />
+              <Route path="how-we-work" element={<HowWeWorkRedirect />} />
               <Route path="rsvp" element={<Rsvp />} />
               <Route path="history" element={<PortalHistory />} />
             </Route>

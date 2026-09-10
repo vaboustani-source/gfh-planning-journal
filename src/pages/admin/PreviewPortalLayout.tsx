@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Outlet, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalDataProvider } from "@/hooks/usePortalData";
-import { Eye, X, Sunrise, CalendarHeart, CheckSquare, Briefcase, Music, Sparkles, UtensilsCrossed, Users, DollarSign, MessageCircle, StickyNote, FileText, Clock, ClipboardList, BookOpen } from "lucide-react";
+import { Eye, X, Sunrise, CalendarHeart, CheckSquare, Briefcase, Music, Sparkles, UtensilsCrossed, Users, DollarSign, MessageCircle, StickyNote, FileText, Clock, ClipboardList, Compass } from "lucide-react";
 
 const navItems = [
+  { to: "start", label: "Start Here", icon: Compass },
   { to: "today", label: "Today", icon: Sunrise },
   { to: "our-wedding", label: "Our Wedding", icon: CalendarHeart },
   { to: "timeline", label: "Timeline", icon: Clock },
@@ -20,7 +21,6 @@ const navItems = [
   { to: "notes", label: "Notes", icon: StickyNote },
   { to: "forms", label: "Forms", icon: ClipboardList },
   { to: "documents", label: "Documents", icon: FileText },
-  { to: "how-we-work", label: "How We Work", icon: BookOpen },
 ];
 
 export default function PreviewPortalLayout() {
