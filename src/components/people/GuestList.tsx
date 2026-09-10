@@ -23,7 +23,14 @@ interface ImportRow {
   is_plus_one: boolean;
   source: string;
   exclude: boolean;
+  dietary_restrictions: string[];
+  invited_optional_meals: string[];
+  song_request: string;
 }
+
+const MEAL_CODES = ["rehearsal_dinner", "welcome_party", "farewell_brunch"] as const;
+const asMealCodes = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((c): c is string => typeof c === "string" && (MEAL_CODES as readonly string[]).includes(c)) : [];
 
 const SIDE_VALUES = ["partner_1", "partner_2", "both", "other"] as const;
 const RELATIONSHIP_VALUES = ["immediate_family", "extended_family", "wedding_party", "friend", "coworker", "other"] as const;
@@ -37,12 +44,19 @@ interface AiGuestRow {
   lodging_preference: "on_site" | "off_site" | "undecided";
   rsvp_status: "invited" | "confirmed" | "declined" | "maybe";
   side: string; relationship: string; notes: string; source: string;
+  dietary_restrictions?: string[]; song_request?: string; invited_optional_meals?: string[];
 }
 interface AiImportResult {
   layout_summary: string;
   guests: AiGuestRow[];
   skipped: { source: string; reason: string }[];
 }
+interface AiColumnMap {
+  layout_summary: string;
+  column_guide: string;
+}
+// Lines sent to the column map pass: the header plus enough rows to see the pattern.
+const AI_MAP_SAMPLE_LINES = 12;
 
 // Break a paste into small batches. The organizer runs each batch as its own
 // server request, and the gateway cuts any single request off at 150 seconds,
@@ -109,6 +123,9 @@ function blankImportRow(partial: Partial<ImportRow> = {}): ImportRow {
     side: "",
     relationship: "",
     notes: "",
+    dietary_restrictions: [],
+    invited_optional_meals: [],
+    song_request: "",
     is_plus_one: false,
     source: "",
     exclude: false,
@@ -373,7 +390,16 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
   const aiRowToImportRow = (g: AiGuestRow): ImportRow => {
     const notes = [g.notes?.trim(), g.is_plus_one && g.plus_one_of ? `Plus-one of ${g.plus_one_of}.` : ""]
       .filter(Boolean).join(" ");
+    const lodging = g.lodging_preference ?? "undecided";
+    let meals = asMealCodes(g.invited_optional_meals);
+    // House rule: on-site guests are invited to every optional meal unless the sheet says otherwise.
+    if (lodging === "on_site" && meals.length === 0) meals = [...MEAL_CODES];
+    const dietary = Array.isArray(g.dietary_restrictions)
+      ? g.dietary_restrictions.map(d => String(d).trim()).filter(Boolean) : [];
     return blankImportRow({
+      dietary_restrictions: dietary,
+      invited_optional_meals: meals,
+      song_request: (g.song_request ?? "").trim(),
       first_name: (g.first_name ?? "").trim(),
       last_name: (g.last_name ?? "").trim(),
       email: (g.email ?? "").trim(),
@@ -410,12 +436,18 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     const batches = splitForAi(text);
     const results: (AiImportResult | undefined)[] = new Array(batches.length);
     let done = 0;
+    let columnGuide = "";
+    let mapSummary = "";
     const label = () => batches.length > 1
       ? `Organizing your list, ${done} of ${batches.length} parts done…`
       : "Organizing your list…";
     const runBatch = async (i: number) => {
       const { data, error } = await supabase.functions.invoke("ai-guest-import", {
-        body: { event_id: eventId, text: batches[i], hint: importHint.trim() || undefined },
+        body: {
+          event_id: eventId, text: batches[i],
+          hint: importHint.trim() || undefined,
+          column_guide: columnGuide || undefined,
+        },
       });
       if (error) throw new Error(error.message || "Could not organize the list");
       if (data?.error) throw new Error(data.error);
@@ -435,12 +467,26 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     const summary: string[] = [];
     const skipped: { source: string; reason: string }[] = [];
     try {
+      // Multi-batch: read the columns once first, so every batch reads them the same way
+      // and the "how we read your sheet" note appears once instead of once per batch.
+      if (batches.length > 1) {
+        setOrganizing("Reading your columns…");
+        const sample = text.split(/\r?\n/).filter(l => l.trim() !== "").slice(0, AI_MAP_SAMPLE_LINES).join("\n");
+        const { data, error } = await supabase.functions.invoke("ai-guest-import", {
+          body: { event_id: eventId, mode: "map", text: sample, hint: importHint.trim() || undefined },
+        });
+        if (error) throw new Error(error.message || "Could not read the columns");
+        if (data?.error) throw new Error(data.error);
+        columnGuide = ((data as AiColumnMap).column_guide ?? "").trim();
+        mapSummary = ((data as AiColumnMap).layout_summary ?? "").trim();
+      }
       setOrganizing(label());
       await Promise.all(Array.from({ length: Math.min(AI_PARALLEL, batches.length) }, worker));
+      if (mapSummary) summary.push(mapSummary);
       for (const result of results) {
         if (!result) continue;
         (result.guests ?? []).forEach(g => rows.push(aiRowToImportRow(g)));
-        if (result.layout_summary) summary.push(result.layout_summary);
+        if (!mapSummary && result.layout_summary) summary.push(result.layout_summary);
         (result.skipped ?? []).forEach(sk => skipped.push(sk));
       }
       if (rows.length === 0) { toast.error("We could not find any guests in that text"); return; }
@@ -546,6 +592,9 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
       relationship: asRelationship(r.relationship.trim().toLowerCase()),
       notes: r.notes.trim() || null,
       is_plus_one: r.is_plus_one,
+      dietary_restrictions: r.dietary_restrictions.map(d => d.trim()).filter(Boolean),
+      invited_optional_meals: asMealCodes(r.invited_optional_meals),
+      rsvp_responses: r.song_request.trim() ? { song_request: r.song_request.trim() } : {},
     }));
     const { error } = await db.from("guests").insert(payload);
     setImporting(false);
@@ -1015,6 +1064,8 @@ function ReviewGrid({
               <th className="px-2 py-2">Phone</th>
               <th className="px-2 py-2">Lodging</th>
               <th className="px-2 py-2">Type</th>
+              <th className="px-2 py-2">Dietary</th>
+              <th className="px-2 py-2">Meals</th>
               <th className="px-2 py-2">Notes</th>
               <th className="px-2 py-2">Status</th>
               <th className="px-2 py-2 w-10"></th>
@@ -1061,6 +1112,25 @@ function ReviewGrid({
                       <option value="adult">Adult</option>
                       <option value="child">Child</option>
                     </select>
+                  </td>
+                  <td className="px-2 py-1.5 min-w-[120px]">
+                    <input value={r.dietary_restrictions.join(", ")} title={r.dietary_restrictions.join(", ")}
+                      placeholder="Vegetarian, Nut Allergy"
+                      onChange={e => onUpdate(i, { dietary_restrictions: e.target.value.split(",").map(d => d.trim()).filter(Boolean) })}
+                      className="w-full px-2 py-1 rounded border border-input bg-background text-sm" />
+                  </td>
+                  <td className="px-2 py-1.5 whitespace-nowrap">
+                    {OPTIONAL_MEALS.map(m => (
+                      <label key={m.code} title={m.label} className="inline-flex items-center gap-1 mr-2 text-[11px] text-foreground">
+                        <input type="checkbox" checked={r.invited_optional_meals.includes(m.code)}
+                          onChange={e => onUpdate(i, {
+                            invited_optional_meals: e.target.checked
+                              ? [...r.invited_optional_meals.filter(c => c !== m.code), m.code]
+                              : r.invited_optional_meals.filter(c => c !== m.code),
+                          })} />
+                        {m.label.split(" ")[0]}
+                      </label>
+                    ))}
                   </td>
                   <td className="px-2 py-1.5 min-w-[180px]">
                     <input value={r.notes} onChange={e => onUpdate(i, { notes: e.target.value })} title={r.notes}

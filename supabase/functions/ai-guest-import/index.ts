@@ -3,8 +3,13 @@
 // and organizes it into guest rows that match the Our People guest list.
 // Nothing is saved here. The client shows the result in a review grid first.
 //
-// Input:  { event_id: string, text: string, hint?: string }
-// Output: { layout_summary: string, guests: GuestRow[], skipped: { source, reason }[] }
+// Input:  { event_id: string, text: string, hint?: string, column_guide?: string }
+// Output: { layout_summary: string, guests: GuestRow[], skipped: { text, reason }[] }
+//
+// Column map pass (the client runs this once before a multi-batch import):
+// Input:  { event_id: string, mode: "map", text: string (header + a few rows), hint?: string }
+// Output: { layout_summary: string, column_guide: string }
+// Every batch is then sent with that column_guide so all of them read the sheet the same way.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Anthropic from "npm:@anthropic-ai/sdk@0.124.0";
@@ -16,7 +21,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_CHARS = 60_000;
+// Keep each request small. The API gateway cuts requests off at 150 seconds,
+// so the client sends short batches and this guards against oversized ones.
+const MAX_CHARS = 12_000;
+const AI_TIMEOUT_MS = 120_000;
 
 const GuestRow = z.object({
   first_name: z.string(),
@@ -32,14 +40,21 @@ const GuestRow = z.object({
   relationship: z.enum([
     "immediate_family", "extended_family", "wedding_party", "friend", "coworker", "other", "unknown",
   ]),
+  dietary_restrictions: z.array(z.string()),
+  song_request: z.string(),
+  invited_optional_meals: z.array(z.enum(["rehearsal_dinner", "welcome_party", "farewell_brunch"])),
   notes: z.string(),
-  source: z.string(),
+});
+
+const ColumnMap = z.object({
+  layout_summary: z.string(),
+  column_guide: z.string(),
 });
 
 const ImportResult = z.object({
   layout_summary: z.string(),
   guests: z.array(GuestRow),
-  skipped: z.array(z.object({ source: z.string(), reason: z.string() })),
+  skipped: z.array(z.object({ text: z.string(), reason: z.string() })),
 });
 
 const SYSTEM_PROMPT = `You organize wedding guest lists for Gilbertsville Farmhouse, a private estate wedding venue. Couples keep their guest lists in spreadsheets of every possible shape: address lists for invitations, lodging and room assignment sheets, RSVP trackers, headcount grids, or a plain list of names. You will be given the raw text of one of those sheets, pasted straight out of a spreadsheet, and you turn it into one clean row per person for the venue's guest list.
@@ -56,10 +71,21 @@ Output rules:
 - rsvp_status: "confirmed" for yes, attending, accepted, or confirmed. "declined" for no or regrets. "maybe" for maybe or tentative. Otherwise "invited".
 - side: use partner names given in the context to decide partner_1 or partner_2 when the sheet says whose guest someone is (for example "Shaw's friends" when a partner's name is Shaw). Use "both" for shared friends, "other" for vendors or staff. Use "unknown" when you cannot tell.
 - relationship: choose the closest option only when the sheet gives a clear signal (Mom & Dad, parents, sister, grandparents are immediate_family; aunt, uncle, cousin are extended_family; groomsman, bridesmaid, GM, BM, best man, maid of honor are wedding_party; friend or BFF is friend; coworker or work is coworker). Otherwise "unknown".
+- dietary_restrictions: a list with one entry per restriction. Use these exact labels when they fit: Vegetarian, Vegan, Gluten-Free, Nut Allergy, Dairy-Free, Shellfish Allergy, Halal, Kosher. Anything else, keep the sheet's wording in Title Case (for example "No Pork"). Empty list when the sheet shows none. Dietary details never go in notes.
+- song_request: the guest's song request when the sheet has one, otherwise an empty string.
+- invited_optional_meals: the optional weekend meals this person is invited to, as codes. "rehearsal_dinner" is the Friday rehearsal dinner. "welcome_party" is the Friday evening welcome party or welcome drinks. "farewell_brunch" is the Sunday farewell brunch. Read a column by its meaning: rehearsal or rehearsal dinner means rehearsal_dinner; welcome party, welcome drinks, Friday night, Friday evening means welcome_party; farewell, brunch, Sunday brunch means farewell_brunch. The Saturday wedding itself has no code because everyone is invited to it. Thursday events, beach day, disco, after-party and any other named event have no code either: record those in notes as "Events: Thursday, Beach, Disco." A 1, yes, TRUE, x, or check in an event column means invited to that event; 0, no, FALSE, or blank means not. House rule when the sheet does not say: on-site guests get all three codes, off-site guests get none. When the sheet does say, follow the sheet.
 - notes: keep every useful detail that has no column of its own, written as short readable phrases separated by periods. Examples: "Room: Village 4." "Staying Friday night only." "Mailing address: 58 Mallard Road, Manhasset, NY 11030." "Groomsman 7 of 8." "Row was highlighted in the original sheet." Do not repeat the person's name in notes.
-- source: the original line or cell text the row came from, trimmed, so a human can check your work.
-- Skip header rows, section labels, totals, blank lines, and column titles. Skip the couple themselves if a row is clearly the couple getting married, and list it under skipped with the reason. List anything else you could not turn into a person under skipped with a short reason.
-- layout_summary: two or three plain sentences describing what kind of sheet this was and how you read the columns, so the person importing can confirm you understood it. No em dashes or en dashes anywhere in your output.`;
+- Skip header rows, section labels, totals, blank lines, and column titles. Skip the couple themselves if a row is clearly the couple getting married, and list it under skipped with the reason. List anything else you could not turn into a person under skipped, quoting the text briefly, with a short reason.
+- layout_summary: one or two plain sentences describing what kind of sheet this was and how you read the columns, so the person importing can confirm you understood it. No em dashes or en dashes anywhere in your output.
+- When a COLUMN GUIDE is provided, it comes from a first read of the same sheet. Follow it exactly so every batch reads the columns the same way, even if a batch on its own looks ambiguous.`;
+
+const MAP_PROMPT = `You are looking at the first lines of a wedding guest spreadsheet for Gilbertsville Farmhouse, pasted straight out of a spreadsheet with tabs separating columns. Your only job is to describe the columns so that other readers, each seeing a different slice of the same sheet, all read it the same way.
+
+Return:
+- layout_summary: one or two plain sentences saying what kind of sheet this is (address list, RSVP tracker, lodging list, event attendance grid, plain names) and how a row should be read.
+- column_guide: a numbered list, one line per column in order, in the form "Column 3 (Attending): TRUE means the guest is confirmed, blank means invited only." Name the header text if there is one, say what the column holds, and how to read its values. Map columns onto these guest fields when they fit: first name, last name, email, phone, lodging (on-site or off-site), child, RSVP status, side (which partner's guest), relationship, plus-one link, dietary restrictions, song request, and per-event attendance (rehearsal dinner, welcome party or Friday evening, farewell brunch, plus any other events such as Thursday, beach, disco). Say which columns are mailing address parts, and note anything that should be skipped such as header rows, totals, or section labels.
+
+The Saturday wedding column, if any, means the main event and does not need a field. No em dashes or en dashes anywhere in your output.`;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -91,10 +117,12 @@ Deno.serve(async (req) => {
     const eventId: string | undefined = body.event_id;
     const text: string = typeof body.text === "string" ? body.text : "";
     const hint: string = typeof body.hint === "string" ? body.hint.trim() : "";
+    const columnGuide: string = typeof body.column_guide === "string" ? body.column_guide.trim() : "";
+    const mode: "map" | "organize" = body.mode === "map" ? "map" : "organize";
     if (!eventId) return json({ error: "event_id required" }, 400);
     if (!text.trim()) return json({ error: "Paste or upload a guest list first" }, 400);
     if (text.length > MAX_CHARS) {
-      return json({ error: `That is a lot of text (${text.length.toLocaleString()} characters). Paste it in a few smaller batches.` }, 413);
+      return json({ error: "That batch is too large. Paste fewer rows at a time." }, 413);
     }
 
     const svc = createClient(supabaseUrl, serviceKey);
@@ -115,19 +143,25 @@ Deno.serve(async (req) => {
       `Wedding date: ${event?.wedding_date || "unknown"}`,
     ].join("\n");
 
-    const userContent =
-      `EVENT CONTEXT\n${context}\n\n` +
-      (hint ? `NOTE FROM THE PERSON IMPORTING\n${hint}\n\n` : "") +
-      `SPREADSHEET TEXT (tabs separate columns)\n<sheet>\n${text}\n</sheet>\n\n` +
-      `Organize this into guest rows.`;
+    const userContent = mode === "map"
+      ? `EVENT CONTEXT\n${context}\n\n` +
+        (hint ? `NOTE FROM THE PERSON IMPORTING\n${hint}\n\n` : "") +
+        `FIRST LINES OF THE SHEET (tabs separate columns)\n<sheet>\n${text}\n</sheet>\n\n` +
+        `Describe the columns.`
+      : `EVENT CONTEXT\n${context}\n\n` +
+        (hint ? `NOTE FROM THE PERSON IMPORTING\n${hint}\n\n` : "") +
+        (columnGuide ? `COLUMN GUIDE (from a first read of this sheet, follow it exactly)\n${columnGuide}\n\n` : "") +
+        `SPREADSHEET TEXT (tabs separate columns)\n<sheet>\n${text}\n</sheet>\n\n` +
+        `Organize this into guest rows.`;
 
-    const client = new Anthropic({ apiKey });
+    // No retries: a retry would push us past the gateway's 150 second cutoff.
+    const client = new Anthropic({ apiKey, timeout: AI_TIMEOUT_MS, maxRetries: 0 });
     const stream = client.messages.stream({
       model: "claude-opus-5",
-      max_tokens: 64000,
-      system: SYSTEM_PROMPT,
+      max_tokens: mode === "map" ? 2000 : 16000,
+      system: mode === "map" ? MAP_PROMPT : SYSTEM_PROMPT,
       messages: [{ role: "user", content: userContent }],
-      output_config: { effort: "medium", format: zodOutputFormat(ImportResult) },
+      output_config: { effort: "low", format: zodOutputFormat(mode === "map" ? ColumnMap : ImportResult) },
     });
     const message = await stream.finalMessage();
 
@@ -150,6 +184,15 @@ Deno.serve(async (req) => {
       console.error("ai-guest-import: response was not JSON", raw.slice(0, 500));
       return json({ error: "The AI response could not be read. Please try again." }, 502);
     }
+    if (mode === "map") {
+      const map = ColumnMap.safeParse(parsedJson);
+      if (!map.success) {
+        console.error("ai-guest-import: column map mismatch", map.error.issues.slice(0, 5));
+        return json({ error: "The AI could not describe the columns. Please try again." }, 502);
+      }
+      return json(map.data);
+    }
+
     const result = ImportResult.safeParse(parsedJson);
     if (!result.success) {
       console.error("ai-guest-import: schema mismatch", result.error.issues.slice(0, 5));
@@ -164,6 +207,9 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
+    if (e instanceof Anthropic.APIConnectionTimeoutError) {
+      return json({ error: "That batch took too long to organize. Try pasting fewer rows at a time." }, 504);
+    }
     if (e instanceof Anthropic.RateLimitError) {
       return json({ error: "The AI is busy right now. Wait a minute and try again." }, 429);
     }
