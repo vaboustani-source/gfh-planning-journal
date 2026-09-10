@@ -44,19 +44,26 @@ interface AiImportResult {
   skipped: { source: string; reason: string }[];
 }
 
-// Break a big paste into batches the organizer can handle in one request.
-// Header lines (the first few) are repeated at the top of every batch for context.
-const AI_BATCH_LINES = 90;
+// Break a paste into small batches. The organizer runs each batch as its own
+// server request, and the gateway cuts any single request off at 150 seconds,
+// so batches stay short and several run at the same time.
+const AI_BATCH_LINES = 15;
+const AI_PARALLEL = 4;
+// A first line like "Name\tAddress\tRSVP" is a header worth repeating on every
+// batch. A first line with digits or long cells is a real guest and is not.
+function looksLikeHeaderLine(line: string): boolean {
+  const cells = line.split(/\t|,/).map(c => c.trim()).filter(Boolean);
+  return cells.length >= 2 && cells.every(c => c.length <= 25 && !/\d/.test(c));
+}
 function splitForAi(text: string): string[] {
-  const lines = text.split(/\r?\n/);
-  if (lines.length <= AI_BATCH_LINES + 20) return [text];
-  const headerCount = Math.min(3, lines.length);
-  const header = lines.slice(0, headerCount);
-  const body = lines.slice(headerCount);
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+  if (lines.length <= AI_BATCH_LINES + 5) return [lines.join("\n")];
+  const header = looksLikeHeaderLine(lines[0]) ? [lines[0]] : [];
+  const body = lines.slice(header.length);
   const batches: string[] = [];
   for (let i = 0; i < body.length; i += AI_BATCH_LINES) {
     const chunk = body.slice(i, i + AI_BATCH_LINES);
-    const prefix = i === 0 ? header : ["(first lines repeated for context, do not import twice)", ...header];
+    const prefix = header.length && i > 0 ? ["(column titles repeated for context)", ...header] : header;
     batches.push([...prefix, ...chunk].join("\n"));
   }
   return batches;
@@ -401,18 +408,37 @@ export default function GuestList({ eventId, isAdmin = false, onCountChange }: P
     } catch { /* fall through to the organizer */ }
 
     const batches = splitForAi(text);
+    const results: (AiImportResult | undefined)[] = new Array(batches.length);
+    let done = 0;
+    const label = () => batches.length > 1
+      ? `Organizing your list, ${done} of ${batches.length} parts done…`
+      : "Organizing your list…";
+    const runBatch = async (i: number) => {
+      const { data, error } = await supabase.functions.invoke("ai-guest-import", {
+        body: { event_id: eventId, text: batches[i], hint: importHint.trim() || undefined },
+      });
+      if (error) throw new Error(error.message || "Could not organize the list");
+      if (data?.error) throw new Error(data.error);
+      results[i] = data as AiImportResult;
+      done += 1;
+      setOrganizing(label());
+    };
+    // Up to AI_PARALLEL batches in flight at once, results kept in paste order.
+    let next = 0;
+    const worker = async () => {
+      while (next < batches.length) {
+        const i = next++;
+        await runBatch(i);
+      }
+    };
     const rows: ImportRow[] = [];
     const summary: string[] = [];
     const skipped: { source: string; reason: string }[] = [];
     try {
-      for (let i = 0; i < batches.length; i++) {
-        setOrganizing(batches.length > 1 ? `Organizing part ${i + 1} of ${batches.length}…` : "Organizing your list…");
-        const { data, error } = await supabase.functions.invoke("ai-guest-import", {
-          body: { event_id: eventId, text: batches[i], hint: importHint.trim() || undefined },
-        });
-        if (error) throw new Error(error.message || "Could not organize the list");
-        if (data?.error) throw new Error(data.error);
-        const result = data as AiImportResult;
+      setOrganizing(label());
+      await Promise.all(Array.from({ length: Math.min(AI_PARALLEL, batches.length) }, worker));
+      for (const result of results) {
+        if (!result) continue;
         (result.guests ?? []).forEach(g => rows.push(aiRowToImportRow(g)));
         if (result.layout_summary) summary.push(result.layout_summary);
         (result.skipped ?? []).forEach(sk => skipped.push(sk));
