@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { RSVP_ENABLED } from "@/lib/featureFlags";
+import { HOW_WE_WORK_SECTIONS } from "@/content/howWeWork";
 
 /* ── Welcome video URL ─────────────────────────
    Paste a Loom or YouTube embed URL below to show a welcome video.
@@ -95,6 +96,12 @@ const COMPACT_LINKS: CompactLink[] = [
   { to: "/portal/insurance", label: "Wedding Insurance", description: "recommended in your contract, with two ways to buy." },
   { to: "/portal/notes", label: "Notes", description: "a place for your own notes." },
 ];
+
+const HOW_WE_WORK_LINKS: CompactLink[] = HOW_WE_WORK_SECTIONS.map((s) => ({
+  to: `/portal/how-we-work#${s.slug}`,
+  label: s.title,
+  description: s.blurb,
+}));
 
 const FIRST_STEPS: StepLink[] = [
   { to: "/portal/messages", label: "Say hello in Messages so we have a thread going." },
@@ -212,6 +219,20 @@ export default function StartHere() {
           <div className="rounded-xl border border-border bg-card p-5 md:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
               {COMPACT_LINKS.map((link) => (
+                <CompactLinkItem key={link.to} {...link} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How we work */}
+        <section className="mb-12">
+          <h2 className="font-display text-xl font-light text-foreground mb-4">
+            How we work
+          </h2>
+          <div className="rounded-xl border border-border bg-card p-5 md:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+              {HOW_WE_WORK_LINKS.map((link) => (
                 <CompactLinkItem key={link.to} {...link} />
               ))}
             </div>
