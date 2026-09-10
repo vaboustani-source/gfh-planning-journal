@@ -77,14 +77,24 @@ function BlockView({ block }: { block: Block }) {
   }
 }
 
+/* Role pills share one color per role so a column can be scanned by color. */
+function pillClass(label: string): string {
+  const l = label.toLowerCase();
+  if (l.startsWith("culinary")) return "bg-sage/15 border-sage/30 text-sage";
+  if (l.startsWith("weekend")) return "bg-gold/30 border-gold/60 text-foreground";
+  if (l.startsWith("resort")) return "bg-forest/10 border-forest/25 text-forest";
+  if (l.startsWith("your planner")) return "bg-muted border-border text-muted-foreground";
+  return "bg-muted border-border text-foreground";
+}
+
 function EditorialTable({ columns, rows, pillColumn }: { columns: string[]; rows: string[][]; pillColumn?: number }) {
   return (
-    <div className="overflow-x-auto -mx-1 px-1">
-      <table className="w-full text-left border-collapse min-w-[560px]">
+    <div className="overflow-x-auto">
+      <table className="w-full text-left border-collapse">
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c} className="font-body text-[11px] tracking-widest uppercase text-muted-foreground font-medium pb-2 pr-4 border-b border-border align-bottom">{c}</th>
+              <th key={c} className="font-body text-[11px] tracking-widest uppercase text-muted-foreground font-medium pb-2 pr-3 last:pr-0 border-b border-border align-bottom">{c}</th>
             ))}
           </tr>
         </thead>
@@ -92,9 +102,9 @@ function EditorialTable({ columns, rows, pillColumn }: { columns: string[]; rows
           {rows.map((row, ri) => (
             <tr key={ri} className="border-b border-border last:border-b-0 align-top">
               {row.map((cell, ci) => (
-                <td key={ci} className={`py-3 pr-4 font-body text-sm leading-relaxed ${ci === 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                <td key={ci} className={`py-2.5 pr-3 last:pr-0 font-body text-sm leading-relaxed ${ci === 0 ? "text-foreground" : "text-muted-foreground"} ${pillColumn === ci ? "w-px whitespace-nowrap" : ""}`}>
                   {pillColumn === ci
-                    ? <span className="inline-block whitespace-nowrap rounded-full bg-sage/10 border border-sage/20 text-sage text-xs font-medium px-2.5 py-0.5">{cell}</span>
+                    ? <span className={`inline-block whitespace-nowrap rounded-full border text-xs font-medium px-2.5 py-0.5 ${pillClass(cell)}`}>{cell}</span>
                     : <Inline text={cell} />}
                 </td>
               ))}
