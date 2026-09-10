@@ -52,7 +52,7 @@ export const HOW_WE_WORK_INTRO =
   "Nothing about your weekend should be a surprise, least of all how we work.";
 
 export const HOW_WE_WORK_CLOSING =
-  "Questions about anything above? Ask your Resort Coordinator. That's exactly what they're for.";
+  "Questions about anything above? Ask your Resort Coordinator, your contact for all reservations and experiences. That's exactly what they're for.";
 
 export const HOW_WE_WORK_SECTIONS: Section[] = [
   {
@@ -237,7 +237,7 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
           "A manager on the estate at all hours. Any question about the property, answered promptly.",
           "Their contact: our Resort Coordinator and guest experience team, there to cater to all guests all weekend long.",
         ] },
-        { title: "For you, and from you", items: [
+        { title: "For you", items: [
           "Your contact: our Weekend Event Coordinator is your liaison all weekend, to ensure a question-free weekend for you.",
           "On wedding day: a dedicated guest services member who helps accommodate transportation and your photo and video team during the day.",
         ] },
@@ -253,10 +253,10 @@ export const HOW_WE_WORK_SECTIONS: Section[] = [
       { type: "table", columns: ["Role", "Ask them about", "Not their scope"], rows: [
         ["Culinary Team", "Menu selections, tastings, custom dishes, dietary accommodations, market-price items, bar and beverage.", "Timeline, décor, lodging."],
         ["Weekend Event Coordinator", "The timeline, vendor arrivals and load-in, rehearsal, day-of direction, family and wedding party logistics, changes after 60 days, ceremony and reception spaces, the scissor lift and golf cart, wedding insurance, vendor recommendations.", "Planning your wedding, sourcing vendors, design, etiquette: those belong to your planner."],
-        ["Resort Coordinator", "Guesthouse assignments, property walkthroughs, guest services, anything about the land.", "Vendor management, timeline building, event design."],
+        ["Resort Coordinator", "Reservations, guesthouse assignments, property walkthroughs, guest services, on-site experiences, anything about the land.", "Vendor management, timeline building, event design."],
         ["Your Planner or Designer", "Florals, tablescapes, styling, invitations, vendor contracts, etiquette, the visual world of your wedding.", "Anything the estate provides directly."],
       ] },
-      { type: "note", text: "Questions about anything in How We Work? Ask your Resort Coordinator. That's exactly what they're for." },
+      { type: "note", text: "Questions about anything in How We Work? Ask your Resort Coordinator, your contact for all reservations and experiences. That's exactly what they're for." },
     ],
   },
   {
