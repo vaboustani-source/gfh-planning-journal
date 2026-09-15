@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Map as MapIcon, ExternalLink, FileText, Loader2, Armchair, ArrowRight, Tent, Ruler, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { signResourceUrls } from "@/lib/resourceUrl";
 
 /* ── Floor Layouts & Tent Options ─────────────────────
    The drawings live in Canva so the team edits them in
@@ -47,7 +48,7 @@ const DECKS: CanvaDeck[] = [
 const embedUrl = (d: CanvaDeck) => `https://www.canva.com/design/${d.designPath}/view?embed`;
 const openUrl = (d: CanvaDeck) => `https://www.canva.com/design/${d.designPath}/view`;
 
-interface Resource { id: string; title: string; description: string | null; file_url: string | null }
+interface Resource { id: string; title: string; description: string | null; file_url: string | null; signedUrl?: string | null }
 
 function DeckViewer({ deck }: { deck: CanvaDeck }) {
   const [loaded, setLoaded] = useState(false);
@@ -109,7 +110,7 @@ export default function FloorLayouts() {
       .eq("visible", true)
       .eq("category", "Venue Maps")
       .order("sort_order", { ascending: true })
-      .then(({ data }) => { if (data) setPdfs(data as Resource[]); });
+      .then(async ({ data }) => { if (data) setPdfs(await signResourceUrls(data as Resource[])); });
   }, []);
 
   return (
@@ -158,20 +159,30 @@ export default function FloorLayouts() {
               aria-expanded={showPdfs}
               className="inline-flex items-center gap-2 font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <FileText size={14} /> Individual drawings as PDF ({pdfs.length})
+              <FileText size={14} /> Individual drawings ({pdfs.length})
               <ChevronDown size={14} className={`transition-transform ${showPdfs ? "rotate-180" : ""}`} />
             </button>
             {showPdfs && (
-              <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {pdfs.map(r => (
-                  <li key={r.id}>
-                    <a href={r.file_url || "#"} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 hover:border-sage/40 transition-colors">
-                      <FileText size={14} className="text-sage shrink-0" />
-                      <span className="font-body text-sm text-foreground truncate flex-1">{r.title}</span>
-                      <ExternalLink size={12} className="text-muted-foreground group-hover:text-sage shrink-0" />
-                    </a>
-                  </li>
-                ))}
+              <ul className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {pdfs.map(r => {
+                  const href = r.signedUrl || r.file_url || "#";
+                  const isImg = /\.(jpe?g|png|webp|gif)(\?|$)/i.test(r.file_url || "");
+                  return (
+                    <li key={r.id}>
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="group block rounded-lg border border-border bg-card overflow-hidden hover:border-sage/40 transition-colors">
+                        <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden">
+                          {isImg && r.signedUrl
+                            ? <img src={r.signedUrl} alt={r.title} loading="lazy" className="w-full h-full object-cover" />
+                            : <FileText size={20} className="text-sage/60" strokeWidth={1.25} />}
+                        </div>
+                        <div className="px-2.5 py-2 flex items-center gap-2">
+                          <span className="font-body text-xs text-foreground truncate flex-1">{r.title}</span>
+                          <ExternalLink size={11} className="text-muted-foreground group-hover:text-sage shrink-0" />
+                        </div>
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

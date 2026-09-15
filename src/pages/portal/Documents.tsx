@@ -7,6 +7,7 @@ import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpl
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { FRIENDLY_CATEGORY } from "@/components/vendor/VendorCard";
 import { toast } from "sonner";
+import { signResourceUrls } from "@/lib/resourceUrl";
 
 interface Doc {
   id: string;
@@ -48,6 +49,7 @@ interface GfhResource {
   category: string | null;
   file_url: string | null;
   file_name: string | null;
+  signedUrl?: string | null;
 }
 
 function extractStoragePath(fileUrl: string): string | null {
@@ -81,7 +83,7 @@ export default function Documents() {
       .eq("visible", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
-      .then(({ data }) => { if (data) setResources(data as GfhResource[]); });
+      .then(async ({ data }) => { if (data) setResources(await signResourceUrls(data as GfhResource[])); });
   }, []);
 
   const fetchDocs = useCallback(async () => {
@@ -220,7 +222,7 @@ export default function Documents() {
             {resources.map(r => (
               <a
                 key={r.id}
-                href={r.file_url || "#"}
+                href={r.signedUrl || r.file_url || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group rounded-xl bg-card border border-border shadow-soft p-4 hover:border-sage/40 hover:shadow-md transition-all flex items-start gap-3"
