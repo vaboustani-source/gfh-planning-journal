@@ -27,7 +27,7 @@ const resourceItems = [
   { to: "tipping", label: "Tipping Guide", icon: Gift },
   { to: "insurance", label: "Wedding Insurance", icon: Shield },
   { to: "marriage-license", label: "Marriage License", icon: Landmark },
-  { to: "floor-layouts", label: "Floor Layouts", icon: MapIcon },
+  { to: "floor-layouts", label: "Floor Layouts & Tents", icon: MapIcon },
 ];
 
 export default function PreviewPortalLayout() {

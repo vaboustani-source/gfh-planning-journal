@@ -45,7 +45,7 @@ const resourceNavItems: NavItemDef[] = [
   { to: "/portal/tipping",          label: "Tipping Guide",     icon: Gift,     tiers: [1, 3, 4], tab: "overview" },
   { to: "/portal/insurance",        label: "Wedding Insurance", icon: Shield,   tiers: [1, 3, 4], tab: "overview" },
   { to: "/portal/marriage-license", label: "Marriage License",  icon: Landmark, tiers: [1, 3, 4], tab: "overview" },
-  { to: "/portal/floor-layouts",    label: "Floor Layouts",     icon: MapIcon,  tiers: [1, 3, 4], tab: "overview" },
+  { to: "/portal/floor-layouts",    label: "Floor Layouts & Tents", icon: MapIcon,  tiers: [1, 3, 4], tab: "overview" },
 ];
 
 function ResourceGroup({ items, onNavigate }: { items: NavItemDef[]; onNavigate?: () => void }) {
