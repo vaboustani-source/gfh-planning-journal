@@ -53,7 +53,7 @@ export const TEAM_ROLES: TeamRole[] = [
     title: "Resort Coordinator",
     description: "Leader of our Guest Services Team: oversees the resort for the entire weekend and makes sure you and your guests have everything you need.",
     tiers: [
-      { range: "$100–250", low: 100, note: "Thank you for all of your help as our resort coordinator." },
+      { range: "$200–250", low: 200, note: "Thank you for all of your help as our resort coordinator." },
       { range: "$250–350", low: 250, note: "You were fabulous. Thank you so much!" },
       { range: "$350–500+", low: 350, note: "You went above and beyond, made our weekend stress-free and work-free, and we are forever grateful." },
     ],

@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalData } from "@/hooks/usePortalData";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, ExternalLink } from "lucide-react";
+import { Loader2, Download, Trash2, FileText, Image as ImageIcon, File, CloudUpload, ExternalLink, ArrowRight, BookOpen, Gift } from "lucide-react";
 import PortalStickyFooter from "@/components/portal/PortalStickyFooter";
 import { FRIENDLY_CATEGORY } from "@/components/vendor/VendorCard";
 import { toast } from "sonner";
@@ -49,6 +49,11 @@ interface GfhResource {
   file_url: string | null;
   file_name: string | null;
 }
+
+const BUILT_IN_GUIDES: { to: string; title: string; description: string; icon: React.ElementType }[] = [
+  { to: "/portal/start#how-we-work", title: "How We Work", description: "Service expectations: our roles, what is included, and every rate in one place.", icon: BookOpen },
+  { to: "/portal/tipping", title: "Tipping Guide", description: "Never expected. Suggested ranges for our team, plus norms for your outside vendors.", icon: Gift },
+];
 
 function extractStoragePath(fileUrl: string): string | null {
   const match = fileUrl.match(/vendor-contracts\/(.+?)(?:\?|$)/);
@@ -205,8 +210,7 @@ export default function Documents() {
       </div>
 
       {/* From Gilbertsville Farmhouse — global resources */}
-      {resources.length > 0 && (
-        <section>
+      <section>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-full bg-sage/15 flex items-center justify-center">
               <span className="font-display text-sm text-sage">G</span>
@@ -217,6 +221,26 @@ export default function Documents() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Built-in guides live as pages in the portal, not files. */}
+            {BUILT_IN_GUIDES.map(g => (
+              <Link
+                key={g.to}
+                to={g.to}
+                className="group rounded-xl bg-card border border-border shadow-soft p-4 hover:border-sage/40 hover:shadow-md transition-all flex items-start gap-3"
+              >
+                <div className="w-9 h-9 rounded-lg bg-sage/10 flex items-center justify-center shrink-0 group-hover:bg-sage/20 transition-colors">
+                  <g.icon size={16} className="text-sage" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-body text-sm font-medium text-foreground truncate">{g.title}</p>
+                    <span className="text-[9px] tracking-wider uppercase px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Guide</span>
+                  </div>
+                  <p className="font-body text-xs text-muted-foreground mt-1 line-clamp-2">{g.description}</p>
+                </div>
+                <ArrowRight size={14} className="text-muted-foreground group-hover:text-sage transition-colors shrink-0 mt-1" />
+              </Link>
+            ))}
             {resources.map(r => (
               <a
                 key={r.id}
@@ -242,7 +266,6 @@ export default function Documents() {
             ))}
           </div>
         </section>
-      )}
 
       {/* Upload zone */}
       <div className="rounded-xl bg-card border border-border p-5 shadow-soft">
