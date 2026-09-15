@@ -91,8 +91,8 @@ export const TEAM_ROLES: TeamRole[] = [
   {
     slug: "catering",
     title: "Catering Team",
-    description: "Our chefs, kitchen staff, and waitstaff. Gratuity is not included in your catering pricing, so this is the one envelope without a suggested range. Enter whatever feels right and it is shared across the whole team.",
-    countHint: "Given to the Weekend Event Coordinator with the other envelopes. Industry norms for outside caterers are listed below if you want a reference.",
+    description: "Our chefs, kitchen staff, and waitstaff. Gratuity is not included in your catering pricing. This is a discretionary item. Couples often leave somewhere between 10–20%. Any amount is appreciated and will be distributed amongst all service staff.",
+    countHint: "Given to the Weekend Event Coordinator with the other envelopes.",
     tiers: [],
   },
 ];

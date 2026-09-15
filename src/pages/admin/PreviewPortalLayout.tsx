@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Outlet, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalDataProvider } from "@/hooks/usePortalData";
-import { Eye, X, Sunrise, CalendarHeart, CheckSquare, Briefcase, Music, Sparkles, UtensilsCrossed, Users, DollarSign, MessageCircle, StickyNote, FileText, Clock, ClipboardList, Compass } from "lucide-react";
+import { Eye, X, Sunrise, CalendarHeart, CheckSquare, Briefcase, Music, Sparkles, UtensilsCrossed, Users, DollarSign, MessageCircle, StickyNote, FileText, Clock, ClipboardList, Compass, Gift, Shield, Landmark, Map as MapIcon } from "lucide-react";
 
 const navItems = [
   { to: "start", label: "Start Here", icon: Compass },
@@ -21,6 +21,13 @@ const navItems = [
   { to: "notes", label: "Notes", icon: StickyNote },
   { to: "forms", label: "Forms", icon: ClipboardList },
   { to: "documents", label: "Documents", icon: FileText },
+];
+
+const resourceItems = [
+  { to: "tipping", label: "Tipping Guide", icon: Gift },
+  { to: "insurance", label: "Wedding Insurance", icon: Shield },
+  { to: "marriage-license", label: "Marriage License", icon: Landmark },
+  { to: "floor-layouts", label: "Floor Layouts", icon: MapIcon },
 ];
 
 export default function PreviewPortalLayout() {
@@ -107,6 +114,23 @@ export default function PreviewPortalLayout() {
 
             <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
               {navItems.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={`/admin/preview/${eventId}/${item.to}`}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-2.5 rounded-lg font-body text-sm transition-all duration-200 ${
+                      isActive
+                        ? "bg-sage/12 text-sage-dark font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`
+                  }
+                >
+                  <item.icon size={16} strokeWidth={1.75} />
+                  <span>{item.label}</span>
+                </NavLink>
+              ))}
+              <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground px-4 pt-4 pb-1">Helpful resources</p>
+              {resourceItems.map(item => (
                 <NavLink
                   key={item.to}
                   to={`/admin/preview/${eventId}/${item.to}`}

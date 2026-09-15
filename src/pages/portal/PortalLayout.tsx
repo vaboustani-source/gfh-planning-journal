@@ -7,7 +7,7 @@ import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import { RSVP_ENABLED } from "@/lib/featureFlags";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, Shield, ShieldCheck, Wallet, History as HistoryIcon, Compass, Gift
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, Shield, ShieldCheck, Wallet, History as HistoryIcon, Compass, Gift, Landmark, Map as MapIcon, BookMarked, ChevronDown
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
@@ -37,10 +37,45 @@ const allNavItems: NavItemDef[] = [
   { to: "/portal/forms",           label: "Forms",             icon: ClipboardList,     tiers: [1, 3, 4],     tab: "forms" },
   { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4],     tab: "documents" },
   { to: "/portal/contracts",       label: "Agreements",        icon: ShieldCheck,       tiers: [1, 3, 4],     tab: "documents" },
-  { to: "/portal/insurance",       label: "Wedding Insurance", icon: Shield,            tiers: [1, 3, 4],     tab: "overview" },
-  { to: "/portal/tipping",         label: "Tipping Guide",     icon: Gift,              tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/history",         label: "History",           icon: HistoryIcon,       tiers: [1, 3, 4],     tab: "overview" },
 ];
+
+/* Reference pages, grouped under one collapsible heading so the main list stays short. */
+const resourceNavItems: NavItemDef[] = [
+  { to: "/portal/tipping",          label: "Tipping Guide",     icon: Gift,     tiers: [1, 3, 4], tab: "overview" },
+  { to: "/portal/insurance",        label: "Wedding Insurance", icon: Shield,   tiers: [1, 3, 4], tab: "overview" },
+  { to: "/portal/marriage-license", label: "Marriage License",  icon: Landmark, tiers: [1, 3, 4], tab: "overview" },
+  { to: "/portal/floor-layouts",    label: "Floor Layouts",     icon: MapIcon,  tiers: [1, 3, 4], tab: "overview" },
+];
+
+function ResourceGroup({ items, onNavigate }: { items: NavItemDef[]; onNavigate?: () => void }) {
+  const location = useLocation();
+  const active = items.some(i => location.pathname.startsWith(i.to));
+  const [open, setOpen] = useState(active);
+  useEffect(() => { if (active) setOpen(true); }, [active]);
+  if (items.length === 0) return null;
+  return (
+    <div className="pt-2">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg font-body text-sm transition-all duration-200 ${
+          active && !open ? "text-sage-dark font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+        }`}
+      >
+        <BookMarked size={16} strokeWidth={1.75} />
+        <span className="flex-1 text-left">Helpful resources</span>
+        <ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="mt-1 ml-4 pl-3 border-l border-border flex flex-col gap-0.5">
+          {items.map(item => <NavItem key={item.to} {...item} onClick={onNavigate} />)}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function NavItem({ to, label, icon: Icon, onClick }: { to: string; label: string; icon: React.ElementType; onClick?: () => void }) {
   return (
@@ -103,6 +138,12 @@ function PortalLayoutInner() {
     return byTier.filter(i => tabAccess[i.tab]);
   }, [accessTier, tabAccess, isPreviewMode]);
 
+  const resourceItems = useMemo(() => {
+    if (accessTier === 2) return [];
+    const byTier = resourceNavItems.filter(i => i.tiers.includes(accessTier));
+    return isPreviewMode ? byTier : byTier.filter(i => tabAccess[i.tab]);
+  }, [accessTier, tabAccess, isPreviewMode]);
+
   // Guard: redirect away from blocked tabs and feature-flagged routes
   useEffect(() => {
     if (isPreviewMode) return;
@@ -140,14 +181,15 @@ function PortalLayoutInner() {
           </NavLink>
 
           {/* Nav */}
-          <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+          <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 flex flex-col gap-1">
             {navItems.map(item => (
               <NavItem key={item.to} {...item} />
             ))}
+            <ResourceGroup items={resourceItems} />
           </nav>
 
           {/* Profile + Sign out */}
-          <div className="px-5 py-4 border-t border-border">
+          <div className="shrink-0 px-5 py-4 border-t border-border">
             <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground mb-0.5">Signed in as</p>
             <p className="font-body text-sm font-medium text-foreground truncate mb-3">
               {profile?.first_name && profile?.last_name
@@ -183,10 +225,11 @@ function PortalLayoutInner() {
                   <X size={18} />
                 </button>
               </div>
-              <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+              <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 flex flex-col gap-1">
                 {navItems.map(item => (
                   <NavItem key={item.to} {...item} onClick={() => setMobileMenuOpen(false)} />
                 ))}
+                <ResourceGroup items={resourceItems} onNavigate={() => setMobileMenuOpen(false)} />
               </nav>
               <div className="px-3 py-4 border-t border-border">
                 <button
