@@ -79,11 +79,8 @@ function RoleCard({ role, plan, onChange }: { role: TeamRole; plan: RolePlan; on
         )}
       </div>
 
-      {role.info ? (
-        <p className="font-body text-sm text-muted-foreground mt-3 leading-relaxed">{role.info}</p>
-      ) : (
-        <>
-          <div className="flex flex-wrap gap-2 mt-4">
+      <>
+          {role.tiers.length > 0 && <div className="flex flex-wrap gap-2 mt-4">
             {role.tiers.map((t, i) => {
               const on = plan.tier === i;
               return (
@@ -101,7 +98,7 @@ function RoleCard({ role, plan, onChange }: { role: TeamRole; plan: RolePlan; on
                 </button>
               );
             })}
-          </div>
+          </div>}
 
           {chosen && (
             <p className="font-body text-sm italic text-muted-foreground mt-3 leading-relaxed border-l-2 border-sage/40 pl-3">
@@ -146,8 +143,7 @@ function RoleCard({ role, plan, onChange }: { role: TeamRole; plan: RolePlan; on
             {isCustom && <span className="font-body text-xs text-muted-foreground pb-2">Your own amount</span>}
           </div>
           {role.countHint && <p className="font-body text-xs text-muted-foreground mt-2">{role.countHint}</p>}
-        </>
-      )}
+      </>
     </div>
   );
 }

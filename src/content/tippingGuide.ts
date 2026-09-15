@@ -33,8 +33,7 @@ export interface TeamRole {
   perPerson?: boolean;
   countHint?: string;
   tiers: Tier[];
-  /** Roles without tiers are informational only (e.g. the catering team). */
-  info?: string;
+  /** Roles with no tiers show only the amount field (e.g. the catering team). */
 }
 
 export const TEAM_ROLES: TeamRole[] = [
@@ -92,8 +91,8 @@ export const TEAM_ROLES: TeamRole[] = [
   {
     slug: "catering",
     title: "Catering Team",
-    description: "Chefs, kitchen staff, and waitstaff.",
-    info: "You are already tipping our entire catering team through the gratuity included in your catering bill. If you feel so inclined, you are welcome to tip our chefs or any catering team member directly, or the group as a whole. Nothing more is expected.",
+    description: "Our chefs, kitchen staff, and waitstaff. Gratuity is not included in your catering pricing, so this is the one envelope without a suggested range. Enter whatever feels right and it is shared across the whole team.",
+    countHint: "Given to the Weekend Event Coordinator with the other envelopes. Industry norms for outside caterers are listed below if you want a reference.",
     tiers: [],
   },
 ];
@@ -101,7 +100,7 @@ export const TEAM_ROLES: TeamRole[] = [
 /* ── Before the envelopes ─────────────────────────────── */
 
 export const ENVELOPE_BASICS: { lead: string; text: string }[] = [
-  { lead: "Read your contracts first.", text: "Gratuity is often built into catering and transportation agreements. When it is, no additional tip is expected." },
+  { lead: "Read your contracts first.", text: "Gratuity is often built into transportation and outside catering agreements. When it is, no additional tip is expected. Our own catering pricing does not include gratuity, which is why the Catering Team has its own envelope above." },
   { lead: "Ask what a service charge covers.", text: "A service charge is a mandatory fee on a venue or catering contract, and it does not always go to the people serving you." },
   { lead: "Owners do not need a tip.", text: "You are already paying what a business owner set as a fair price. Their employees are the ones to tip. A tip for an owner is a kind gesture for exceptional work, not an expectation." },
   { lead: "Prepare the envelopes ahead of time.", text: "Visit the bank before the weekend, put each tip in a labeled envelope, and hand them to your Weekend Event Coordinator at the rehearsal. They will make sure each one reaches the right person at the right moment." },
