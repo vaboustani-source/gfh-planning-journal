@@ -40,7 +40,7 @@ export const TEAM_ROLES: TeamRole[] = [
   {
     slug: "weekend-event-coordinator",
     title: "Weekend Event Coordinator",
-    description: "Leader of our Experience Team and your day-of planner: your right hand from the moment you book your date to the day of your event.",
+    description: "Leader of our Experience Team and the director of your weekend: your right hand from the moment you book your date to the day of your event.",
     tiers: [
       { range: "$600–800", low: 600, note: "Thank you for your services as our event coordinator." },
       { range: "$800–1,200", low: 800, note: "There is no way we could have done this without you. Thank you so much!" },
