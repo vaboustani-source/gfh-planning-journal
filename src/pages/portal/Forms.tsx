@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, FileText, Lock, ChevronRight, ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import FormFiller from "@/components/forms/FormFiller";
-import { FormField, ResponseMap, ResponseValue, AssignmentStatus, STATUS_LABELS, STATUS_COLORS } from "@/lib/formFields";
+import { FormField, ResponseMap, ResponseValue, AssignmentStatus, STATUS_LABELS, STATUS_COLORS, CoupleNames, missingRequired } from "@/lib/formFields";
 
 interface AssignmentRow {
   id: string;
@@ -17,7 +17,15 @@ interface AssignmentRow {
 
 export default function PortalForms() {
   const { eventId } = usePortalData();
-  const [items, setItems] = useState<AssignmentRow[]>([]);
+  const [items, setItemsState] = useState<AssignmentRow[]>([]);
+  // The debounced save runs after the render that scheduled it, so it reads from a ref.
+  const itemsRef = useRef<AssignmentRow[]>([]);
+  const setItems = (next: AssignmentRow[] | ((prev: AssignmentRow[]) => AssignmentRow[])) => {
+    const value = typeof next === "function" ? next(itemsRef.current) : next;
+    itemsRef.current = value;
+    setItemsState(value);
+  };
+  const [names, setNames] = useState<CoupleNames>({});
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -25,6 +33,8 @@ export default function PortalForms() {
   const fetchAll = async () => {
     if (!eventId) return;
     setLoading(true);
+    supabase.from("events").select("partner1_name, partner2_name").eq("id", eventId).maybeSingle()
+      .then(({ data: ev }) => { if (ev) setNames({ partner1: ev.partner1_name, partner2: ev.partner2_name }); });
     const { data } = await supabase
       .from("form_assignments")
       .select("id, status, submitted_at, forms(id, title, description, fields)")
@@ -65,7 +75,8 @@ export default function PortalForms() {
   };
 
   const persist = async (id: string) => {
-    const it = items.find(i => i.id === id);
+    if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
+    const it = itemsRef.current.find(i => i.id === id);
     if (!it || it.status === "submitted") return;
 
     if (it.responseRowId) {
@@ -89,9 +100,9 @@ export default function PortalForms() {
   };
 
   const submit = async (id: string) => {
-    const it = items.find(i => i.id === id);
+    const it = itemsRef.current.find(i => i.id === id);
     if (!it) return;
-    const missing = it.form.fields.filter(f => f.required && (it.responses[f.id] === undefined || it.responses[f.id] === null || it.responses[f.id] === ""));
+    const missing = missingRequired(it.form.fields, it.responses);
     if (missing.length) {
       toast.error(`Please answer all required fields (${missing.length} missing)`);
       return;
@@ -115,7 +126,7 @@ export default function PortalForms() {
     const isSubmitted = active.status === "submitted";
     return (
       <div className="px-4 lg:px-8 py-8 max-w-3xl mx-auto">
-        <button onClick={() => { persist(active.id); setActiveId(null); fetchAll(); }} className="flex items-center gap-2 font-body text-sm text-muted-foreground hover:text-foreground mb-4">
+        <button onClick={async () => { await persist(active.id); setActiveId(null); fetchAll(); }} className="flex items-center gap-2 font-body text-sm text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft size={15} /> Back to forms
         </button>
         <div className="bg-card rounded-xl border border-border p-6 lg:p-8">
@@ -134,6 +145,8 @@ export default function PortalForms() {
             responses={active.responses}
             onChange={(fid, v) => updateResponse(active.id, fid, v)}
             readOnly={isSubmitted}
+            names={names}
+            uploadPrefix={eventId ? `${eventId}/${active.id}` : undefined}
           />
 
           {!isSubmitted && (
@@ -156,7 +169,7 @@ export default function PortalForms() {
     <div className="px-4 lg:px-8 py-8 max-w-5xl mx-auto">
       <div className="mb-6">
         <h1 className="font-display text-2xl lg:text-3xl font-light text-foreground">Forms</h1>
-        <p className="font-body text-sm text-muted-foreground mt-1">Forms from Brandon to fill out for your event.</p>
+        <p className="font-body text-sm text-muted-foreground mt-1">Anything we need from you two, in one place. Answers save as you type.</p>
       </div>
 
       {items.length === 0 ? (

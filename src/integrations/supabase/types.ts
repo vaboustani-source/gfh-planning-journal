@@ -2524,6 +2524,7 @@ export type Database = {
       }
       forms: {
         Row: {
+          auto_assign: boolean
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -2533,6 +2534,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          auto_assign?: boolean
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -2542,6 +2544,7 @@ export type Database = {
           title: string
         }
         Update: {
+          auto_assign?: boolean
           created_at?: string | null
           created_by?: string | null
           description?: string | null

@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, Trash2, Edit, FileText, Users, Loader2, X } from "luci
 import { toast } from "sonner";
 import FormBuilder from "@/components/forms/FormBuilder";
 import FormFiller from "@/components/forms/FormFiller";
-import { FormField, ResponseMap, AssignmentStatus, STATUS_LABELS, STATUS_COLORS } from "@/lib/formFields";
+import { FormField, ResponseMap, AssignmentStatus, STATUS_LABELS, STATUS_COLORS, CoupleNames } from "@/lib/formFields";
 
 interface FormRow {
   id: string;
@@ -14,6 +14,7 @@ interface FormRow {
   description: string | null;
   fields: FormField[];
   is_template: boolean;
+  auto_assign: boolean;
   created_at: string;
 }
 
@@ -21,6 +22,7 @@ interface EventOption {
   id: string;
   title: string;
   couple_names: string;
+  names: CoupleNames;
 }
 
 interface AssignmentRow {
@@ -56,6 +58,7 @@ export default function AdminForms() {
       id: e.id,
       title: e.title,
       couple_names: [e.partner1_name, e.partner2_name].filter(Boolean).join(" & ") || e.title,
+      names: { partner1: e.partner1_name, partner2: e.partner2_name },
     })));
     if (a) setAssignments(a.map((r: any) => ({
       id: r.id, form_id: r.form_id, event_id: r.event_id,
@@ -67,7 +70,7 @@ export default function AdminForms() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  const startNew = () => setEditing({ title: "", description: "", fields: [], is_template: false });
+  const startNew = () => setEditing({ title: "", description: "", fields: [], is_template: false, auto_assign: false });
 
   const saveForm = async () => {
     if (!editing) return;
@@ -77,6 +80,7 @@ export default function AdminForms() {
       description: editing.description ?? null,
       fields: (editing.fields ?? []) as any,
       is_template: !!editing.is_template,
+      auto_assign: !!editing.auto_assign,
     };
     if (editing.id) {
       const { error } = await supabase.from("forms").update(payload).eq("id", editing.id);
@@ -139,10 +143,13 @@ export default function AdminForms() {
                       {form.is_template && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider bg-sage/15 text-sage font-medium">Template</span>
                       )}
+                      {form.auto_assign && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider bg-blue-100 text-blue-700 font-medium">Auto-assigned</span>
+                      )}
                     </div>
                     {form.description && <p className="font-body text-xs text-muted-foreground mb-1">{form.description}</p>}
                     <p className="font-body text-[11px] text-muted-foreground">
-                      {form.fields.length} field{form.fields.length === 1 ? "" : "s"} · {formAssignments.length} assignment{formAssignments.length === 1 ? "" : "s"}
+                      {form.fields.filter(f => f.type !== "section").length} question{form.fields.filter(f => f.type !== "section").length === 1 ? "" : "s"} · {formAssignments.length} assignment{formAssignments.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
@@ -203,6 +210,14 @@ export default function AdminForms() {
               />
               Save as reusable template
             </label>
+            <label className="flex items-center gap-2 font-body text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!editing.auto_assign}
+                onChange={(e) => setEditing({ ...editing, auto_assign: e.target.checked })}
+              />
+              Assign automatically to every new wedding
+            </label>
             <FormBuilder
               fields={(editing.fields as FormField[]) ?? []}
               onChange={(fields) => setEditing({ ...editing, fields })}
@@ -234,6 +249,7 @@ export default function AdminForms() {
             responses={viewResponse.assignment.responses ?? {}}
             onChange={() => {}}
             readOnly
+            names={events.find(e => e.id === viewResponse.assignment.event_id)?.names}
           />
         </Modal>
       )}

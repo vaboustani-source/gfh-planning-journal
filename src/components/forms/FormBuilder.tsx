@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FormField, FieldType, FIELD_TYPE_LABELS, ALL_FIELD_TYPES, newField } from "@/lib/formFields";
+import { FormField, FieldType, FIELD_TYPE_LABELS, ALL_FIELD_TYPES, HAS_OPTIONS, newField } from "@/lib/formFields";
 import { GripVertical, Plus, Trash2, ChevronDown, X } from "lucide-react";
 
 interface Props {
@@ -45,7 +45,7 @@ export default function FormBuilder({ fields, onChange }: Props) {
           onDragStart={() => onDragStart(field.id)}
           onDragOver={(e) => onDragOver(e, field.id)}
           onDragEnd={() => setDragId(null)}
-          className="rounded-lg border border-border bg-card p-3 flex gap-2"
+          className={`rounded-lg border p-3 flex gap-2 ${field.type === "section" ? "border-sage/40 bg-sage/5" : "border-border bg-card"}`}
         >
           <div className="flex flex-col items-center pt-2 cursor-grab active:cursor-grabbing text-muted-foreground">
             <GripVertical size={16} />
@@ -55,26 +55,28 @@ export default function FormBuilder({ fields, onChange }: Props) {
               <input
                 value={field.label}
                 onChange={(e) => update(field.id, { label: e.target.value })}
-                placeholder="Question label"
+                placeholder={field.type === "section" ? "Section heading" : "Question label"}
                 className="flex-1 px-3 py-1.5 rounded-md border border-input bg-background font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <select
                 value={field.type}
-                onChange={(e) => update(field.id, { type: e.target.value as FieldType, options: e.target.value === "multiple_choice" ? (field.options ?? ["Option 1"]) : undefined })}
+                onChange={(e) => update(field.id, { type: e.target.value as FieldType, options: HAS_OPTIONS(e.target.value as FieldType) ? (field.options ?? ["Option 1"]) : undefined })}
                 className="px-2 py-1.5 rounded-md border border-input bg-background font-body text-xs"
               >
                 {ALL_FIELD_TYPES.map(t => (
                   <option key={t} value={t}>{FIELD_TYPE_LABELS[t]}</option>
                 ))}
               </select>
-              <label className="flex items-center gap-1 font-body text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  checked={!!field.required}
-                  onChange={(e) => update(field.id, { required: e.target.checked })}
-                />
-                Required
-              </label>
+              {field.type !== "section" && (
+                <label className="flex items-center gap-1 font-body text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={!!field.required}
+                    onChange={(e) => update(field.id, { required: e.target.checked })}
+                  />
+                  Required
+                </label>
+              )}
               <button
                 onClick={() => remove(field.id)}
                 className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
@@ -84,7 +86,14 @@ export default function FormBuilder({ fields, onChange }: Props) {
               </button>
             </div>
 
-            {field.type === "multiple_choice" && (
+            <input
+              value={field.help ?? ""}
+              onChange={(e) => update(field.id, { help: e.target.value || undefined })}
+              placeholder="Helper text (optional). {partner1} / {partner2} insert first names."
+              className="w-full px-3 py-1 rounded-md border border-input bg-background font-body text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+
+            {HAS_OPTIONS(field.type) && (
               <div className="space-y-1.5 pl-1">
                 {(field.options ?? []).map((opt, idx) => (
                   <div key={idx} className="flex gap-2 items-center">

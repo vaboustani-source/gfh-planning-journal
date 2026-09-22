@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, FileText, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import FormFiller from "@/components/forms/FormFiller";
-import { FormField, ResponseMap, AssignmentStatus, STATUS_LABELS, STATUS_COLORS } from "@/lib/formFields";
+import { FormField, ResponseMap, AssignmentStatus, STATUS_LABELS, STATUS_COLORS, CoupleNames } from "@/lib/formFields";
 
 interface AssignmentWithForm {
   id: string;
@@ -17,11 +17,14 @@ export default function EventForms({ eventId }: { eventId: string }) {
   const [items, setItems] = useState<AssignmentWithForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<AssignmentWithForm | null>(null);
+  const [names, setNames] = useState<CoupleNames>({});
 
   useEffect(() => {
     if (!eventId) return;
     (async () => {
       setLoading(true);
+      supabase.from("events").select("partner1_name, partner2_name").eq("id", eventId).maybeSingle()
+        .then(({ data: ev }) => { if (ev) setNames({ partner1: ev.partner1_name, partner2: ev.partner2_name }); });
       const { data: assignments } = await supabase
         .from("form_assignments")
         .select("id, status, submitted_at, forms(id, title, description, fields)")
@@ -107,7 +110,7 @@ export default function EventForms({ eventId }: { eventId: string }) {
               {viewing.status === "not_started" ? (
                 <p className="font-body text-sm text-muted-foreground italic">Couple has not started this form yet.</p>
               ) : (
-                <FormFiller fields={viewing.form.fields} responses={viewing.responses} onChange={() => {}} readOnly />
+                <FormFiller fields={viewing.form.fields} responses={viewing.responses} onChange={() => {}} readOnly names={names} />
               )}
             </div>
           </div>
