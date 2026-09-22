@@ -9,3 +9,5 @@ project_id = "orbzcbnhljpriwuvxsjr"
     verify_jwt = false
   [functions.postmark-inbound-message]
     verify_jwt = false
+  [functions.scheduling-oauth-callback]
+    verify_jwt = false

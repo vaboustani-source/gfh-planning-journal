@@ -66,6 +66,7 @@ export const PATH_TO_TAB: Record<string, TabKey> = {
   "/portal/experiences": "experiences",
   "/portal/seating": "seating",
   "/portal/planning": "overview",
+  "/portal/calls": "overview",
   "/portal/insurance": "overview",
   "/portal/tipping": "overview",
   "/portal/marriage-license": "overview",

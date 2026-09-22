@@ -7,7 +7,7 @@ import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import { RSVP_ENABLED } from "@/lib/featureFlags";
 import {
   Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, Shield, ShieldCheck, Wallet, History as HistoryIcon, Compass, Gift, Landmark, Map as MapIcon, BookMarked, ChevronDown
+  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, Shield, ShieldCheck, Wallet, History as HistoryIcon, Compass, Gift, Landmark, Map as MapIcon, BookMarked, ChevronDown, Video
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
@@ -23,6 +23,7 @@ const allNavItems: NavItemDef[] = [
   { to: "/portal/our-wedding",     label: "Our Wedding",       icon: CalendarHeart,     tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/timeline",        label: "Timeline",          icon: Clock,             tiers: [1, 3, 4],     tab: "timeline" },
   { to: "/portal/planning",        label: "Planning",          icon: CheckSquare,       tiers: [1, 3, 4],     tab: "overview" },
+  { to: "/portal/calls",           label: "Planning Calls",    icon: Video,             tiers: [1, 3, 4],     tab: "overview" },
   { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4],     tab: "vendors" },
   { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4],     tab: "ceremony" },
   { to: "/portal/decor",           label: "Decor",             icon: Sparkles,          tiers: [1, 3, 4],     tab: "ceremony" },

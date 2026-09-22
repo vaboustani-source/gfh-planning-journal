@@ -1,5 +1,6 @@
 import GmailConnectCard from "@/components/admin/GmailConnectCard";
 import EmailSignatureCard from "@/components/admin/EmailSignatureCard";
+import CallSchedulingCard from "@/components/admin/CallSchedulingCard";
 
 export default function SettingsIntegrations() {
   return (
@@ -9,6 +10,7 @@ export default function SettingsIntegrations() {
       </h2>
       <GmailConnectCard />
       <EmailSignatureCard />
+      <CallSchedulingCard />
     </div>
   );
 }

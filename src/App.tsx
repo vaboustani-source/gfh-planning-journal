@@ -56,6 +56,7 @@ import Documents from "./pages/portal/Documents";
 import Contracts from "./pages/portal/Contracts";
 import Insurance from "./pages/portal/Insurance";
 import TippingGuide from "./pages/portal/TippingGuide";
+import PlanningCalls from "./pages/portal/PlanningCalls";
 import MarriageLicense from "./pages/portal/MarriageLicense";
 import FloorLayouts from "./pages/portal/FloorLayouts";
 import { HowWeWorkRedirect } from "./pages/portal/HowWeWork";
@@ -228,6 +229,7 @@ const App = () => (
               <Route path="our-wedding" element={<OurWeekend />} />
               <Route path="timeline" element={<Timeline />} />
               <Route path="planning" element={<Planning />} />
+              <Route path="calls" element={<PlanningCalls />} />
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
               <Route path="decor" element={<Decor />} />
@@ -266,6 +268,7 @@ const App = () => (
               <Route path="our-wedding" element={<OurWeekend />} />
               <Route path="timeline" element={<Timeline />} />
               <Route path="planning" element={<Planning />} />
+              <Route path="calls" element={<PlanningCalls />} />
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
               <Route path="decor" element={<Decor />} />
