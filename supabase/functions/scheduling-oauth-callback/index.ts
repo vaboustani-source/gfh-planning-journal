@@ -1,6 +1,6 @@
 // OAuth redirect target for both Google Calendar and Zoom (planning-call scheduling).
 // Exchanges the code, stores the staff member's tokens (service role only), and sends them back to the app.
-import { callbackUrl, googleApi, serviceClient, verifyState, zoomApi, zoomBasicAuth } from "../_shared/scheduling.ts";
+import { callbackUrl, googleApi, googleClient, serviceClient, verifyState, zoomApi, zoomBasicAuth } from "../_shared/scheduling.ts";
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
@@ -20,13 +20,14 @@ Deno.serve(async (req) => {
     let email: string | null = null;
 
     if (state.provider === "google") {
+      const client = await googleClient(serviceClient());
       const res = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           code,
-          client_id: Deno.env.get("GMAIL_CLIENT_ID")!,
-          client_secret: Deno.env.get("GMAIL_CLIENT_SECRET")!,
+          client_id: client.id,
+          client_secret: client.secret,
           redirect_uri: callbackUrl(),
           grant_type: "authorization_code",
         }),

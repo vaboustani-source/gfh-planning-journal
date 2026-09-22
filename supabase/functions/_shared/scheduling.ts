@@ -100,6 +100,21 @@ export function callbackUrl(): string {
   return `https://${projectRef}.supabase.co/functions/v1/scheduling-oauth-callback`;
 }
 
+/* ── Google OAuth client ── */
+
+/**
+ * The Google OAuth client Victoria owns: GCP project "GFH Marketing Email" (lunar-airport-504422-c3),
+ * consent screen Internal to gilbertsvillefarmhouse.com. Its keys live in pr_oauth_client (shared with
+ * the Marketing Hub's PR Desk). Falls back to the GMAIL_CLIENT_ID/SECRET secrets.
+ */
+export async function googleClient(admin: SupabaseClient): Promise<{ id: string; secret: string }> {
+  const { data } = await admin.from("pr_oauth_client").select("client_id, client_secret").limit(1).maybeSingle();
+  const id = data?.client_id ?? Deno.env.get("GMAIL_CLIENT_ID");
+  const secret = data?.client_secret ?? Deno.env.get("GMAIL_CLIENT_SECRET");
+  if (!id || !secret) throw new Error("Google OAuth client is not configured");
+  return { id, secret };
+}
+
 /* ── Tokens ── */
 
 async function storedToken(admin: SupabaseClient, userId: string, provider: "google" | "zoom") {
@@ -113,12 +128,13 @@ export async function googleAccessToken(admin: SupabaseClient, userId: string): 
   if (row.access_token && row.access_token_expires_at && new Date(row.access_token_expires_at).getTime() > Date.now() + 60_000) {
     return row.access_token;
   }
+  const client = await googleClient(admin);
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: Deno.env.get("GMAIL_CLIENT_ID")!,
-      client_secret: Deno.env.get("GMAIL_CLIENT_SECRET")!,
+      client_id: client.id,
+      client_secret: client.secret,
       refresh_token: row.refresh_token,
       grant_type: "refresh_token",
     }),

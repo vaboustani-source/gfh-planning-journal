@@ -1,6 +1,6 @@
 // Staff only. Connects the CALLER's own Google Calendar or Zoom for planning calls,
 // or disconnects it. Body: { provider: "google" | "zoom", action?: "disconnect", return_to?, app_origin? }
-import { callbackUrl, corsHeaders, getCaller, GOOGLE_CALENDAR_SCOPE, json, serviceClient, signState } from "../_shared/scheduling.ts";
+import { callbackUrl, corsHeaders, getCaller, GOOGLE_CALENDAR_SCOPE, googleClient, json, serviceClient, signState } from "../_shared/scheduling.ts";
 
 const FALLBACK_APP_ORIGIN = "https://plan.gilbertsvillefarmhouse.com";
 const ALLOWED_APP_ORIGINS = new Set([
@@ -48,8 +48,7 @@ Deno.serve(async (req) => {
     });
 
     if (provider === "google") {
-      const clientId = Deno.env.get("GMAIL_CLIENT_ID");
-      if (!clientId) throw new Error("GMAIL_CLIENT_ID not configured");
+      const { id: clientId } = await googleClient(serviceClient());
       const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: callbackUrl(),
