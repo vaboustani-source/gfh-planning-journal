@@ -1,5 +1,5 @@
-// Admin-only. Starts the Google Calendar or Zoom OAuth flow for planning-call scheduling,
-// or disconnects a provider. Body: { provider: "google" | "zoom", action?: "disconnect", return_to?, app_origin? }
+// Staff only. Connects the CALLER's own Google Calendar or Zoom for planning calls,
+// or disconnects it. Body: { provider: "google" | "zoom", action?: "disconnect", return_to?, app_origin? }
 import { callbackUrl, corsHeaders, getCaller, GOOGLE_CALENDAR_SCOPE, json, serviceClient, signState } from "../_shared/scheduling.ts";
 
 const FALLBACK_APP_ORIGIN = "https://plan.gilbertsvillefarmhouse.com";
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   try {
     const caller = await getCaller(req);
     if (!caller) return json({ error: "Unauthorized" }, 401);
-    if (!caller.isAdmin) return json({ error: "Admin only" }, 403);
+    if (!caller.isStaff) return json({ error: "Staff only" }, 403);
 
     const body = await req.json().catch(() => ({}));
     const provider = body.provider;
@@ -33,10 +33,10 @@ Deno.serve(async (req) => {
 
     if (body.action === "disconnect") {
       const admin = serviceClient();
-      await admin.from("call_scheduling_tokens").delete().eq("provider", provider);
-      await admin.from("call_scheduling_settings")
+      await admin.from("call_scheduling_tokens").delete().eq("user_id", caller.id).eq("provider", provider);
+      await admin.from("call_hosts")
         .update({ [provider === "google" ? "google_account_email" : "zoom_account_email"]: null, updated_at: new Date().toISOString() })
-        .eq("id", 1);
+        .eq("user_id", caller.id);
       return json({ ok: true });
     }
 
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
         scope: GOOGLE_CALENDAR_SCOPE,
         access_type: "offline",
         prompt: "consent",
-        login_hint: "events@gilbertsvillefarmhouse.com",
+        login_hint: caller.email ?? "",
         state,
       });
       return json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${params}` });

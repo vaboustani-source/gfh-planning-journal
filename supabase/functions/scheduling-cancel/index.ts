@@ -1,5 +1,5 @@
 // Cancels a planning call: deletes the Zoom meeting and the calendar event (the couple
-// gets a cancellation email from events@). Couples must cancel before the notice cutoff.
+// gets a cancellation email from the host). Couples must cancel before the notice cutoff.
 // Body: { call_id }
 import { cancelCall, canAccessEvent, corsHeaders, getCaller, json, loadSettings, serviceClient } from "../_shared/scheduling.ts";
 

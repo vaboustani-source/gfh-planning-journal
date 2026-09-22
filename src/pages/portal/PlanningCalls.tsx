@@ -399,7 +399,7 @@ export default function PlanningCalls() {
           <h1 className="font-display text-4xl font-light text-foreground mb-4">Planning Calls</h1>
           <p className="font-body text-base text-muted-foreground leading-relaxed max-w-2xl">
             Your Weekend Event Coordination includes three planning calls on Zoom. Pick a time that suits you,
-            and the invite with your Zoom link arrives by email from events@gilbertsvillefarmhouse.com.
+            and the invite with your Zoom link arrives by email from your coordinator.
           </p>
         </div>
 

@@ -1,9 +1,10 @@
-// Books a planning call: re-checks the slot is free, creates the Zoom meeting and the
-// events@ Google Calendar event (which emails the couple an invite), and saves the row.
+// Books a planning call with the wedding's call host: re-checks the slot is free, creates the
+// meeting on the host's Zoom and the event on the host's Google Calendar (which emails the
+// couple an invite), and saves the row.
 // Body: { event_id, call_kind, starts_at, note?, reschedule_of? }
 import {
   bookingWindow, CALL_KINDS, CALL_LABELS, cancelCall, canAccessEvent, corsHeaders, freeSlots, getCaller, googleAccessToken,
-  googleApi, json, loadSettings, serviceClient, ymdInTz, zoomAccessToken, zoomApi, type CallKind,
+  googleApi, json, loadSettings, resolveHost, serviceClient, ymdInTz, zoomAccessToken, zoomApi, type CallKind,
 } from "../_shared/scheduling.ts";
 import { APP_BASE_URL } from "../_shared/appUrls.ts";
 
@@ -59,13 +60,17 @@ Deno.serve(async (req) => {
     if (!caller.isAdmin && (day < w.opens || day > w.closes)) return json({ error: "That date is outside this call's booking window" }, 400);
     if (event.wedding_date && day >= event.wedding_date) return json({ error: "Calls must be before the wedding" }, 400);
 
+    const { host, ready } = await resolveHost(admin, eventId, s);
+    if (!host || !ready) return json({ error: "Online booking isn't set up for your coordinator yet. Please message us." }, 400);
+
     // Is the time still free right now?
-    const slots = await freeSlots(admin, s, day, day);
+    const slots = await freeSlots(admin, s, host, day, day);
     if (!slots.includes(startIso)) return json({ error: "Sorry, that time was just taken. Please pick another." }, 409);
 
     // Claim the slot first; the unique index stops a double booking at the same start.
     const { data: row, error: insErr } = await admin.from("planning_calls").insert({
       event_id: eventId,
+      host_user_id: host.user_id,
       call_kind: kind,
       starts_at: startIso,
       ends_at: end.toISOString(),
@@ -86,7 +91,7 @@ Deno.serve(async (req) => {
       const label = CALL_LABELS[kind];
       const summary = `${label} · ${event.title}`;
 
-      const zoom = await zoomApi(await zoomAccessToken(admin), "/users/me/meetings", {
+      const zoom = await zoomApi(await zoomAccessToken(admin, host.user_id), "/users/me/meetings", {
         method: "POST",
         body: JSON.stringify({
           topic: `${summary} · Gilbertsville Farmhouse`,
@@ -117,7 +122,7 @@ Deno.serve(async (req) => {
         "Questions? Write to events@gilbertsvillefarmhouse.com",
       ].filter((l) => l !== null).join("\n");
 
-      const gEvent = await googleApi(await googleAccessToken(admin), "/calendars/primary/events?sendUpdates=all", {
+      const gEvent = await googleApi(await googleAccessToken(admin, host.user_id), "/calendars/primary/events?sendUpdates=all", {
         method: "POST",
         body: JSON.stringify({
           summary,
@@ -142,7 +147,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       // Roll back so the slot isn't stuck and no orphan Zoom meeting is left.
       if (zoomId) {
-        try { await zoomApi(await zoomAccessToken(admin), `/meetings/${zoomId}`, { method: "DELETE" }); } catch { /* ignore */ }
+        try { await zoomApi(await zoomAccessToken(admin, host.user_id), `/meetings/${zoomId}`, { method: "DELETE" }); } catch { /* ignore */ }
       }
       await admin.from("planning_calls").delete().eq("id", row.id);
       throw e;

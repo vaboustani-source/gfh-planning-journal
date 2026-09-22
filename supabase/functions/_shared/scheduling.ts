@@ -1,5 +1,5 @@
 // Shared helpers for planning-call scheduling (scheduling-* edge functions).
-// Google Calendar (events@) supplies free/busy + sends the invite; Zoom hosts the call.
+// Each staff host connects their own Google Calendar (free/busy + the invite) and Zoom (the meeting).
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 export const corsHeaders = {
@@ -16,6 +16,8 @@ export const GOOGLE_CALENDAR_SCOPE =
   "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.freebusy";
 
 export const ADMIN_ROLES = ["admin", "event_director"];
+/** GFH staff who can connect their own calendar + Zoom and host calls (matches is_internal_staff). */
+export const STAFF_ROLES = ["admin", "event_director", "ceo_owner", "sales_manager", "marketing", "planner"];
 
 /* ── Call kinds. Keep in sync with src/content/planningCalls.ts ── */
 
@@ -53,7 +55,7 @@ export async function getCaller(req: Request) {
   if (!user) return null;
   const { data: profile } = await serviceClient().from("users").select("id, role, email, first_name, last_name").eq("id", user.id).single();
   if (!profile) return null;
-  return { ...profile, isAdmin: ADMIN_ROLES.includes(profile.role) };
+  return { ...profile, isAdmin: ADMIN_ROLES.includes(profile.role), isStaff: STAFF_ROLES.includes(profile.role) };
 }
 
 export async function canAccessEvent(admin: SupabaseClient, eventId: string, caller: { id: string; isAdmin: boolean }) {
@@ -100,14 +102,14 @@ export function callbackUrl(): string {
 
 /* ── Tokens ── */
 
-async function storedToken(admin: SupabaseClient, provider: "google" | "zoom") {
-  const { data } = await admin.from("call_scheduling_tokens").select("*").eq("provider", provider).maybeSingle();
+async function storedToken(admin: SupabaseClient, userId: string, provider: "google" | "zoom") {
+  const { data } = await admin.from("call_scheduling_tokens").select("*").eq("user_id", userId).eq("provider", provider).maybeSingle();
   return data;
 }
 
-export async function googleAccessToken(admin: SupabaseClient): Promise<string> {
-  const row = await storedToken(admin, "google");
-  if (!row) throw new Error("Google Calendar is not connected");
+export async function googleAccessToken(admin: SupabaseClient, userId: string): Promise<string> {
+  const row = await storedToken(admin, userId, "google");
+  if (!row) throw new Error("This host's Google Calendar is not connected");
   if (row.access_token && row.access_token_expires_at && new Date(row.access_token_expires_at).getTime() > Date.now() + 60_000) {
     return row.access_token;
   }
@@ -127,7 +129,7 @@ export async function googleAccessToken(admin: SupabaseClient): Promise<string> 
     access_token: t.access_token,
     access_token_expires_at: new Date(Date.now() + ((t.expires_in ?? 3600) - 60) * 1000).toISOString(),
     updated_at: new Date().toISOString(),
-  }).eq("provider", "google");
+  }).eq("user_id", userId).eq("provider", "google");
   return t.access_token;
 }
 
@@ -135,9 +137,9 @@ export function zoomBasicAuth(): string {
   return "Basic " + btoa(`${Deno.env.get("ZOOM_CLIENT_ID")}:${Deno.env.get("ZOOM_CLIENT_SECRET")}`);
 }
 
-export async function zoomAccessToken(admin: SupabaseClient): Promise<string> {
-  const row = await storedToken(admin, "zoom");
-  if (!row) throw new Error("Zoom is not connected");
+export async function zoomAccessToken(admin: SupabaseClient, userId: string): Promise<string> {
+  const row = await storedToken(admin, userId, "zoom");
+  if (!row) throw new Error("This host's Zoom is not connected");
   if (row.access_token && row.access_token_expires_at && new Date(row.access_token_expires_at).getTime() > Date.now() + 60_000) {
     return row.access_token;
   }
@@ -154,7 +156,7 @@ export async function zoomAccessToken(admin: SupabaseClient): Promise<string> {
     refresh_token: t.refresh_token ?? row.refresh_token,
     access_token_expires_at: new Date(Date.now() + ((t.expires_in ?? 3600) - 60) * 1000).toISOString(),
     updated_at: new Date().toISOString(),
-  }).eq("provider", "zoom");
+  }).eq("user_id", userId).eq("provider", "zoom");
   return t.access_token;
 }
 
@@ -244,23 +246,49 @@ function isoWeekday(ymd: string): number {
 
 /* ── Availability ── */
 
+/** Shared rules for every host. */
 export interface Settings {
   timezone: string;
-  weekly_hours: Record<string, Array<[string, string]>>;
   call_minutes: number;
   buffer_minutes: number;
   min_notice_hours: number;
   max_days_ahead: number;
   cancel_notice_hours: number;
+  default_host_user_id: string | null;
+}
+
+/** One staff member's availability. */
+export interface Host {
+  user_id: string;
+  display_name: string;
+  weekly_hours: Record<string, Array<[string, string]>>;
   blocked_dates: string[];
   extra_busy_calendars: string[];
-  host_name: string;
 }
 
 export async function loadSettings(admin: SupabaseClient): Promise<Settings> {
   const { data, error } = await admin.from("call_scheduling_settings").select("*").eq("id", 1).single();
   if (error || !data) throw new Error("Call scheduling settings are missing");
   return data as Settings;
+}
+
+/**
+ * Who hosts this wedding's calls: events.call_host_user_id, else the default host.
+ * `ready` is true only when that person has connected both Google Calendar and Zoom.
+ */
+export async function resolveHost(admin: SupabaseClient, eventId: string, s: Settings) {
+  const { data: event } = await admin.from("events").select("call_host_user_id").eq("id", eventId).single();
+  const userId: string | null = event?.call_host_user_id ?? s.default_host_user_id ?? null;
+  if (!userId) return { host: null, ready: false };
+  const [{ data: host }, { data: tokens }] = await Promise.all([
+    admin.from("call_hosts").select("*").eq("user_id", userId).maybeSingle(),
+    admin.from("call_scheduling_tokens").select("provider").eq("user_id", userId),
+  ]);
+  const connected = new Set((tokens ?? []).map((t) => t.provider));
+  return {
+    host: host as Host | null,
+    ready: !!host && connected.has("google") && connected.has("zoom"),
+  };
 }
 
 /** The dates (in the host's zone) a call kind can be booked, or null if the kind has no wedding date to anchor to. */
@@ -280,20 +308,21 @@ export function bookingWindow(kind: CallKind, weddingDate: string | null, s: Set
 
 /**
  * Free start times between two dates (inclusive), in UTC ISO strings.
- * Busy = Google free/busy on events@ (+ extra calendars) plus booked planning_calls, padded by the buffer.
+ * Busy = the host's Google free/busy (+ their extra calendars) plus their booked planning_calls, padded by the buffer.
  */
-export async function freeSlots(admin: SupabaseClient, s: Settings, fromYmd: string, toYmd: string, now = new Date()) {
+export async function freeSlots(admin: SupabaseClient, s: Settings, host: Host, fromYmd: string, toYmd: string, now = new Date()) {
   if (toYmd < fromYmd) return [];
   const rangeStart = zonedToUtc(fromYmd, "00:00", s.timezone);
   const rangeEnd = zonedToUtc(addDays(toYmd, 1), "00:00", s.timezone);
 
-  const token = await googleAccessToken(admin);
-  const busy = await googleBusy(token, ["primary", ...(s.extra_busy_calendars ?? [])], rangeStart, rangeEnd);
+  const token = await googleAccessToken(admin, host.user_id);
+  const busy = await googleBusy(token, ["primary", ...(host.extra_busy_calendars ?? [])], rangeStart, rangeEnd);
 
   const { data: booked } = await admin
     .from("planning_calls")
     .select("starts_at, ends_at")
     .eq("status", "booked")
+    .eq("host_user_id", host.user_id)
     .lt("starts_at", rangeEnd.toISOString())
     .gt("ends_at", rangeStart.toISOString());
   for (const b of booked ?? []) busy.push({ start: Date.parse(b.starts_at), end: Date.parse(b.ends_at) });
@@ -301,12 +330,12 @@ export async function freeSlots(admin: SupabaseClient, s: Settings, fromYmd: str
   const pad = s.buffer_minutes * 60_000;
   const len = s.call_minutes * 60_000;
   const earliest = now.getTime() + s.min_notice_hours * 3_600_000;
-  const blocked = new Set(s.blocked_dates ?? []);
+  const blocked = new Set(host.blocked_dates ?? []);
   const slots: string[] = [];
 
   for (let day = fromYmd; day <= toYmd; day = addDays(day, 1)) {
     if (blocked.has(day)) continue;
-    for (const [from, to] of s.weekly_hours[String(isoWeekday(day))] ?? []) {
+    for (const [from, to] of host.weekly_hours[String(isoWeekday(day))] ?? []) {
       const dayEnd = zonedToUtc(day, to, s.timezone).getTime();
       for (let t = zonedToUtc(day, from, s.timezone).getTime(); t + len <= dayEnd; t += 30 * 60_000) {
         if (t < earliest) continue;
@@ -323,13 +352,13 @@ export async function freeSlots(admin: SupabaseClient, s: Settings, fromYmd: str
 export async function cancelCall(admin: SupabaseClient, call: any, cancelledBy: string) {
   if (call.zoom_meeting_id) {
     try {
-      await zoomApi(await zoomAccessToken(admin), `/meetings/${call.zoom_meeting_id}`, { method: "DELETE" });
+      await zoomApi(await zoomAccessToken(admin, call.host_user_id), `/meetings/${call.zoom_meeting_id}`, { method: "DELETE" });
     } catch (e) { console.error("zoom delete failed", e); }
   }
   if (call.google_event_id) {
     try {
-      // sendUpdates=all emails the couple a cancellation from events@.
-      await googleApi(await googleAccessToken(admin), `/calendars/primary/events/${call.google_event_id}?sendUpdates=all`, { method: "DELETE" });
+      // sendUpdates=all emails the couple a cancellation from the host.
+      await googleApi(await googleAccessToken(admin, call.host_user_id), `/calendars/primary/events/${call.google_event_id}?sendUpdates=all`, { method: "DELETE" });
     } catch (e) { console.error("google delete failed", e); }
   }
   await admin.from("planning_calls").update({

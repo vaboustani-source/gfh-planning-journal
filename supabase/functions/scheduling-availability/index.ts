@@ -1,7 +1,7 @@
 // Open planning-call times for one wedding + call kind.
 // Body: { event_id, call_kind } -> { ready, window, slots[], timezone, call_minutes, host_name }
 import {
-  addDays, bookingWindow, CALL_KINDS, canAccessEvent, corsHeaders, freeSlots, getCaller, json, loadSettings, serviceClient,
+  addDays, bookingWindow, CALL_KINDS, canAccessEvent, corsHeaders, freeSlots, getCaller, json, loadSettings, resolveHost, serviceClient,
   type CallKind,
 } from "../_shared/scheduling.ts";
 
@@ -18,12 +18,15 @@ Deno.serve(async (req) => {
     if (!(await canAccessEvent(admin, event_id, caller))) return json({ error: "Not your wedding" }, 403);
 
     const s = await loadSettings(admin);
-    const base = { timezone: s.timezone, call_minutes: s.call_minutes, host_name: s.host_name, cancel_notice_hours: s.cancel_notice_hours };
-
-    const { data: tokens } = await admin.from("call_scheduling_tokens").select("provider");
-    const connected = new Set((tokens ?? []).map((t) => t.provider));
-    if (!connected.has("google") || !connected.has("zoom")) {
-      return json({ ...base, ready: false, reason: "not_connected", slots: [] });
+    const { host, ready } = await resolveHost(admin, event_id, s);
+    const base = {
+      timezone: s.timezone,
+      call_minutes: s.call_minutes,
+      host_name: host?.display_name || "your coordinator",
+      cancel_notice_hours: s.cancel_notice_hours,
+    };
+    if (!host || !ready) {
+      return json({ ...base, ready: false, reason: host ? "host_not_connected" : "no_host", slots: [] });
     }
 
     const { data: event } = await admin.from("events").select("wedding_date").eq("id", event_id).single();
@@ -44,7 +47,7 @@ Deno.serve(async (req) => {
         ? "closed"
         : "open";
 
-    const slots = status === "open" ? await freeSlots(admin, s, from, to) : [];
+    const slots = status === "open" ? await freeSlots(admin, s, host, from, to) : [];
     return json({
       ...base,
       ready: true,

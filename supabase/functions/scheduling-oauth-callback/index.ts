@@ -1,5 +1,5 @@
 // OAuth redirect target for both Google Calendar and Zoom (planning-call scheduling).
-// Exchanges the code, stores tokens (service role only), and sends the admin back to the app.
+// Exchanges the code, stores the staff member's tokens (service role only), and sends them back to the app.
 import { callbackUrl, googleApi, serviceClient, verifyState, zoomApi, zoomBasicAuth } from "../_shared/scheduling.ts";
 
 Deno.serve(async (req) => {
@@ -55,25 +55,31 @@ Deno.serve(async (req) => {
     }
 
     const admin = serviceClient();
-    const { data: existing } = await admin.from("call_scheduling_tokens").select("refresh_token").eq("provider", state.provider).maybeSingle();
+    const { data: existing } = await admin.from("call_scheduling_tokens").select("refresh_token")
+      .eq("user_id", state.user_id).eq("provider", state.provider).maybeSingle();
     const refresh = tokens.refresh_token ?? existing?.refresh_token;
     if (!refresh) return back({ scheduling: "error", provider: state.provider, reason: "no_refresh_token" });
 
     await admin.from("call_scheduling_tokens").upsert({
+      user_id: state.user_id,
       provider: state.provider,
       account_email: email,
       refresh_token: refresh,
       access_token: tokens.access_token,
       access_token_expires_at: new Date(Date.now() + ((tokens.expires_in ?? 3600) - 60) * 1000).toISOString(),
-      connected_by: state.user_id,
       updated_at: new Date().toISOString(),
-    }, { onConflict: "provider" });
+    }, { onConflict: "user_id,provider" });
 
-    await admin.from("call_scheduling_settings").update({
-      [state.provider === "google" ? "google_account_email" : "zoom_account_email"]: email,
-      updated_at: new Date().toISOString(),
-      updated_by: state.user_id,
-    }).eq("id", 1);
+    // Make sure this person has a host row (hours default to Mon-Fri), then record the account.
+    const emailCol = state.provider === "google" ? "google_account_email" : "zoom_account_email";
+    const { data: host } = await admin.from("call_hosts").select("user_id").eq("user_id", state.user_id).maybeSingle();
+    if (host) {
+      await admin.from("call_hosts").update({ [emailCol]: email, updated_at: new Date().toISOString() }).eq("user_id", state.user_id);
+    } else {
+      const { data: u } = await admin.from("users").select("first_name, last_name").eq("id", state.user_id).single();
+      const name = [u?.first_name, u?.last_name].filter(Boolean).join(" ");
+      await admin.from("call_hosts").insert({ user_id: state.user_id, display_name: name, [emailCol]: email });
+    }
 
     return back({ scheduling: "connected", provider: state.provider, email: email ?? "" });
   } catch (e) {
