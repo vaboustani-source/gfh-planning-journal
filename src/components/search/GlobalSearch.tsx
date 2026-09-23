@@ -31,6 +31,7 @@ const COUPLE_NAV: NavDest[] = [
   { label: "Planning",         to: "/portal/planning",     icon: CheckSquare,      synonyms: "checklist tasks todo to-do" },
   { label: "Vendors",          to: "/portal/vendors",      icon: Briefcase,        synonyms: "photographer florist dj band team" },
   { label: "Ceremony & Music", to: "/portal/ceremony",     icon: Music,            synonyms: "ceremony music song processional vows" },
+  { label: "Mood Board",       to: "/portal/mood-board",   icon: Sparkles,         synonyms: "mood board inspiration pinterest instagram tiktok inspo" },
   { label: "Décor",            to: "/portal/decor",        icon: Sparkles,         synonyms: "decor rental flowers styling" },
   { label: "Experiences",      to: "/portal/experiences",  icon: Sparkles,         synonyms: "goat yoga fireworks activities add-ons" },
   { label: "Menus & Meals",    to: "/portal/menus-meals",  icon: UtensilsCrossed,  synonyms: "menu food bar drinks dinner brunch" },
@@ -52,7 +53,7 @@ const ADMIN_NAV: NavDest[] = [
   { label: "All Messages",       to: "/admin/messages",                 icon: MessageCircle,synonyms: "messages chat" },
   { label: "Preferred Vendors",  to: "/admin/preferred-vendors",        icon: Briefcase,    synonyms: "preferred vendors network" },
   { label: "Experiences Catalog",to: "/admin/experiences",              icon: Sparkles,     synonyms: "experiences catalog" },
-  { label: "Décor Catalog",      to: "/admin/decor",                    icon: Wand2,        synonyms: "decor catalog rentals" },
+  { label: "Décor Catalog",      to: "/admin/decor-catalog",                  icon: Wand2,        synonyms: "decor catalog rentals" },
   { label: "Layout Library",     to: "/admin/layouts",                  icon: LayoutGrid,   synonyms: "layout library floor plan" },
   { label: "Resources",          to: "/admin/resources",                icon: BookOpen,     synonyms: "resources guides docs" },
   { label: "Forms",              to: "/admin/forms",                    icon: ClipboardList,synonyms: "forms templates" },
@@ -71,6 +72,7 @@ const EVENT_TABS: { id: string; label: string; icon: any; synonyms: string }[] =
   { id: "contracts",   label: "Contracts",        icon: ShieldCheck,      synonyms: "contracts agreements" },
   { id: "vendors",     label: "Vendors",          icon: Briefcase,        synonyms: "vendors photographer florist" },
   { id: "experiences", label: "Experiences",      icon: Sparkles,         synonyms: "experiences activities" },
+  { id: "moodboard",   label: "Mood Board",       icon: Sparkles,         synonyms: "mood board inspiration pinterest inspo" },
   { id: "decor",       label: "Décor",            icon: Sparkles,         synonyms: "decor rentals" },
   { id: "ceremony",    label: "Ceremony & Music", icon: Music,            synonyms: "ceremony music song" },
   { id: "timeline",    label: "Timeline",         icon: Clock,            synonyms: "timeline schedule" },
@@ -180,7 +182,7 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
     : (scope === "admin-event" && adminMode === "event"
         ? EVENT_TABS.map(t => ({
             label: t.label, icon: t.icon, synonyms: t.synonyms,
-            to: `/admin/event/${eventId}?tab=${t.id}`,
+            to: `/admin/events/${eventId}?tab=${t.id}`,
           }))
         : ADMIN_NAV);
 
@@ -241,7 +243,7 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
               <CommandItem
                 key={e.id}
                 value={`${e.coupleNames} ${e.title}`}
-                onSelect={() => go(`/admin/event/${e.id}`)}
+                onSelect={() => go(`/admin/events/${e.id}`)}
               >
                 <CalendarHeart size={14} className="mr-2 text-sage shrink-0" />
                 <span className="flex-1 truncate">{e.coupleNames}</span>
@@ -262,7 +264,7 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
                 ? eventTitleMap[g.event_id] : null;
               const to = scope === "couple"
                 ? "/portal/our-people"
-                : `/admin/event/${g.event_id ?? eventId}?tab=our-people`;
+                : `/admin/events/${g.event_id ?? eventId}?tab=our-people`;
               return (
                 <CommandItem key={g.id} value={`guest ${name} ${evCtx ?? ""}`} onSelect={() => go(to)}>
                   <Users size={14} className="mr-2 text-sage shrink-0" />
@@ -282,7 +284,7 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
                 ? eventTitleMap[v.event_id] : null;
               const to = scope === "couple"
                 ? "/portal/vendors"
-                : `/admin/event/${v.event_id ?? eventId}?tab=vendors`;
+                : `/admin/events/${v.event_id ?? eventId}?tab=vendors`;
               return (
                 <CommandItem key={v.id} value={`vendor ${v.name} ${v.role ?? ""} ${evCtx ?? ""}`} onSelect={() => go(to)}>
                   <Briefcase size={14} className="mr-2 text-sage shrink-0" />
@@ -301,7 +303,7 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
             {experiences.slice(0, 6).map((x) => {
               const to = scope === "couple"
                 ? "/portal/experiences"
-                : `/admin/event/${eventId}?tab=experiences`;
+                : `/admin/events/${eventId}?tab=experiences`;
               return (
                 <CommandItem key={x.id} value={`experience ${x.title}`} onSelect={() => go(to)}>
                   <Sparkles size={14} className="mr-2 text-sage shrink-0" />
@@ -318,7 +320,7 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
             {decor.slice(0, 6).map((d) => {
               const to = scope === "couple"
                 ? "/portal/decor"
-                : `/admin/event/${eventId}?tab=decor`;
+                : `/admin/events/${eventId}?tab=decor`;
               return (
                 <CommandItem key={d.id} value={`decor ${d.item_name ?? ""}`} onSelect={() => go(to)}>
                   <Wand2 size={14} className="mr-2 text-sage shrink-0" />
@@ -335,7 +337,7 @@ export default function GlobalSearch({ scope, eventId, open, onOpenChange }: Pro
             {timelineBlocks.slice(0, 6).map((t) => {
               const to = scope === "couple"
                 ? "/portal/timeline"
-                : `/admin/event/${eventId}?tab=timeline`;
+                : `/admin/events/${eventId}?tab=timeline`;
               return (
                 <CommandItem key={t.id} value={`timeline ${t.title ?? ""}`} onSelect={() => go(to)}>
                   <Clock size={14} className="mr-2 text-sage shrink-0" />

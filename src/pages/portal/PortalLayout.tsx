@@ -1,101 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { PortalDataProvider, usePortalData } from "@/hooks/usePortalData";
 import { tabKeyForPath, TabKey } from "@/lib/tabAccess";
 import { RSVP_ENABLED } from "@/lib/featureFlags";
-import {
-  Home, CalendarHeart, CheckSquare, Users, Music, UtensilsCrossed, DollarSign,
-  MessageCircle, StickyNote, Briefcase, LogOut, Menu, X, Sparkles, User, FileText, Clock, ClipboardList, Armchair, MailCheck, Shield, ShieldCheck, Wallet, History as HistoryIcon, Compass, Gift, Landmark, Map as MapIcon, BookMarked, ChevronDown, Video
-} from "lucide-react";
+import { LogOut, Menu, X, User } from "lucide-react";
+import { ALL_PORTAL_ITEMS, PORTAL_MOBILE_SLUGS, type PortalNavItem } from "@/lib/portalNav";
+import PortalSidebarNav from "@/components/portal/PortalSidebarNav";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
-
-type NavItemDef = {
-  to: string; label: string; icon: React.ElementType;
-  tiers: number[]; tab: TabKey;
-};
-
-const allNavItems: NavItemDef[] = [
-  { to: "/portal/start",           label: "Start Here",        icon: Compass,         tiers: [1, 3, 4],     tab: "overview" },
-  { to: "/portal/today",           label: "Home",              icon: Home,              tiers: [1, 2, 3, 4], tab: "overview" },
-  { to: "/portal/our-wedding",     label: "Our Wedding",       icon: CalendarHeart,     tiers: [1, 3, 4],     tab: "overview" },
-  { to: "/portal/timeline",        label: "Timeline",          icon: Clock,             tiers: [1, 3, 4],     tab: "timeline" },
-  { to: "/portal/planning",        label: "Planning",          icon: CheckSquare,       tiers: [1, 3, 4],     tab: "overview" },
-  { to: "/portal/calls",           label: "Planning Calls",    icon: Video,             tiers: [1, 3, 4],     tab: "overview" },
-  { to: "/portal/vendors",         label: "Vendors",           icon: Briefcase,         tiers: [1, 3, 4],     tab: "vendors" },
-  { to: "/portal/ceremony",        label: "Ceremony & Music",  icon: Music,             tiers: [1, 3, 4],     tab: "ceremony" },
-  { to: "/portal/decor",           label: "Decor",             icon: Sparkles,          tiers: [1, 3, 4],     tab: "ceremony" },
-  { to: "/portal/experiences",     label: "Experiences",       icon: Sparkles,          tiers: [1, 3, 4],     tab: "experiences" },
-  { to: "/portal/menus-meals",     label: "Menus & Meals",     icon: UtensilsCrossed,   tiers: [1, 3, 4],     tab: "menus" },
-  { to: "/portal/our-people",      label: "Our People",        icon: Users,             tiers: [1, 3, 4],     tab: "lodging" },
-  { to: "/portal/rsvp",            label: "RSVP",              icon: MailCheck,         tiers: [1, 3, 4],     tab: "rsvp" },
-  { to: "/portal/financials",      label: "Financials",        icon: DollarSign,        tiers: [1, 3, 4],     tab: "financials" },
-  { to: "/portal/budget",          label: "Budget",            icon: Wallet,            tiers: [1, 3, 4],     tab: "overview" },
-  { to: "/portal/messages",        label: "Messages",          icon: MessageCircle,     tiers: [1, 2, 3, 4],  tab: "messages" },
-  { to: "/portal/notes",           label: "Notes",             icon: StickyNote,        tiers: [1, 3, 4],     tab: "notes" },
-  { to: "/portal/forms",           label: "Forms",             icon: ClipboardList,     tiers: [1, 3, 4],     tab: "forms" },
-  { to: "/portal/documents",       label: "Documents",         icon: FileText,          tiers: [1, 3, 4],     tab: "documents" },
-  { to: "/portal/contracts",       label: "Agreements",        icon: ShieldCheck,       tiers: [1, 3, 4],     tab: "documents" },
-  { to: "/portal/history",         label: "History",           icon: HistoryIcon,       tiers: [1, 3, 4],     tab: "overview" },
-];
-
-/* Reference pages, grouped under one collapsible heading so the main list stays short. */
-const resourceNavItems: NavItemDef[] = [
-  { to: "/portal/tipping",          label: "Tipping Guide",     icon: Gift,     tiers: [1, 3, 4], tab: "overview" },
-  { to: "/portal/insurance",        label: "Wedding Insurance", icon: Shield,   tiers: [1, 3, 4], tab: "overview" },
-  { to: "/portal/marriage-license", label: "Marriage License",  icon: Landmark, tiers: [1, 3, 4], tab: "overview" },
-  { to: "/portal/floor-layouts",    label: "Floor Layouts & Tents", icon: MapIcon,  tiers: [1, 3, 4], tab: "overview" },
-];
-
-function ResourceGroup({ items, onNavigate }: { items: NavItemDef[]; onNavigate?: () => void }) {
-  const location = useLocation();
-  const active = items.some(i => location.pathname.startsWith(i.to));
-  const [open, setOpen] = useState(active);
-  useEffect(() => { if (active) setOpen(true); }, [active]);
-  if (items.length === 0) return null;
-  return (
-    <div className="pt-2">
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-        className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg font-body text-sm transition-all duration-200 ${
-          active && !open ? "text-sage-dark font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-        }`}
-      >
-        <BookMarked size={16} strokeWidth={1.75} />
-        <span className="flex-1 text-left">Helpful resources</span>
-        <ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="mt-1 ml-4 pl-3 border-l border-border flex flex-col gap-0.5">
-          {items.map(item => <NavItem key={item.to} {...item} onClick={onNavigate} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function NavItem({ to, label, icon: Icon, onClick }: { to: string; label: string; icon: React.ElementType; onClick?: () => void }) {
-  return (
-    <NavLink
-      to={to}
-      onClick={onClick}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-2.5 rounded-lg font-body text-sm transition-all duration-200 ${
-          isActive
-            ? "bg-sage/12 text-sage-dark font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-        }`
-      }
-    >
-      <Icon size={16} strokeWidth={1.75} />
-      <span>{label}</span>
-    </NavLink>
-  );
-}
 
 function MobileNavItem({ to, label, icon: Icon }: { to: string; label: string; icon: React.ElementType }) {
   return (
@@ -129,21 +43,19 @@ function PortalLayoutInner() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Tier 2 = messages only; others filter by tier array AND tab_access
-  const navItems = useMemo(() => {
-    if (accessTier === 2) return allNavItems.filter(i => i.to === "/portal/messages");
-    let byTier = allNavItems.filter(i => i.tiers.includes(accessTier));
-    if (!isPreviewMode && !RSVP_ENABLED) {
-      byTier = byTier.filter(i => i.to !== "/portal/rsvp");
-    }
-    if (isPreviewMode) return byTier;
-    return byTier.filter(i => tabAccess[i.tab]);
+  const visible = useCallback((item: PortalNavItem) => {
+    if (accessTier === 2) return item.slug === "messages";
+    if (!item.tiers.includes(accessTier)) return false;
+    if (!isPreviewMode && !RSVP_ENABLED && item.slug === "rsvp") return false;
+    return isPreviewMode || !!tabAccess[item.tab];
   }, [accessTier, tabAccess, isPreviewMode]);
 
-  const resourceItems = useMemo(() => {
-    if (accessTier === 2) return [];
-    const byTier = resourceNavItems.filter(i => i.tiers.includes(accessTier));
-    return isPreviewMode ? byTier : byTier.filter(i => tabAccess[i.tab]);
-  }, [accessTier, tabAccess, isPreviewMode]);
+  const mobileItems = useMemo(
+    () => PORTAL_MOBILE_SLUGS
+      .map(slug => ALL_PORTAL_ITEMS.find(i => i.slug === slug))
+      .filter((i): i is PortalNavItem => !!i && visible(i)),
+    [visible],
+  );
 
   // Guard: redirect away from blocked tabs and feature-flagged routes
   useEffect(() => {
@@ -183,10 +95,7 @@ function PortalLayoutInner() {
 
           {/* Nav */}
           <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 flex flex-col gap-1">
-            {navItems.map(item => (
-              <NavItem key={item.to} {...item} />
-            ))}
-            <ResourceGroup items={resourceItems} />
+            <PortalSidebarNav basePath="/portal" visible={visible} />
           </nav>
 
           {/* Profile + Sign out */}
@@ -227,10 +136,7 @@ function PortalLayoutInner() {
                 </button>
               </div>
               <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 flex flex-col gap-1">
-                {navItems.map(item => (
-                  <NavItem key={item.to} {...item} onClick={() => setMobileMenuOpen(false)} />
-                ))}
-                <ResourceGroup items={resourceItems} onNavigate={() => setMobileMenuOpen(false)} />
+                <PortalSidebarNav basePath="/portal" visible={visible} onNavigate={() => setMobileMenuOpen(false)} />
               </nav>
               <div className="px-3 py-4 border-t border-border">
                 <button
@@ -277,9 +183,13 @@ function PortalLayoutInner() {
 
           {/* ── Mobile bottom nav ──────────────── */}
           <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t border-border flex justify-around overflow-x-auto pb-16">
-            {navItems.map(item => (
-              <MobileNavItem key={item.to} {...item} />
+            {mobileItems.map(item => (
+              <MobileNavItem key={item.slug} to={`/portal/${item.slug}`} label={item.label} icon={item.icon} />
             ))}
+            <button onClick={() => setMobileMenuOpen(true)} className="flex flex-col items-center gap-1 px-2 py-1.5 text-muted-foreground">
+              <Menu size={20} strokeWidth={1.75} />
+              <span className="font-body text-[10px] leading-tight">More</span>
+            </button>
             <Sheet>
               <SheetTrigger asChild>
                 <button className="flex flex-col items-center gap-1 px-2 py-1.5 text-muted-foreground">

@@ -41,6 +41,8 @@ import Planning from "./pages/portal/Planning";
 import Vendors from "./pages/portal/Vendors";
 import Ceremony from "./pages/portal/Ceremony";
 import Decor from "./pages/portal/Decor";
+import MoodBoardPage from "./pages/portal/MoodBoardPage";
+import MoodBoardShare from "./pages/MoodBoardShare";
 import Experiences from "./pages/portal/Experiences";
 import ExperienceCatalog from "./pages/admin/ExperienceCatalog";
 import LayoutLibrary from "./pages/admin/LayoutLibrary";
@@ -233,6 +235,7 @@ const App = () => (
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
               <Route path="decor" element={<Decor />} />
+              <Route path="mood-board" element={<MoodBoardPage />} />
               <Route path="experiences" element={<Experiences />} />
               <Route path="seating" element={<Seating />} />
               <Route path="menus-meals" element={<MenusMeals />} />
@@ -272,6 +275,7 @@ const App = () => (
               <Route path="vendors" element={<Vendors />} />
               <Route path="ceremony" element={<Ceremony />} />
               <Route path="decor" element={<Decor />} />
+              <Route path="mood-board" element={<MoodBoardPage />} />
               <Route path="experiences" element={<Experiences />} />
               <Route path="seating" element={<Seating />} />
               <Route path="menus-meals" element={<MenusMeals />} />
@@ -291,6 +295,8 @@ const App = () => (
               <Route path="rsvp" element={<Rsvp />} />
               <Route path="history" element={<PortalHistory />} />
             </Route>
+
+            <Route path="/moodboard/:token" element={<MoodBoardShare />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

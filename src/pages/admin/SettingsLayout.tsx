@@ -3,25 +3,45 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-const LIBRARIES = [
-  { slug: "journal", label: "Journal" },
-  { slug: "preferred-vendors", label: "Preferred Vendors" },
-  { slug: "decor-rentals", label: "Décor Rentals" },
-  { slug: "experiences", label: "Experiences" },
-  { slug: "layouts", label: "Table Layouts" },
-  { slug: "lodging", label: "Lodging" },
-  { slug: "resources", label: "Resources" },
-  { slug: "forms", label: "Forms" },
-  { slug: "contract-templates", label: "Contract Templates" },
-  { slug: "email-copy", label: "Email Copy" },
-  { slug: "automated-emails", label: "Automated Emails" },
-  { slug: "email-templates", label: "Reply Templates" },
-  { slug: "integrations", label: "Integrations" },
-];
+type SettingsLink = { slug: string; label: string };
 
-const ADMIN_ONLY = [
-  { slug: "team", label: "Team & Roles" },
-  { slug: "email-test", label: "Email Test" },
+const SECTIONS: { label: string; items: SettingsLink[]; adminOnly?: boolean }[] = [
+  {
+    label: "Couple journal",
+    items: [
+      { slug: "journal", label: "Journal" },
+      { slug: "forms", label: "Forms" },
+      { slug: "contract-templates", label: "Contract Templates" },
+    ],
+  },
+  {
+    label: "Catalogs",
+    items: [
+      { slug: "experiences", label: "Experiences" },
+      { slug: "decor-rentals", label: "Décor Rentals" },
+      { slug: "preferred-vendors", label: "Preferred Vendors" },
+      { slug: "layouts", label: "Table Layouts" },
+      { slug: "lodging", label: "Lodging" },
+      { slug: "resources", label: "Resources" },
+    ],
+  },
+  {
+    label: "Email & connections",
+    items: [
+      { slug: "email-copy", label: "Email Copy" },
+      { slug: "automated-emails", label: "Automated Emails" },
+      { slug: "email-templates", label: "Reply Templates" },
+      { slug: "integrations", label: "Integrations" },
+    ],
+  },
+  {
+    label: "Admin",
+    adminOnly: true,
+    items: [
+      { slug: "team", label: "Team & Roles" },
+      { slug: "email-test", label: "Email Test" },
+    ],
+  },
 ];
 
 export default function SettingsLayout() {
@@ -38,61 +58,16 @@ export default function SettingsLayout() {
         </h1>
       </div>
 
-      <p
-        className="font-body uppercase pl-6 mt-8 mb-4"
-        style={{ color: "#6B6B6B", fontSize: "11px", letterSpacing: "2px" }}
-      >
-        GFH Libraries
-      </p>
-
-      <nav className="flex-1">
-        {LIBRARIES.map((item) => (
-          <NavLink
-            key={item.slug}
-            to={`/admin/settings/${item.slug}`}
-            onClick={onItemClick}
-            className={({ isActive }) =>
-              [
-                "block font-body transition-colors",
-                "pl-6 pr-4",
-                isActive
-                  ? "border-l-[3px]"
-                  : "border-l-[3px] border-transparent hover:bg-[#FAF8F4]",
-              ].join(" ")
-            }
-            style={({ isActive }) =>
-              isActive
-                ? {
-                    fontSize: "15px",
-                    paddingTop: "12px",
-                    paddingBottom: "12px",
-                    paddingLeft: "21px", // 24 - 3px border
-                    backgroundColor: "#FAF8F4",
-                    borderLeftColor: "#2C3E2D",
-                    color: "#2C3E2D",
-                  }
-                : {
-                    fontSize: "15px",
-                    paddingTop: "12px",
-                    paddingBottom: "12px",
-                    paddingLeft: "21px",
-                    color: "#1A1A1A",
-                  }
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
-
-        {isAdmin && (
-          <>
+      <nav className="flex-1 overflow-y-auto pb-4">
+        {SECTIONS.filter(sec => !sec.adminOnly || isAdmin).map((sec) => (
+          <div key={sec.label}>
             <p
-              className="font-body uppercase pl-6 mt-8 mb-4"
+              className="font-body uppercase pl-6 mt-7 mb-2"
               style={{ color: "#6B6B6B", fontSize: "11px", letterSpacing: "2px" }}
             >
-              Admin
+              {sec.label}
             </p>
-            {ADMIN_ONLY.map((item) => (
+            {sec.items.map((item) => (
               <NavLink
                 key={item.slug}
                 to={`/admin/settings/${item.slug}`}
@@ -105,15 +80,15 @@ export default function SettingsLayout() {
                 }
                 style={({ isActive }) =>
                   isActive
-                    ? { fontSize: "15px", paddingTop: "12px", paddingBottom: "12px", paddingLeft: "21px", backgroundColor: "#FAF8F4", borderLeftColor: "#2C3E2D", color: "#2C3E2D" }
-                    : { fontSize: "15px", paddingTop: "12px", paddingBottom: "12px", paddingLeft: "21px", color: "#1A1A1A" }
+                    ? { fontSize: "15px", paddingTop: "9px", paddingBottom: "9px", paddingLeft: "21px", backgroundColor: "#FAF8F4", borderLeftColor: "#2C3E2D", color: "#2C3E2D" }
+                    : { fontSize: "15px", paddingTop: "9px", paddingBottom: "9px", paddingLeft: "21px", color: "#1A1A1A" }
                 }
               >
                 {item.label}
               </NavLink>
             ))}
-          </>
-        )}
+          </div>
+        ))}
       </nav>
 
       <button

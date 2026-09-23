@@ -84,9 +84,10 @@ const PROMINENT_CARDS: ProminentCard[] = [
 ];
 
 const COMPACT_LINKS: CompactLink[] = [
-  { to: "/portal/our-wedding", label: "Our Wedding", description: "the big-picture view of your day." },
-  { to: "/portal/planning", label: "Planning", description: "your running checklist." },
+  { to: "/portal/our-wedding", label: "Our Weekend → Overview", description: "the big-picture view of your day." },
+  { to: "/portal/planning", label: "Planning → Checklist", description: "your running checklist." },
   { to: "/portal/ceremony", label: "Ceremony & Music", description: "ceremony details and music." },
+  { to: "/portal/mood-board", label: "Mood Board", description: "photos, pins and posts that show the look you're after." },
   { to: "/portal/decor", label: "Decor", description: "the look and feel of your spaces." },
   { to: "/portal/experiences", label: "Experiences", description: "extras you can add to the weekend." },
   ...(RSVP_ENABLED ? [{ to: "/portal/rsvp", label: "RSVP", description: "collect replies from your guests." }] : []),

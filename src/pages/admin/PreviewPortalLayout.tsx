@@ -1,34 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Outlet, NavLink } from "react-router-dom";
+import { useParams, useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalDataProvider } from "@/hooks/usePortalData";
-import { Eye, X, Sunrise, CalendarHeart, CheckSquare, Briefcase, Music, Sparkles, UtensilsCrossed, Users, DollarSign, MessageCircle, StickyNote, FileText, Clock, ClipboardList, Compass, Gift, Shield, Landmark, Map as MapIcon } from "lucide-react";
+import { Eye, X } from "lucide-react";
+import PortalSidebarNav from "@/components/portal/PortalSidebarNav";
 
-const navItems = [
-  { to: "start", label: "Start Here", icon: Compass },
-  { to: "today", label: "Today", icon: Sunrise },
-  { to: "our-wedding", label: "Our Wedding", icon: CalendarHeart },
-  { to: "timeline", label: "Timeline", icon: Clock },
-  { to: "planning", label: "Planning", icon: CheckSquare },
-  { to: "vendors", label: "Vendors", icon: Briefcase },
-  { to: "ceremony", label: "Ceremony & Music", icon: Music },
-  { to: "decor", label: "Décor", icon: Sparkles },
-  { to: "experiences", label: "Experiences", icon: Sparkles },
-  { to: "menus-meals", label: "Menus & Meals", icon: UtensilsCrossed },
-  { to: "our-people", label: "Our People", icon: Users },
-  { to: "financials", label: "Financials", icon: DollarSign },
-  { to: "messages", label: "Messages", icon: MessageCircle },
-  { to: "notes", label: "Notes", icon: StickyNote },
-  { to: "forms", label: "Forms", icon: ClipboardList },
-  { to: "documents", label: "Documents", icon: FileText },
-];
+// Preview shows every page the couple could have, regardless of tab access.
+const showAll = () => true;
 
-const resourceItems = [
-  { to: "tipping", label: "Tipping Guide", icon: Gift },
-  { to: "insurance", label: "Wedding Insurance", icon: Shield },
-  { to: "marriage-license", label: "Marriage License", icon: Landmark },
-  { to: "floor-layouts", label: "Floor Layouts & Tents", icon: MapIcon },
-];
 
 export default function PreviewPortalLayout() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -113,39 +92,7 @@ export default function PreviewPortalLayout() {
             </div>
 
             <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
-              {navItems.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={`/admin/preview/${eventId}/${item.to}`}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2.5 rounded-lg font-body text-sm transition-all duration-200 ${
-                      isActive
-                        ? "bg-sage/12 text-sage-dark font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    }`
-                  }
-                >
-                  <item.icon size={16} strokeWidth={1.75} />
-                  <span>{item.label}</span>
-                </NavLink>
-              ))}
-              <p className="font-body text-[10px] tracking-widest uppercase text-muted-foreground px-4 pt-4 pb-1">Helpful resources</p>
-              {resourceItems.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={`/admin/preview/${eventId}/${item.to}`}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2.5 rounded-lg font-body text-sm transition-all duration-200 ${
-                      isActive
-                        ? "bg-sage/12 text-sage-dark font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    }`
-                  }
-                >
-                  <item.icon size={16} strokeWidth={1.75} />
-                  <span>{item.label}</span>
-                </NavLink>
-              ))}
+              <PortalSidebarNav basePath={`/admin/preview/${eventId}`} visible={showAll} />
             </nav>
           </aside>
 

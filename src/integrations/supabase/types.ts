@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      moodboard_items: {
+        Row: {
+          approved: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          image_path: string | null
+          kind: string
+          note: string | null
+          provider: string
+          sort_order: number
+          source_url: string | null
+          staff_note: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          image_path?: string | null
+          kind: string
+          note?: string | null
+          provider?: string
+          sort_order?: number
+          source_url?: string | null
+          staff_note?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          image_path?: string | null
+          kind?: string
+          note?: string | null
+          provider?: string
+          sort_order?: number
+          source_url?: string | null
+          staff_note?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moodboard_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moodboard_settings: {
+        Row: {
+          event_id: string
+          pinterest_board_url: string | null
+          share_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          event_id: string
+          pinterest_board_url?: string | null
+          share_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          event_id?: string
+          pinterest_board_url?: string | null
+          share_token?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moodboard_settings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads_advice: {
         Row: {
           created_at: string | null
@@ -7036,6 +7127,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_moodboard_by_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       acquire_stripe_session_lock: {
         Args: { p_booking_id: string }
         Returns: boolean

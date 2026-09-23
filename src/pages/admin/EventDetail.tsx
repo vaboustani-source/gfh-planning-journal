@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Menu, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Menu, X } from "lucide-react";
 import { GlobalSearchTrigger } from "@/components/search/GlobalSearch";
 import OverviewTab from "./tabs/Overview";
 import MilestonesTab from "./tabs/Milestones";
@@ -20,6 +20,7 @@ import ContractsTab from "./tabs/ContractsTab";
 import AdminBudgetTab from "./tabs/AdminBudgetTab";
 import ActivityTab from "./tabs/ActivityTab";
 import DecorTab from "./tabs/DecorTab";
+import MoodBoardTab from "./tabs/MoodBoardTab";
 import EventForms from "./tabs/EventForms";
 import ExperiencesTab from "./tabs/ExperiencesTab";
 import OurPeopleTab from "./tabs/OurPeopleTab";
@@ -42,50 +43,70 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Guests & Lodging",
-    items: [
-      { id: "our-people", label: "Our People" },
-      { id: "rsvp", label: "RSVP" },
-    ],
-  },
-  {
     label: "Planning",
     items: [
       { id: "checklist", label: "Checklist" },
       { id: "forms", label: "Forms" },
-      { id: "documents", label: "Documents" },
-      { id: "contracts", label: "Contracts" },
-      { id: "budget", label: "Budget" },
-    ],
-  },
-  {
-    label: "Vendors & Services",
-    items: [
-      { id: "vendors", label: "Vendors" },
-      { id: "vendor-roster", label: "Vendor Roster" },
-      { id: "experiences", label: "Experiences" },
-      { id: "decor", label: "Décor" },
-    ],
-  },
-  {
-    label: "Weekend Details",
-    items: [
-      { id: "ceremony", label: "Ceremony & Music" },
       { id: "timeline", label: "Timeline" },
-      { id: "menus-bar", label: "Menus & Bar" },
+      { id: "notes", label: "Notes" },
+    ],
+  },
+  {
+    label: "Guests & Lodging",
+    items: [
+      { id: "our-people", label: "Our People" },
+      { id: "rsvp", label: "RSVP" },
       { id: "dietary", label: "Dietary & Kids" },
     ],
   },
   {
-    label: "Business",
+    label: "The Weekend",
     items: [
+      { id: "ceremony", label: "Ceremony & Music" },
+      { id: "menus-bar", label: "Menus & Bar" },
+      { id: "experiences", label: "Experiences" },
+    ],
+  },
+  {
+    label: "Style & Décor",
+    items: [
+      { id: "moodboard", label: "Mood Board" },
+      { id: "decor", label: "Décor" },
+    ],
+  },
+  {
+    label: "Vendors",
+    items: [
+      { id: "vendors", label: "Vendors" },
+      { id: "vendor-roster", label: "Vendor Roster" },
+    ],
+  },
+  {
+    label: "Paperwork & Money",
+    items: [
+      { id: "contracts", label: "Contracts" },
+      { id: "documents", label: "Documents" },
       { id: "financials", label: "Financials" },
+      { id: "budget", label: "Budget" },
+    ],
+  },
+  {
+    label: "Communication",
+    items: [
       { id: "messages", label: "Messages" },
       { id: "emails", label: "Emails" },
-      { id: "notes", label: "Notes" },
     ],
   },
 ];
+
+const COLLAPSED_KEY = "gfh.admin.eventNavCollapsed";
+function readCollapsed(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
 
 const TAB_ORDER = NAV_GROUPS.flatMap(g => g.items.map(i => i.id));
 
@@ -117,6 +138,14 @@ export default function EventDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "overview");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<string[]>(readCollapsed);
+  const toggleGroup = (label: string) => {
+    setCollapsed(prev => {
+      const next = prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label];
+      try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(next)); } catch { /* private mode */ }
+      return next;
+    });
+  };
 
   const handleTabChange = useCallback((tabId: string) => {
     setActiveTab(tabId);
@@ -238,11 +267,23 @@ export default function EventDetail() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {NAV_GROUPS.map((group, gi) => (
-          <div key={group.label} className={gi === 0 ? "" : "mt-4"}>
-            <p className="px-3 pt-2 pb-1 font-body text-[10px] uppercase tracking-widest text-muted-foreground">
-              {group.label}
-            </p>
+        {NAV_GROUPS.map((group, gi) => {
+          const holdsActive = group.items.some(i => i.id === activeTab);
+          const isOpen = holdsActive || !collapsed.includes(group.label);
+          const groupUnread = group.items.some(i => i.id === "messages") && unreadCount > 0;
+          return (
+          <div key={group.label} className={gi === 0 ? "" : "mt-2"}>
+            <button
+              type="button"
+              onClick={() => toggleGroup(group.label)}
+              aria-expanded={isOpen}
+              className="flex items-center gap-1.5 w-full px-3 pt-2 pb-1 font-body text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="flex-1 text-left">{group.label}</span>
+              {!isOpen && groupUnread && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+              <ChevronDown size={12} className={`transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
+            </button>
+            {isOpen && (
             <div className="flex flex-col">
               {group.items.map(item => {
                 const isActive = activeTab === item.id;
@@ -266,8 +307,10 @@ export default function EventDetail() {
                 );
               })}
             </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </nav>
     </div>
   );
@@ -329,6 +372,7 @@ export default function EventDetail() {
             {activeTab === "vendor-roster" && <VendorRosterTab eventId={event.id} />}
             {activeTab === "ceremony" && <CeremonyTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "decor" && <DecorTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
+            {activeTab === "moodboard" && <MoodBoardTab eventId={event.id} />}
             {activeTab === "experiences" && <ExperiencesTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "timeline" && <TimelineTab eventId={event.id} onNavigateNext={navigateToNextTab} />}
             {activeTab === "menus-bar" && <MenusBarTab eventId={event.id} onNavigateNext={navigateToNextTab} tastingDate={event.tasting_date} tastingDateNote={event.tasting_date_note} />}
