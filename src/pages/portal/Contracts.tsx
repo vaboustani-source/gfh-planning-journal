@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePortalData } from "@/hooks/usePortalData";
 import { toast } from "sonner";
-import { FileText, ShieldCheck, Lock, CheckCircle2, AlertTriangle, ArrowLeft, Download } from "lucide-react";
+import { FileText, ShieldCheck, Lock, CheckCircle2, AlertTriangle, ArrowLeft, Download, MessageSquareDiff } from "lucide-react";
 import {
   renderContract, statusLabel, statusPillClass, docTypeLabel,
-  type ContractContext,
+  type ContractContext, type ContractFields,
 } from "@/lib/contractTemplate";
+import { loadContractContext } from "@/lib/contractContext";
 import SignedCertificate, { ELECTRONIC_SIGNATURE_CONSENT } from "@/components/contracts/SignedCertificate";
 
 type Contract = {
@@ -22,6 +23,24 @@ type Contract = {
   requires_both_partners: boolean;
   sent_at: string | null;
   created_at: string;
+  fields: ContractFields | null;
+  parent_contract_id: string | null;
+};
+
+type ChangeRequest = {
+  id: string;
+  contract_id: string;
+  request_text: string;
+  status: "open" | "amendment_sent" | "declined" | "closed";
+  staff_response: string | null;
+  created_at: string;
+};
+
+const REQUEST_STATUS: Record<ChangeRequest["status"], string> = {
+  open: "With your coordinator",
+  amendment_sent: "Amendment ready to sign",
+  declined: "Not possible",
+  closed: "Resolved",
 };
 
 type Signature = {
@@ -43,6 +62,7 @@ export default function PortalContracts() {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<Contract | null>(null);
   const [ctx, setCtx] = useState<ContractContext>({});
+  const [requests, setRequests] = useState<ChangeRequest[]>([]);
 
   const load = useCallback(async () => {
     if (!eventId) return;
@@ -52,6 +72,10 @@ export default function PortalContracts() {
       .neq("status", "draft").order("created_at", { ascending: false });
     const list = (cs ?? []) as Contract[];
     setContracts(list);
+    const { data: reqs } = await (supabase as any)
+      .from("contract_change_requests").select("id, contract_id, request_text, status, staff_response, created_at")
+      .eq("event_id", eventId).order("created_at", { ascending: false });
+    setRequests((reqs ?? []) as ChangeRequest[]);
     if (list.length) {
       const { data: sigs } = await (supabase as any)
         .from("contract_signatures").select("*")
@@ -64,26 +88,7 @@ export default function PortalContracts() {
   useEffect(() => {
     void load();
     if (!eventId) return;
-    (async () => {
-      const { data: ev } = await supabase
-        .from("events")
-        .select("title, partner1_name, partner2_name, wedding_date, estimated_guest_count, package_tier")
-        .eq("id", eventId).maybeSingle();
-      const { data: fin } = await (supabase as any)
-        .from("financials").select("site_fee_total, catering_estimate").eq("event_id", eventId).maybeSingle();
-      if (ev) {
-        const couple = [ev.partner1_name, ev.partner2_name].filter(Boolean).join(" & ") || ev.title;
-        const total = (Number(fin?.site_fee_total) || 0) + (Number(fin?.catering_estimate) || 0);
-        setCtx({
-          couple_names: couple,
-          wedding_date: ev.wedding_date,
-          venue_name: "Gilbertsville Farmhouse",
-          guest_count: ev.estimated_guest_count,
-          package_tier: ev.package_tier,
-          total_amount: total || null,
-        });
-      }
-    })();
+    void loadContractContext(eventId).then(setCtx);
   }, [eventId, load]);
 
   const signedByMe = (cid: string) => signatures.some(s => s.contract_id === cid && s.signer_user_id === user?.id);
@@ -94,6 +99,8 @@ export default function PortalContracts() {
       contract={active}
       ctx={ctx}
       mySigs={sigsFor(active.id)}
+      requests={requests.filter(r => r.contract_id === active.id)}
+      onRequested={load}
       onBack={() => { setActive(null); void load(); }}
     />;
   }
@@ -113,7 +120,7 @@ export default function PortalContracts() {
         <div className="rounded-xl border border-border bg-card p-10 text-center">
           <FileText size={28} className="mx-auto text-muted-foreground mb-3" strokeWidth={1.5} />
           <p className="font-display text-lg text-foreground">Nothing to sign just yet</p>
-          <p className="font-body text-sm text-muted-foreground mt-1">When Brandon sends you an agreement, it will appear here.</p>
+          <p className="font-body text-sm text-muted-foreground mt-1">When your coordinator sends you an agreement, it will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -142,6 +149,11 @@ export default function PortalContracts() {
                     ) : (
                       <p className="font-body text-xs text-muted-foreground mt-1">{docTypeLabel(c.document_type)}</p>
                     )}
+                    {c.parent_contract_id && (
+                      <p className="font-body text-xs text-muted-foreground mt-1">
+                        Amends your {contracts.find(p => p.id === c.parent_contract_id)?.title ?? "agreement"}
+                      </p>
+                    )}
                   </div>
                 </div>
               </button>
@@ -149,13 +161,103 @@ export default function PortalContracts() {
           })}
         </div>
       )}
+
+      {requests.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="font-display text-xl text-foreground">Your change requests</h2>
+          {requests.map(r => (
+            <div key={r.id} className="rounded-xl border border-border bg-white p-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className="font-body text-xs text-muted-foreground">
+                  {contracts.find(c => c.id === r.contract_id)?.title ?? "Agreement"} · {new Date(r.created_at).toLocaleDateString()}
+                </p>
+                <span className="font-body text-[11px] rounded-full px-2 py-0.5 border border-border">{REQUEST_STATUS[r.status]}</span>
+              </div>
+              <p className="font-body text-sm text-foreground whitespace-pre-wrap mt-1">{r.request_text}</p>
+              {r.staff_response && (
+                <p className="font-body text-sm text-muted-foreground mt-2 border-l-2 border-sage/40 pl-3">{r.staff_response}</p>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+    </div>
+  );
+}
+
+/* ============== Request a change (signed contracts) ============== */
+function RequestChange({ contract, requests, onRequested }: {
+  contract: Contract; requests: ChangeRequest[]; onRequested: () => void;
+}) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const pending = requests.find(r => r.status === "open");
+
+  const submit = async () => {
+    if (!user || !text.trim()) return;
+    setBusy(true);
+    const { data, error } = await (supabase as any).from("contract_change_requests").insert({
+      contract_id: contract.id,
+      event_id: contract.event_id,
+      requested_by: user.id,
+      request_text: text.trim(),
+    }).select("id").single();
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    // Let the team know; the request is saved either way.
+    void supabase.functions.invoke("notify-contract-change-request", { body: { request_id: data.id } });
+    toast.success("Sent to your coordinator. You'll see their reply here.");
+    setText("");
+    setOpen(false);
+    onRequested();
+  };
+
+  if (pending) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-4 mt-6">
+        <p className="font-body text-sm text-foreground">Your change request is with your coordinator:</p>
+        <p className="font-body text-sm text-muted-foreground whitespace-pre-wrap mt-1">{pending.request_text}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      {!open ? (
+        <button onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 font-body text-sm hover:border-sage/40">
+          <MessageSquareDiff size={15} /> Request a change to this agreement
+        </button>
+      ) : (
+        <div className="rounded-lg border border-border bg-background p-5 space-y-3">
+          <p className="font-display text-lg text-foreground">What would you like to change?</p>
+          <p className="font-body text-sm text-muted-foreground">
+            Describe the change in your own words, and mention the section if you know it. Your coordinator will review it.
+            If it's approved, you'll receive an Amendment to sign here. Your signed agreement stays as it is until then.
+          </p>
+          <textarea value={text} onChange={e => setText(e.target.value)} rows={5} maxLength={4000}
+            className="w-full border border-border rounded-md px-3 py-2 font-body text-sm bg-white"
+            placeholder="e.g. We'd like to reduce the required guesthouse suites from 50 to 40 (section 11.A)." />
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setOpen(false)} disabled={busy}
+              className="rounded-md border border-border bg-background px-4 py-2 font-body text-sm">Cancel</button>
+            <button onClick={submit} disabled={busy || !text.trim()}
+              className="rounded-md bg-primary text-primary-foreground px-4 py-2 font-body text-sm hover:opacity-90 disabled:opacity-40">
+              {busy ? "Sending…" : "Send request"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ============== Detail / Signing ============== */
-function ContractDetail({ contract, ctx, mySigs, onBack }: {
-  contract: Contract; ctx: ContractContext; mySigs: Signature[]; onBack: () => void;
+function ContractDetail({ contract, ctx, mySigs, requests, onRequested, onBack }: {
+  contract: Contract; ctx: ContractContext; mySigs: Signature[];
+  requests: ChangeRequest[]; onRequested: () => void; onBack: () => void;
 }) {
   const { user } = useAuth();
   const [accountName, setAccountName] = useState<string>("");
@@ -166,7 +268,7 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
   const [contractStatus, setContractStatus] = useState(contract.status);
   // Show the frozen rendered_content verbatim when present (sent or later).
   // Drafts have no rendered_content, but couples never see drafts.
-  const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
+  const rendered = contract.rendered_content ?? renderContract(contract.content, ctx, contract.fields ?? {});
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const alreadySigned = allSigs.some(s => s.signer_user_id === user?.id);
   const locked = contractStatus === "fully_signed" || contractStatus === "executed" || contractStatus === "voided";
@@ -311,6 +413,10 @@ function ContractDetail({ contract, ctx, mySigs, onBack }: {
           )}
         </div>
       </article>
+
+      {(contractStatus === "fully_signed" || contractStatus === "executed") && contract.document_type !== "addendum" && (
+        <RequestChange contract={contract} requests={requests} onRequested={onRequested} />
+      )}
 
       {allSigs.length > 0 && (
         <SignedCertificate

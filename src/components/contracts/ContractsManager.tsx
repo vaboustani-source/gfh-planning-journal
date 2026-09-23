@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Plus, Send, Eye, X, Lock, AlertTriangle, ShieldCheck, Ban, Download } from "lucide-react";
+import { FileText, Plus, Send, Eye, X, Lock, AlertTriangle, ShieldCheck, Ban, Download, MessageSquareDiff, FilePen } from "lucide-react";
 import {
   renderContract, sha256Hex, statusLabel, statusPillClass, docTypeLabel,
-  PLACEHOLDER_TOKENS, type ContractContext,
+  PLACEHOLDER_TOKENS, templateTokens, missingTokens, isAutoFilled, fieldLabel, MULTILINE_FIELDS,
+  type ContractContext, type ContractFields,
 } from "@/lib/contractTemplate";
+import { loadContractContext, withParentContract } from "@/lib/contractContext";
 import SignedCertificate from "@/components/contracts/SignedCertificate";
 
 type Contract = {
@@ -21,6 +23,19 @@ type Contract = {
   requires_countersignature: boolean;
   sent_at: string | null;
   created_at: string;
+  fields: ContractFields;
+  parent_contract_id: string | null;
+};
+
+type ChangeRequest = {
+  id: string;
+  contract_id: string;
+  request_text: string;
+  status: "open" | "amendment_sent" | "declined" | "closed";
+  staff_response: string | null;
+  amendment_contract_id: string | null;
+  created_at: string;
+  requested_by: string;
 };
 
 type Signature = {
@@ -61,6 +76,8 @@ export default function ContractsManager({ eventId }: Props) {
   const [ctx, setCtx] = useState<ContractContext>({});
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [requests, setRequests] = useState<ChangeRequest[]>([]);
+  const [editorRequestId, setEditorRequestId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,6 +86,10 @@ export default function ContractsManager({ eventId }: Props) {
       .order("created_at", { ascending: false });
     const list = (cs ?? []) as Contract[];
     setContracts(list);
+    const { data: reqs } = await (supabase as any)
+      .from("contract_change_requests").select("*").eq("event_id", eventId)
+      .order("created_at", { ascending: false });
+    setRequests((reqs ?? []) as ChangeRequest[]);
 
     if (list.length) {
       const { data: sigs } = await (supabase as any)
@@ -85,27 +106,7 @@ export default function ContractsManager({ eventId }: Props) {
 
   useEffect(() => {
     void load();
-    // Build context from event data
-    (async () => {
-      const { data: ev } = await supabase
-        .from("events")
-        .select("title, partner1_name, partner2_name, wedding_date, ceremony_location, estimated_guest_count, package_tier")
-        .eq("id", eventId).maybeSingle();
-      const { data: fin } = await (supabase as any)
-        .from("financials").select("site_fee_total, catering_estimate").eq("event_id", eventId).maybeSingle();
-      if (ev) {
-        const couple = [ev.partner1_name, ev.partner2_name].filter(Boolean).join(" & ") || ev.title;
-        const total = (Number(fin?.site_fee_total) || 0) + (Number(fin?.catering_estimate) || 0);
-        setCtx({
-          couple_names: couple,
-          wedding_date: ev.wedding_date,
-          venue_name: "Gilbertsville Farmhouse",
-          guest_count: ev.estimated_guest_count,
-          package_tier: ev.package_tier,
-          total_amount: total || null,
-        });
-      }
-    })();
+    void loadContractContext(eventId).then(setCtx);
   }, [eventId, load]);
 
   const openNew = async () => {
@@ -124,6 +125,7 @@ export default function ContractsManager({ eventId }: Props) {
       id: "", event_id: eventId, title: "", document_type: "contract",
       content: "", rendered_content: null, content_hash: null, status: "draft",
       requires_both_partners: false, requires_countersignature: false, sent_at: null, created_at: "",
+      fields: {}, parent_contract_id: null,
     });
     setEditorOpen(true);
   };
@@ -136,14 +138,56 @@ export default function ContractsManager({ eventId }: Props) {
       requires_both_partners: t.requires_both_partners,
       requires_countersignature: t.requires_countersignature,
       sent_at: null, created_at: "",
+      fields: {}, parent_contract_id: null,
     });
     setEditorOpen(true);
+  };
+
+  /** Starts an amendment to a signed contract from the "Contract Amendment" template. */
+  const startAmendment = async (parent: Contract, request?: ChangeRequest) => {
+    const { data: tpl } = await (supabase as any)
+      .from("contract_templates")
+      .select("id, name, document_type, body, requires_both_partners, requires_countersignature")
+      .eq("document_type", "addendum").eq("is_active", true)
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    const n = contracts.filter(c => c.parent_contract_id === parent.id && c.status !== "voided").length + 1;
+    setEditorRequestId(request?.id ?? null);
+    setEditor({
+      id: "", event_id: eventId,
+      title: `Amendment ${n} to ${parent.title}`,
+      document_type: "addendum",
+      content: tpl?.body ?? "{amendment_changes}",
+      rendered_content: null, content_hash: null, status: "draft",
+      requires_both_partners: tpl?.requires_both_partners ?? parent.requires_both_partners,
+      requires_countersignature: tpl?.requires_countersignature ?? parent.requires_countersignature,
+      sent_at: null, created_at: "",
+      fields: request ? { amendment_changes: request.request_text } : {},
+      parent_contract_id: parent.id,
+    });
+    setEditorOpen(true);
+  };
+
+  const resolveRequest = async (r: ChangeRequest, status: "declined" | "closed") => {
+    const response = prompt(
+      status === "declined"
+        ? "Why can't we make this change? The couple will see this note."
+        : "Optional note to the couple (e.g. handled without an amendment):",
+      "",
+    );
+    if (response === null) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await (supabase as any).from("contract_change_requests").update({
+      status, staff_response: response.trim() || null, resolved_by: user?.id, resolved_at: new Date().toISOString(),
+    }).eq("id", r.id);
+    if (error) return toast.error(error.message);
+    toast.success(status === "declined" ? "Request declined" : "Request closed");
+    void load();
   };
 
 
   const openEdit = (c: Contract) => {
     if (c.status === "fully_signed" || c.status === "executed") {
-      toast.error("This contract is signed and locked. Create an addendum instead.");
+      toast.error("This contract is signed and locked. Use Amend to create an amendment instead.");
       return;
     }
     setEditor(c);
@@ -177,6 +221,41 @@ export default function ContractsManager({ eventId }: Props) {
         </button>
       </div>
 
+      {requests.filter(r => r.status === "open").length > 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50/60 p-4 space-y-3">
+          <p className="font-display text-lg text-foreground flex items-center gap-2">
+            <MessageSquareDiff size={17} className="text-amber-700" /> Change requests from the couple
+          </p>
+          {requests.filter(r => r.status === "open").map(r => {
+            const parent = contracts.find(c => c.id === r.contract_id);
+            return (
+              <div key={r.id} className="rounded-lg border border-amber-200 bg-white p-4">
+                <p className="font-body text-xs text-muted-foreground">
+                  On {parent?.title ?? "a contract"} · {new Date(r.created_at).toLocaleDateString()}
+                </p>
+                <p className="font-body text-sm text-foreground whitespace-pre-wrap mt-1">{r.request_text}</p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {parent && (
+                    <button onClick={() => startAmendment(parent, r)}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-3 py-1.5 font-body text-xs hover:opacity-90">
+                      <FilePen size={13} /> Draft amendment
+                    </button>
+                  )}
+                  <button onClick={() => resolveRequest(r, "declined")}
+                    className="rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
+                    Decline
+                  </button>
+                  <button onClick={() => resolveRequest(r, "closed")}
+                    className="rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
+                    Close without amendment
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {loading ? (
         <p className="font-body text-sm text-muted-foreground">Loading…</p>
       ) : contracts.length === 0 ? (
@@ -203,6 +282,11 @@ export default function ContractsManager({ eventId }: Props) {
                   </span>
                   {(c.status === "fully_signed" || c.status === "executed") && <Lock size={12} className="text-sage" />}
                 </div>
+                {c.parent_contract_id && (
+                  <p className="font-body text-xs text-muted-foreground mt-0.5">
+                    Amends {contracts.find(p => p.id === c.parent_contract_id)?.title ?? "an earlier contract"}
+                  </p>
+                )}
                 <p className="font-body text-xs text-muted-foreground mt-1">
                   {sigCounts[c.id] ?? 0} signature{(sigCounts[c.id] ?? 0) === 1 ? "" : "s"}
                   {c.sent_at && ` · Sent ${new Date(c.sent_at).toLocaleDateString()}`}
@@ -218,6 +302,12 @@ export default function ContractsManager({ eventId }: Props) {
                   <button onClick={() => openEdit(c)}
                     className="rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
                     Edit
+                  </button>
+                )}
+                {(c.status === "fully_signed" || c.status === "executed") && c.document_type !== "addendum" && (
+                  <button onClick={() => startAmendment(c)}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
+                    <FilePen size={12} /> Amend
                   </button>
                 )}
                 {c.status !== "voided" && c.status !== "draft" && (
@@ -236,8 +326,9 @@ export default function ContractsManager({ eventId }: Props) {
         <ContractEditor
           contract={editor}
           ctx={ctx}
-          onClose={() => { setEditorOpen(false); setEditor(null); }}
-          onSaved={() => { setEditorOpen(false); setEditor(null); void load(); }}
+          requestId={editorRequestId}
+          onClose={() => { setEditorOpen(false); setEditor(null); setEditorRequestId(null); }}
+          onSaved={() => { setEditorOpen(false); setEditor(null); setEditorRequestId(null); void load(); }}
         />
       )}
 
@@ -324,10 +415,15 @@ function TemplatePicker({ templates, onClose, onBlank, onPick }: {
 }
 
 /* ============== Editor ============== */
-function ContractEditor({ contract, ctx, onClose, onSaved }: {
-  contract: Contract; ctx: ContractContext;
+function ContractEditor({ contract, ctx: baseCtx, requestId, onClose, onSaved }: {
+  contract: Contract; ctx: ContractContext; requestId?: string | null;
   onClose: () => void; onSaved: () => void;
 }) {
+  const [fields, setFields] = useState<ContractFields>(contract.fields ?? {});
+  const [ctx, setCtx] = useState<ContractContext>(baseCtx);
+  useEffect(() => {
+    void withParentContract(baseCtx, contract.parent_contract_id).then(setCtx);
+  }, [baseCtx, contract.parent_contract_id]);
   const [title, setTitle] = useState(contract.title);
   const [docType, setDocType] = useState(contract.document_type);
   const [content, setContent] = useState(contract.content);
@@ -348,10 +444,17 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
         content,
         requires_both_partners: both,
         requires_countersignature: counter,
+        fields,
+        parent_contract_id: contract.parent_contract_id,
       };
       if (!contract.id) payload.created_by = user?.id;
       if (send) {
-        const frozen = renderContract(content, ctx);
+        const missing = missingTokens(content, ctx, fields);
+        if (missing.length) {
+          toast.error(`Fill in every blank before sending: ${missing.map(fieldLabel).join(", ")}`);
+          return;
+        }
+        const frozen = renderContract(content, ctx, fields);
         payload.status = "sent";
         payload.sent_at = new Date().toISOString();
         payload.rendered_content = frozen;
@@ -381,6 +484,12 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
         }
         if (auditRows.length) {
           await (supabase as any).from("contract_audit_log").insert(auditRows);
+        }
+        if (send && requestId) {
+          await (supabase as any).from("contract_change_requests").update({
+            status: "amendment_sent", amendment_contract_id: savedId,
+            resolved_by: user?.id, resolved_at: new Date().toISOString(),
+          }).eq("id", requestId);
         }
       }
       toast.success(send ? "Contract sent to couple" : "Draft saved");
@@ -438,10 +547,52 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
             </button>
           </div>
 
+          {(() => {
+            const blanks = templateTokens(content).filter(t => !isAutoFilled(t, ctx));
+            const auto = templateTokens(content).filter(t => isAutoFilled(t, ctx));
+            if (!blanks.length && !auto.length) return null;
+            return (
+              <div className="rounded-lg border border-border bg-background p-4 space-y-3">
+                <div>
+                  <p className="font-display text-base text-foreground">Fill in the blanks</p>
+                  <p className="font-body text-xs text-muted-foreground">
+                    {auto.length > 0 && <>Filled from this wedding: {auto.map(fieldLabel).join(", ")}. </>}
+                    Everything below must be filled before you can send.
+                  </p>
+                </div>
+                {blanks.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {blanks.map(t => (
+                      <label key={t} className={MULTILINE_FIELDS.has(t) ? "md:col-span-2 block" : "block"}>
+                        <span className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">{fieldLabel(t)}</span>
+                        {MULTILINE_FIELDS.has(t) ? (
+                          <textarea value={fields[t] ?? ""} rows={t === "amendment_changes" ? 6 : 2}
+                            onChange={e => setFields({ ...fields, [t]: e.target.value })}
+                            placeholder={t === "amendment_changes" ? "1. Section 1.C is amended to read: ...\n2. ..." : ""}
+                            className={`w-full mt-1 border rounded-md px-3 py-2 font-body text-sm bg-background ${(fields[t] ?? "").trim() ? "border-border" : "border-amber-300"}`} />
+                        ) : (
+                          <input value={fields[t] ?? ""} onChange={e => setFields({ ...fields, [t]: e.target.value })}
+                            className={`w-full mt-1 border rounded-md px-3 py-2 font-body text-sm bg-background ${(fields[t] ?? "").trim() ? "border-border" : "border-amber-300"}`} />
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {contract.parent_contract_id && (
+                  <p className="font-body text-xs text-muted-foreground">
+                    Write the changes in contract language (for example, "Section 11.A is amended to require FORTY (40) suites").
+                    The couple's request is pre-filled as a starting point.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
           <div>
             <label className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">Content</label>
             <p className="font-body text-[11px] text-muted-foreground mt-0.5 mb-1">
-              Placeholders: {PLACEHOLDER_TOKENS.map(t => <code key={t} className="bg-muted px-1 rounded mx-0.5">{t}</code>)}
+              Filled automatically: {PLACEHOLDER_TOKENS.map(t => <code key={t} className="bg-muted px-1 rounded mx-0.5">{t}</code>)}.
+              Any other word in braces, like <code className="bg-muted px-1 rounded">{"{site_fee}"}</code>, becomes a blank to fill in above.
             </p>
             <textarea value={content} onChange={e => setContent(e.target.value)} rows={16}
               className="w-full border border-border rounded-md px-3 py-2 font-body text-sm bg-background leading-relaxed"
@@ -452,7 +603,7 @@ function ContractEditor({ contract, ctx, onClose, onSaved }: {
             <div className="rounded-lg border border-border bg-background p-5">
               <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Preview (with substituted values)</p>
               <div className="font-body text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                {renderContract(content, ctx) || <span className="text-muted-foreground italic">Empty</span>}
+                {renderContract(content, ctx, fields) || <span className="text-muted-foreground italic">Empty</span>}
               </div>
             </div>
           )}
@@ -501,7 +652,7 @@ function ContractViewer({ contract, ctx, onClose }: {
     })();
   }, [contract.id, contract.content, contract.rendered_content, reloadSigs]);
 
-  const rendered = contract.rendered_content ?? renderContract(contract.content, ctx);
+  const rendered = contract.rendered_content ?? renderContract(contract.content, ctx, contract.fields ?? {});
   const hasVenueSig = sigs.some(s => s.signer_role === "venue");
   const awaitingCountersig = status === "fully_signed" && contract.requires_countersignature && !hasVenueSig;
   const isExecuted = status === "executed";

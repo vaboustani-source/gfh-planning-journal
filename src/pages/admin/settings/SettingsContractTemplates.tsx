@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, X, FileText } from "lucide-react";
-import { PLACEHOLDER_TOKENS, docTypeLabel } from "@/lib/contractTemplate";
+import { PLACEHOLDER_TOKENS, docTypeLabel, templateTokens, fieldLabel } from "@/lib/contractTemplate";
 
 type Template = {
   id: string;
@@ -147,6 +147,23 @@ function TemplateEditor({
   const [active, setActive] = useState(template.is_active);
   const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [versions, setVersions] = useState<Array<{ id: string; name: string; body: string; saved_at: string }>>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    if (!template.id) return;
+    (supabase as any).from("contract_template_versions")
+      .select("id, name, body, saved_at").eq("template_id", template.id)
+      .order("saved_at", { ascending: false }).limit(30)
+      .then(({ data }: { data: Array<{ id: string; name: string; body: string; saved_at: string }> | null }) => setVersions(data ?? []));
+  }, [template.id]);
+
+  const restore = (v: { name: string; body: string; saved_at: string }) => {
+    if (!confirm(`Load the version from ${new Date(v.saved_at).toLocaleString()} into the editor? Nothing changes until you press Save.`)) return;
+    setName(v.name);
+    setBody(v.body);
+    setShowHistory(false);
+  };
 
   const insertToken = (token: string) => {
     const el = textareaRef.current;
@@ -212,7 +229,7 @@ function TemplateEditor({
               {template.id ? "Edit Template" : "New Template"}
             </p>
             <p className="font-body text-xs" style={{ color: "#6B6B6B" }}>
-              Templates are starting points. Each contract stays fully editable per event.
+              Edits apply to contracts you create from now on. Contracts already sent keep the exact wording the couple saw.
             </p>
           </div>
           <button onClick={onClose} style={{ color: "#6B6B6B" }}><X size={18} /></button>
@@ -292,8 +309,17 @@ function TemplateEditor({
               ))}
             </div>
             <p className="font-body text-[11px] mt-1.5" style={{ color: "#6B6B6B" }}>
-              These fill in automatically from each event when a contract is created.
+              These fill in automatically from each wedding. Any other word in braces, like {"{site_fee}"} or {"{check_in_time}"},
+              becomes a blank staff fill in before sending.
             </p>
+            {(() => {
+              const blanks = templateTokens(body).filter(t => !PLACEHOLDER_TOKENS.includes(`{${t}}`));
+              return blanks.length > 0 ? (
+                <p className="font-body text-[11px] mt-1" style={{ color: "#6B6B6B" }}>
+                  Blanks in this template: {blanks.map(fieldLabel).join(", ")}.
+                </p>
+              ) : null;
+            })()}
           </div>
 
           <div>
@@ -310,6 +336,34 @@ function TemplateEditor({
               placeholder="Write the agreement language here. Use the merge fields above to insert event details."
             />
           </div>
+
+          {template.id && (
+            <div>
+              <button type="button" onClick={() => setShowHistory(h => !h)}
+                className="font-body text-xs underline underline-offset-4" style={{ color: "#2C3E2D" }}>
+                {showHistory ? "Hide" : "Show"} version history ({versions.length})
+              </button>
+              {showHistory && (
+                <div className="mt-2 rounded-md border divide-y" style={{ borderColor: "#E8E2D9" }}>
+                  {versions.length === 0 ? (
+                    <p className="font-body text-xs px-3 py-2" style={{ color: "#6B6B6B" }}>
+                      No earlier versions yet. Each time you save, the previous wording is kept here.
+                    </p>
+                  ) : versions.map(v => (
+                    <div key={v.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                      <span className="font-body text-xs" style={{ color: "#1A1A1A" }}>
+                        {new Date(v.saved_at).toLocaleString()} · {v.body.length.toLocaleString()} characters
+                      </span>
+                      <button type="button" onClick={() => restore(v)}
+                        className="font-body text-xs rounded border px-2 py-0.5" style={{ borderColor: "#E8E2D9" }}>
+                        Load this version
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <footer
