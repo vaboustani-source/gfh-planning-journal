@@ -10,8 +10,8 @@ import AutosaveIndicator from "@/components/admin/AutosaveIndicator";
 import AdminStickyFooter from "@/components/admin/AdminStickyFooter";
 import SaveButton from "@/components/admin/SaveButton";
 import { useEventGuestCounts } from "@/hooks/useEventGuestCounts";
+import InclusionsChecklist from "@/components/admin/InclusionsChecklist";
 
-const PACKAGE_TIERS = ["base", "premium", "elite"];
 const STATUSES = ["onboarding", "planning", "active", "complete", "archived"];
 
 interface Props {
@@ -345,7 +345,6 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
           <p className="font-display text-lg font-light text-foreground">Event Info</p>
           <Field label="Event Title" value={event.title} onSave={v => patch({ title: v })} />
           <SelectField label="Status" value={event.status} options={STATUSES} onSave={v => patch({ status: v })} />
-          <SelectField label="Package Tier" value={event.package_tier || "base"} options={PACKAGE_TIERS} onSave={v => patch({ package_tier: v })} />
           <Field label="Estimated Guest Count (planning)" value={String(event.estimated_guest_count || "")} onSave={v => patch({ estimated_guest_count: parseInt(v) || null })} />
           <ConfirmedRsvpField eventId={event.id} />
         </div>
@@ -359,6 +358,9 @@ export default function Overview({ event, coupleNames, onUpdate, onNavigateNext 
         </div>
 
       </div>
+
+      {/* Inclusions (replaced package tiers 9/23/26) */}
+      <InclusionsChecklist eventId={event.id} />
 
       {/* Participants */}
       <ParticipantsPanel eventId={event.id} />

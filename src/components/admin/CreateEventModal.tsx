@@ -11,12 +11,6 @@ interface Props {
   onClose: () => void;
 }
 
-const PACKAGE_TIERS = [
-  { value: "base", label: "Base" },
-  { value: "elevated", label: "Elevated" },
-  { value: "full", label: "Full" },
-];
-
 interface FieldProps {
   label: string;
   type?: string;
@@ -228,27 +222,6 @@ export default function CreateEventModal({ onClose }: Props) {
                   )}
                 </div>
               )}
-            </div>
-
-            {/* Package */}
-            <div>
-              <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">Package Tier</p>
-              <div className="flex gap-2">
-                {PACKAGE_TIERS.map(t => (
-                  <button
-                    type="button"
-                    key={t.value}
-                    onClick={() => set("package_tier", t.value)}
-                    className={`flex-1 py-2.5 rounded-lg border font-body text-sm transition-colors ${
-                      form.package_tier === t.value
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border text-muted-foreground hover:text-foreground bg-background"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {canSeeSales && (

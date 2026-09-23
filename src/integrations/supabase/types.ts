@@ -1894,18 +1894,30 @@ export type Database = {
           event_id: string | null
           id: string
           included: boolean | null
+          label: string | null
+          note: string | null
+          sort_order: number
+          updated_at: string
         }
         Insert: {
           addon: string
           event_id?: string | null
           id?: string
           included?: boolean | null
+          label?: string | null
+          note?: string | null
+          sort_order?: number
+          updated_at?: string
         }
         Update: {
           addon?: string
           event_id?: string | null
           id?: string
           included?: boolean | null
+          label?: string | null
+          note?: string | null
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: [
           {

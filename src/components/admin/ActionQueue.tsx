@@ -407,7 +407,7 @@ function ActionCard({ item, eventName, onSent }: { item: QueueItem; eventName: s
           )}
           {item.kind === "handoff" && (
             <p className="font-body text-sm text-foreground">
-              New client ready to onboard — <span className="capitalize">{item.package_tier ?? "base"}</span> package.
+              New client ready to onboard.
               Configure the wedding, then open the portal for them.
             </p>
           )}
