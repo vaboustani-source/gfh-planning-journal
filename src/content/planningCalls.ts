@@ -2,7 +2,7 @@
    The booking windows here must match CALL_WINDOWS in
    supabase/functions/_shared/scheduling.ts, which enforces them. */
 
-export type CallKind = "post_booking" | "ninety_day" | "thirty_day" | "extra";
+export type CallKind = "post_booking" | "ninety_day" | "thirty_day" | "extra" | "direct";
 
 export interface CallType {
   kind: CallKind;
@@ -10,6 +10,8 @@ export interface CallType {
   /** One line on what the call is for. */
   blurb: string;
   included: boolean;
+  /** For "direct" calls: the staff member the couple chose. */
+  hostUserId?: string;
 }
 
 export const INCLUDED_CALLS: CallType[] = [
@@ -45,6 +47,7 @@ export const CALL_TITLES: Record<CallKind, string> = {
   ninety_day: "90-day call",
   thirty_day: "30-day call",
   extra: "Additional planning call",
+  direct: "Call",
 };
 
 /** Matches RATES in howWeWork.ts ("Coordination planning call"). */

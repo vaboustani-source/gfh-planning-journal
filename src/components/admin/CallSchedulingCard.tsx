@@ -23,6 +23,8 @@ interface Host {
   extra_busy_calendars: string[];
   google_account_email: string | null;
   zoom_account_email: string | null;
+  open_to_couples: boolean;
+  title: string;
 }
 
 interface Rules {
@@ -142,6 +144,8 @@ function MySetup({ me, onSaved }: { me: Host | null; userId: string; onSaved: ()
     extra_busy_calendars: [],
     google_account_email: null,
     zoom_account_email: null,
+    open_to_couples: false,
+    title: "",
   };
   const [draft, setDraft] = useState<Host>(me ?? blank);
   const [saving, setSaving] = useState(false);
@@ -164,6 +168,8 @@ function MySetup({ me, onSaved }: { me: Host | null; userId: string; onSaved: ()
       weekly_hours: draft.weekly_hours,
       blocked_dates: draft.blocked_dates,
       extra_busy_calendars: draft.extra_busy_calendars,
+      open_to_couples: draft.open_to_couples,
+      title: draft.title.trim(),
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
     setSaving(false);
@@ -203,6 +209,25 @@ function MySetup({ me, onSaved }: { me: Host | null; userId: string; onSaved: ()
           <span className="font-body text-xs text-muted-foreground">Your name as couples see it ("60 minutes on Zoom with …")</span>
           <Input value={draft.display_name} onChange={(e) => set("display_name", e.target.value)} className="mt-1 max-w-sm" />
         </label>
+
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <Switch checked={draft.open_to_couples} onCheckedChange={(on) => set("open_to_couples", on)} className="mt-0.5" />
+            <span>
+              <span className="font-body text-sm text-foreground block">Couples can book a call with me directly</span>
+              <span className="font-body text-xs text-muted-foreground">
+                Adds you under "Want to talk with the owners?" on every couple's Planning Calls page. Not billed.
+                Leave off if you only host a wedding's planning calls.
+              </span>
+            </span>
+          </label>
+          {draft.open_to_couples && (
+            <label className="block">
+              <span className="font-body text-xs text-muted-foreground">Title shown next to your name (optional)</span>
+              <Input value={draft.title} onChange={(e) => set("title", e.target.value)} placeholder="Owner" className="mt-1 max-w-xs" />
+            </label>
+          )}
+        </div>
 
         <div>
           <p className="font-body text-sm text-foreground font-medium mb-3">When couples can book you (Eastern Time)</p>

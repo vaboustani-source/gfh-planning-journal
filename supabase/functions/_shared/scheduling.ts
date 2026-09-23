@@ -21,14 +21,15 @@ export const STAFF_ROLES = ["admin", "event_director", "ceo_owner", "sales_manag
 
 /* ── Call kinds. Keep in sync with src/content/planningCalls.ts ── */
 
-export type CallKind = "post_booking" | "ninety_day" | "thirty_day" | "extra";
-export const CALL_KINDS: CallKind[] = ["post_booking", "ninety_day", "thirty_day", "extra"];
+export type CallKind = "post_booking" | "ninety_day" | "thirty_day" | "extra" | "direct";
+export const CALL_KINDS: CallKind[] = ["post_booking", "ninety_day", "thirty_day", "extra", "direct"];
 
 export const CALL_LABELS: Record<CallKind, string> = {
   post_booking: "Post-booking planning call",
   ninety_day: "90-day planning call",
   thirty_day: "30-day planning call",
   extra: "Additional planning call",
+  direct: "Call", // shown as "Call with <host>"
 };
 
 /** Booking window as days before the wedding: [opensDaysBefore, closesDaysBefore]. null = no bound. */
@@ -37,6 +38,7 @@ export const CALL_WINDOWS: Record<CallKind, [number | null, number | null]> = {
   ninety_day: [104, 76],
   thirty_day: [37, 23],
   extra: [null, 7],
+  direct: [null, 1],
 };
 
 /* ── Supabase clients ── */
@@ -305,6 +307,21 @@ export async function resolveHost(admin: SupabaseClient, eventId: string, s: Set
     host: host as Host | null,
     ready: !!host && connected.has("google") && connected.has("zoom"),
   };
+}
+
+/**
+ * The host for a call: a "direct" call goes to the staff member the couple picked (they must be
+ * open to couples); every other kind goes to the wedding's call host.
+ */
+export async function hostForCall(admin: SupabaseClient, eventId: string, s: Settings, kind: CallKind, requestedHostId?: string | null) {
+  if (kind !== "direct") return resolveHost(admin, eventId, s);
+  if (!requestedHostId) return { host: null, ready: false };
+  const [{ data: host }, { data: tokens }] = await Promise.all([
+    admin.from("call_hosts").select("*").eq("user_id", requestedHostId).eq("open_to_couples", true).maybeSingle(),
+    admin.from("call_scheduling_tokens").select("provider").eq("user_id", requestedHostId),
+  ]);
+  const connected = new Set((tokens ?? []).map((t) => t.provider));
+  return { host: host as Host | null, ready: !!host && connected.has("google") && connected.has("zoom") };
 }
 
 /** The dates (in the host's zone) a call kind can be booked, or null if the kind has no wedding date to anchor to. */

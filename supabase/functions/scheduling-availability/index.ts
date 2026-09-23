@@ -1,7 +1,7 @@
 // Open planning-call times for one wedding + call kind.
-// Body: { event_id, call_kind } -> { ready, window, slots[], timezone, call_minutes, host_name }
+// Body: { event_id, call_kind, host_user_id? (for "direct") } -> { ready, window, slots[], timezone, call_minutes, host_name }
 import {
-  addDays, bookingWindow, CALL_KINDS, canAccessEvent, corsHeaders, freeSlots, getCaller, json, loadSettings, resolveHost, serviceClient,
+  addDays, bookingWindow, CALL_KINDS, canAccessEvent, corsHeaders, freeSlots, getCaller, hostForCall, json, loadSettings, serviceClient,
   type CallKind,
 } from "../_shared/scheduling.ts";
 
@@ -11,14 +11,14 @@ Deno.serve(async (req) => {
     const caller = await getCaller(req);
     if (!caller) return json({ error: "Unauthorized" }, 401);
 
-    const { event_id, call_kind } = await req.json().catch(() => ({}));
+    const { event_id, call_kind, host_user_id } = await req.json().catch(() => ({}));
     if (!event_id || !CALL_KINDS.includes(call_kind)) return json({ error: "event_id and a valid call_kind are required" }, 400);
 
     const admin = serviceClient();
     if (!(await canAccessEvent(admin, event_id, caller))) return json({ error: "Not your wedding" }, 403);
 
     const s = await loadSettings(admin);
-    const { host, ready } = await resolveHost(admin, event_id, s);
+    const { host, ready } = await hostForCall(admin, event_id, s, call_kind, host_user_id);
     const base = {
       timezone: s.timezone,
       call_minutes: s.call_minutes,

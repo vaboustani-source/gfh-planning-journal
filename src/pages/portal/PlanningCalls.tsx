@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
-  Video, CalendarClock, Check, Loader2, MessageCircle, Clock, ExternalLink, Plus, RotateCcw, X,
+  Video, CalendarClock, Check, Loader2, MessageCircle, Clock, ExternalLink, Plus, RotateCcw, X, Phone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,12 +40,21 @@ async function callFn<T = any>(name: string, body: Record<string, unknown>): Pro
 interface PlanningCall {
   id: string;
   call_kind: CallKind;
+  host_user_id: string;
   starts_at: string;
   ends_at: string;
   status: "booked" | "cancelled";
   zoom_join_url: string | null;
   zoom_passcode: string | null;
   couple_note: string | null;
+}
+
+/** Staff (Sharon, Victoria) couples can book directly, from list_open_call_hosts(). */
+interface OpenHost {
+  user_id: string;
+  display_name: string;
+  title: string;
+  ready: boolean;
 }
 
 interface Availability {
@@ -94,13 +103,14 @@ function BookingSheet({
   const [saving, setSaving] = useState(false);
 
   const kind = rescheduling?.call_kind ?? callType?.kind ?? null;
+  const hostUserId = kind === "direct" ? (rescheduling?.host_user_id ?? callType?.hostUserId ?? null) : null;
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["call-availability", eventId, kind],
+    queryKey: ["call-availability", eventId, kind, hostUserId],
     enabled: open && !!kind,
     staleTime: 0,
     queryFn: async (): Promise<Availability> => {
-      const { data, error } = await callFn<Availability>("scheduling-availability", { event_id: eventId, call_kind: kind });
+      const { data, error } = await callFn<Availability>("scheduling-availability", { event_id: eventId, call_kind: kind, host_user_id: hostUserId });
       if (error) throw new Error(error);
       return data!;
     },
@@ -130,6 +140,7 @@ function BookingSheet({
         starts_at: slot,
         note: note.trim() || undefined,
         reschedule_of: rescheduling?.id,
+        host_user_id: hostUserId ?? undefined,
       });
       if (msg) {
         toast.error(msg);
@@ -356,7 +367,7 @@ export default function PlanningCalls() {
     enabled: !!eventId,
     queryFn: async (): Promise<PlanningCall[]> => {
       const { data, error } = await db.from("planning_calls")
-        .select("id, call_kind, starts_at, ends_at, status, zoom_join_url, zoom_passcode, couple_note")
+        .select("id, call_kind, host_user_id, starts_at, ends_at, status, zoom_join_url, zoom_passcode, couple_note")
         .eq("event_id", eventId).eq("status", "booked").order("starts_at");
       if (error) throw error;
       return data ?? [];
@@ -366,6 +377,24 @@ export default function PlanningCalls() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["planning-calls", eventId] });
   const byKind = (k: CallKind) => calls.filter((c) => c.call_kind === k);
   const extras = byKind("extra");
+  const directs = byKind("direct");
+
+  const { data: openHosts = [] } = useQuery({
+    queryKey: ["open-call-hosts"],
+    queryFn: async (): Promise<OpenHost[]> => {
+      const { data, error } = await db.rpc("list_open_call_hosts");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const bookableHosts = openHosts.filter((h) => h.ready);
+  const directType = (h: OpenHost): CallType => ({
+    kind: "direct",
+    title: `Call with ${h.display_name}`,
+    blurb: "",
+    included: false,
+    hostUserId: h.user_id,
+  });
 
   const windowText = (kind: CallKind) => {
     const w = event?.wedding_date;
@@ -456,6 +485,31 @@ export default function PlanningCalls() {
                 <BookedCall key={c.id} call={c} onReschedule={() => setRescheduling(c)} onCancel={() => setCancelling(c)} />
               ))}
             </section>
+
+            {bookableHosts.length > 0 && (
+              <section className="rounded-xl border border-border bg-card p-5 md:p-6 mt-4">
+                <h2 className="font-display text-xl font-light text-foreground">Want to talk with the owners?</h2>
+                <p className="font-body text-sm text-muted-foreground leading-relaxed mt-1 max-w-xl">
+                  Your coordinator handles your planning calls. If there's something you'd like to talk through
+                  with {bookableHosts.map((h) => h.display_name.split(" ")[0]).join(" or ")} directly, pick a time here.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {bookableHosts.map((h) => (
+                    <Button key={h.user_id} variant="outline" className="gap-2" onClick={() => setSheetType(directType(h))}>
+                      <Phone size={14} /> {h.display_name}{h.title ? ` · ${h.title}` : ""}
+                    </Button>
+                  ))}
+                </div>
+                {directs.map((c) => (
+                  <div key={c.id}>
+                    <p className="font-body text-xs text-muted-foreground mt-4">
+                      With {openHosts.find((h) => h.user_id === c.host_user_id)?.display_name ?? "the owners"}
+                    </p>
+                    <BookedCall call={c} onReschedule={() => setRescheduling(c)} onCancel={() => setCancelling(c)} />
+                  </div>
+                ))}
+              </section>
+            )}
           </>
         )}
       </div>

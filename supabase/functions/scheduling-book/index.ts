@@ -1,10 +1,10 @@
 // Books a planning call with the wedding's call host: re-checks the slot is free, creates the
 // meeting on the host's Zoom and the event on the host's Google Calendar (which emails the
 // couple an invite), and saves the row.
-// Body: { event_id, call_kind, starts_at, note?, reschedule_of? }
+// Body: { event_id, call_kind, starts_at, note?, reschedule_of?, host_user_id? (for "direct") }
 import {
   bookingWindow, CALL_KINDS, CALL_LABELS, cancelCall, canAccessEvent, corsHeaders, freeSlots, getCaller, googleAccessToken,
-  googleApi, json, loadSettings, resolveHost, serviceClient, ymdInTz, zoomAccessToken, zoomApi, type CallKind,
+  googleApi, hostForCall, json, loadSettings, serviceClient, ymdInTz, zoomAccessToken, zoomApi, type CallKind,
 } from "../_shared/scheduling.ts";
 import { APP_BASE_URL } from "../_shared/appUrls.ts";
 
@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
     // Rescheduling keeps the original call's kind and cancels it once the new one is confirmed.
     let previous: any = null;
     let kind: CallKind = body.call_kind;
+    let requestedHostId: string | null = typeof body.host_user_id === "string" ? body.host_user_id : null;
     if (body.reschedule_of) {
       const { data } = await admin.from("planning_calls").select("*").eq("id", body.reschedule_of).maybeSingle();
       if (!data || data.event_id !== eventId || data.status !== "booked") return json({ error: "That call can't be rescheduled" }, 400);
@@ -34,6 +35,7 @@ Deno.serve(async (req) => {
       }
       previous = data;
       kind = data.call_kind;
+      if (kind === "direct") requestedHostId = data.host_user_id;
     }
     if (!CALL_KINDS.includes(kind)) return json({ error: "Invalid call_kind" }, 400);
 
@@ -46,7 +48,7 @@ Deno.serve(async (req) => {
     if (!event) return json({ error: "Wedding not found" }, 404);
 
     // Included calls: one each.
-    if (kind !== "extra") {
+    if (kind !== "extra" && kind !== "direct") {
       const { data: existing } = await admin.from("planning_calls").select("id")
         .eq("event_id", eventId).eq("call_kind", kind).eq("status", "booked");
       if ((existing ?? []).some((c) => c.id !== previous?.id)) {
@@ -60,8 +62,8 @@ Deno.serve(async (req) => {
     if (!caller.isAdmin && (day < w.opens || day > w.closes)) return json({ error: "That date is outside this call's booking window" }, 400);
     if (event.wedding_date && day >= event.wedding_date) return json({ error: "Calls must be before the wedding" }, 400);
 
-    const { host, ready } = await resolveHost(admin, eventId, s);
-    if (!host || !ready) return json({ error: "Online booking isn't set up for your coordinator yet. Please message us." }, 400);
+    const { host, ready } = await hostForCall(admin, eventId, s, kind, requestedHostId);
+    if (!host || !ready) return json({ error: "Online booking isn't set up for this call yet. Please message us." }, 400);
 
     // Is the time still free right now?
     const slots = await freeSlots(admin, s, host, day, day);
@@ -88,7 +90,7 @@ Deno.serve(async (req) => {
 
     let zoomId: string | null = null;
     try {
-      const label = CALL_LABELS[kind];
+      const label = kind === "direct" ? `Call with ${host.display_name || "Gilbertsville Farmhouse"}` : CALL_LABELS[kind];
       const summary = `${label} · ${event.title}`;
 
       const zoom = await zoomApi(await zoomAccessToken(admin, host.user_id), "/users/me/meetings", {
