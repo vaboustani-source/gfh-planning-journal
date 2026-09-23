@@ -280,6 +280,66 @@ function ScheduleModal({ open, onClose, suggestedTotal, weddingDate, onGenerate 
   );
 }
 
+// ---------------- Record Payment ----------------
+const PAYMENT_METHODS = ["Check", "Wire", "Zelle", "Credit card", "Cash", "Other"];
+
+function RecordPaymentDialog({ payment, onClose, onSave }: {
+  payment: PaymentLine | null;
+  onClose: () => void;
+  onSave: (p: PaymentLine, paidDate: string, method: string | null) => void;
+}) {
+  const [paidDate, setPaidDate] = useState(todayStr());
+  const [method, setMethod] = useState<string>("Check");
+  const [other, setOther] = useState("");
+  useEffect(() => {
+    if (payment) { setPaidDate(payment.paid_date ?? todayStr()); setMethod(payment.method && PAYMENT_METHODS.includes(payment.method) ? payment.method : payment.method ? "Other" : "Check"); setOther(payment.method && !PAYMENT_METHODS.includes(payment.method) ? payment.method : ""); }
+  }, [payment]);
+  const chosen = method === "Other" ? (other.trim() || null) : method;
+  return (
+    <Dialog open={!!payment} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-display font-light">Record payment</DialogTitle>
+        </DialogHeader>
+        {payment && (
+          <div className="space-y-4">
+            <p className="font-body text-sm text-muted-foreground">
+              {payment.label}{payment.amount != null ? ` · ${fmt(payment.amount)}` : ""}
+            </p>
+            <div>
+              <label className="block font-body text-xs uppercase tracking-wide text-muted-foreground mb-1.5">Date received</label>
+              <input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm" />
+            </div>
+            <div>
+              <label className="block font-body text-xs uppercase tracking-wide text-muted-foreground mb-1.5">Method</label>
+              <div className="flex flex-wrap gap-1.5">
+                {PAYMENT_METHODS.map(m => (
+                  <button key={m} type="button" onClick={() => setMethod(m)}
+                    className={`px-2.5 py-1 rounded-full border font-body text-xs transition-colors ${method === m ? "bg-primary text-primary-foreground border-primary" : "bg-background text-foreground border-border hover:border-sage/40"}`}>
+                    {m}
+                  </button>
+                ))}
+              </div>
+              {method === "Other" && (
+                <input value={other} onChange={e => setOther(e.target.value)} placeholder="How did they pay?"
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-body text-sm" />
+              )}
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <button onClick={onClose} className="px-3 py-1.5 rounded-md font-body text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+          <button onClick={() => payment && paidDate && onSave(payment, paidDate, chosen)} disabled={!paidDate}
+            className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground font-body text-xs disabled:opacity-50">
+            Mark paid
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ---------------- Payment Row ----------------
 function PaymentRow({ p, onTogglePaid, onDelete }: {
   p: PaymentLine;
@@ -315,10 +375,15 @@ function PaymentRow({ p, onTogglePaid, onDelete }: {
 
       <button
         onClick={() => onTogglePaid(p)}
-        className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg font-body text-[11px] transition-colors ${p.paid ? "bg-sage/15 text-sage border border-sage/30" : "bg-muted text-muted-foreground border border-border hover:border-sage/40"}`}
+        title={p.paid ? `Paid${p.paid_date ? " " + format(parseISO(p.paid_date), "MMM d, yyyy") : ""}${p.method ? " by " + p.method : ""}. Click to undo.` : "Record this payment"}
+        className={`shrink-0 flex flex-col items-center px-2 py-1 rounded-lg font-body text-[11px] leading-tight transition-colors ${p.paid ? "bg-sage/15 text-sage border border-sage/30" : "bg-muted text-muted-foreground border border-border hover:border-sage/40"}`}
       >
-        {p.paid && <Check size={10} />}
-        {p.paid ? "Paid" : "Mark paid"}
+        <span className="flex items-center gap-1">{p.paid && <Check size={10} />}{p.paid ? "Paid" : "Mark paid"}</span>
+        {p.paid && (p.paid_date || p.method) && (
+          <span className="text-[9px] text-sage/80 whitespace-nowrap">
+            {p.paid_date ? format(parseISO(p.paid_date), "MMM d") : ""}{p.paid_date && p.method ? " · " : ""}{p.method ?? ""}
+          </span>
+        )}
       </button>
 
       <button onClick={() => onDelete(p.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
@@ -541,11 +606,22 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
     if (data) setPayments(prev => [...prev, data as any]);
   };
 
+  // Marking paid asks how and when (date received + method); un-marking clears both.
+  const [recording, setRecording] = useState<PaymentLine | null>(null);
   const togglePaid = async (p: PaymentLine) => {
+    if (!p.paid) { setRecording(p); return; }
     markSaving();
-    const fields = { paid: !p.paid, paid_date: !p.paid ? todayStr() : null, status: !p.paid ? "paid" : "upcoming" };
+    const fields = { paid: false, paid_date: null, method: null, status: "upcoming" };
     setPayments(prev => prev.map(x => x.id === p.id ? { ...x, ...fields } : x));
     await supabase.from("payment_schedule").update(fields).eq("id", p.id);
+    markSaved();
+  };
+  const recordPayment = async (p: PaymentLine, paidDate: string, method: string | null) => {
+    markSaving();
+    const fields = { paid: true, paid_date: paidDate, method, status: "paid" };
+    setPayments(prev => prev.map(x => x.id === p.id ? { ...x, ...fields } : x));
+    await supabase.from("payment_schedule").update(fields).eq("id", p.id);
+    setRecording(null);
     markSaved();
   };
 
@@ -588,6 +664,8 @@ export default function FinancialsTab({ eventId, onNavigateNext }: { eventId: st
           />
         ))}
       </div>
+
+      <RecordPaymentDialog payment={recording} onClose={() => setRecording(null)} onSave={recordPayment} />
 
       {/* Grand total bar */}
       <div className="rounded-xl bg-forest text-white px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-3 shadow-soft">

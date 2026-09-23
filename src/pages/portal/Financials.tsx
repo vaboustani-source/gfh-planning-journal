@@ -15,6 +15,7 @@ interface Payment {
   due_date: string | null;
   paid: boolean | null;
   paid_date: string | null;
+  method: string | null;
   payment_number: number | null;
 }
 
@@ -179,7 +180,7 @@ export default function Financials() {
                                     </p>
                                     {p.due_date && (
                                       <p className={`font-body text-[11px] ${overdue ? "text-destructive/80" : "text-muted-foreground"}`}>
-                                        {p.paid ? `Paid ${p.paid_date ? format(parseISO(p.paid_date), "MMM d, yyyy") : ""}` : `Due ${format(parseISO(p.due_date), "MMM d, yyyy")}`}
+                                        {p.paid ? `Paid ${p.paid_date ? format(parseISO(p.paid_date), "MMM d, yyyy") : ""}${p.method ? ` by ${p.method.toLowerCase()}` : ""}` : `Due ${format(parseISO(p.due_date), "MMM d, yyyy")}`}
                                       </p>
                                     )}
                                   </div>
