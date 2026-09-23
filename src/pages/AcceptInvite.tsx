@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -16,6 +16,24 @@ type Inv = {
 
 type EventInfo = { title: string | null };
 
+type AcceptResult = { landing?: string; error?: string; code?: string };
+
+// supabase.functions.invoke swallows the JSON body of a non-2xx response and only
+// reports "Edge Function returned a non-2xx status code". Read the real message.
+async function invokeAccept(body: Record<string, unknown>, accessToken?: string) {
+  const { data, error } = await supabase.functions.invoke<AcceptResult>("accept-invitation", {
+    body,
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+  });
+  if (!error) return { data, message: data?.error ?? null, code: data?.code ?? null };
+  let parsed: AcceptResult | null = null;
+  const ctx = (error as { context?: unknown }).context;
+  if (ctx instanceof Response) {
+    try { parsed = await ctx.clone().json(); } catch { /* not JSON */ }
+  }
+  return { data: null, message: parsed?.error ?? error.message, code: parsed?.code ?? null };
+}
+
 export default function AcceptInvite() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -23,10 +41,14 @@ export default function AcceptInvite() {
   const [inv, setInv] = useState<Inv | null>(null);
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Recoverable problems (wrong account signed in, bad password) keep the form visible.
+  const [notice, setNotice] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // onAuthStateChange and getSession both fire on load; accept only once at a time.
+  const accepting = useRef(false);
 
   // Load invitation
   useEffect(() => {
@@ -75,31 +97,31 @@ export default function AcceptInvite() {
   }, [inv]);
 
   const acceptWithSession = async () => {
-    if (!inv) return;
+    if (!inv || accepting.current) return;
+    accepting.current = true;
     setSubmitting(true);
     const { data: sess } = await supabase.auth.getSession();
-    const accessToken = sess.session?.access_token;
-    const { data, error } = await supabase.functions.invoke("accept-invitation", {
-      body: { token },
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-    });
+    const { data, message, code } = await invokeAccept({ token }, sess.session?.access_token);
     setSubmitting(false);
-    if (error || data?.error) {
-      // Mismatched Google account: sign them out and show message
-      const msg = (data?.error || error?.message || "").toString();
-      if (msg.toLowerCase().includes("invitation was sent to")) {
+    accepting.current = false;
+    if (message) {
+      // Signed in as someone else (e.g. the coordinator who sent the invite, on the
+      // same browser): sign that account out and let the invitee continue here.
+      if (code === "email_mismatch" || message.toLowerCase().includes("invitation was sent to")) {
         await supabase.auth.signOut();
-        setError(msg);
+        const other = sess.session?.user?.email;
+        setNotice(`${other ? `This browser was signed in as ${other}. We've signed that account out. ` : ""}Continue below to set up access for ${inv.email}.`);
         return;
       }
-      setError(msg || "We couldn't complete the invitation.");
+      setError(message);
       return;
     }
-    navigate(data.landing ?? "/login", { replace: true });
+    navigate(data?.landing ?? "/login", { replace: true });
   };
 
   const handleGoogle = async () => {
     setError(null);
+    setNotice(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/accept-invite/${token}` },
@@ -110,22 +132,20 @@ export default function AcceptInvite() {
   const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inv) return;
-    if (password.length < 8) { setError("Please choose a password with at least 8 characters."); return; }
-    setError(null);
+    if (password.length < 8) { setNotice("Please choose a password with at least 8 characters."); return; }
+    setNotice(null);
     setSubmitting(true);
     // Make sure no other session interferes with the password flow
     await supabase.auth.signOut();
-    const { data, error } = await supabase.functions.invoke("accept-invitation", {
-      body: { token, password, first_name: firstName, last_name: lastName },
-    });
-    if (error || data?.error) {
+    const { data, message } = await invokeAccept({ token, password, first_name: firstName, last_name: lastName });
+    if (message) {
       setSubmitting(false);
-      setError(data?.error || error?.message || "Something went wrong");
+      setNotice(message);
       return;
     }
     // Sign them in with the new password so they land authenticated
     await supabase.auth.signInWithPassword({ email: inv.email, password });
-    navigate(data.landing ?? "/login", { replace: true });
+    navigate(data?.landing ?? "/login", { replace: true });
   };
 
   const heading = (() => {
@@ -175,6 +195,11 @@ export default function AcceptInvite() {
               <p className="font-body text-sm text-muted-foreground text-center mb-1">
                 {subline}
               </p>
+              {notice && (
+                <p className="font-body text-sm text-center rounded-lg px-4 py-3 mb-5" style={{ background: "#F6F1E7", color: "#2C3E2D" }}>
+                  {notice}
+                </p>
+              )}
               <p className="font-body text-xs text-muted-foreground text-center mb-7">
                 Invitation for <span className="font-medium text-foreground">{inv.email}</span>
               </p>
