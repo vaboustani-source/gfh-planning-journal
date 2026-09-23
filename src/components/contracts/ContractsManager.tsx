@@ -8,6 +8,9 @@ import {
   type ContractContext, type ContractFields,
 } from "@/lib/contractTemplate";
 import { loadContractContext, withParentContract } from "@/lib/contractContext";
+import ContractDocument from "@/components/contracts/ContractDocument";
+import ContractPreview from "@/components/contracts/ContractPreview";
+import { downloadContractPdf } from "@/lib/contractPdf";
 import SignedCertificate from "@/components/contracts/SignedCertificate";
 
 type Contract = {
@@ -541,9 +544,9 @@ function ContractEditor({ contract, ctx: baseCtx, requestId, onClose, onSaved }:
                 Requires venue countersignature
               </label>
             </div>
-            <button type="button" onClick={() => setShowPreview(p => !p)}
-              className="font-body text-xs text-sage hover:underline">
-              {showPreview ? "Hide preview" : "Show preview"}
+            <button type="button" onClick={() => setShowPreview(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
+              <Eye size={13} /> Preview as the couple sees it
             </button>
           </div>
 
@@ -599,19 +602,26 @@ function ContractEditor({ contract, ctx: baseCtx, requestId, onClose, onSaved }:
               placeholder="Write the full agreement here. Markdown is supported. Use {couple_names}, {wedding_date}, {total_amount} to auto-fill from event data." />
           </div>
 
-          {showPreview && (
-            <div className="rounded-lg border border-border bg-background p-5">
-              <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Preview (with substituted values)</p>
-              <div className="font-body text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                {renderContract(content, ctx, fields) || <span className="text-muted-foreground italic">Empty</span>}
-              </div>
-            </div>
-          )}
         </div>
+
+        {showPreview && (
+          <ContractPreview
+            title={title || "Untitled"}
+            documentType={docType}
+            text={renderContract(content, ctx, fields)}
+            missing={missingTokens(content, ctx, fields).map(fieldLabel)}
+            onClose={() => setShowPreview(false)}
+            onSend={() => { setShowPreview(false); void save(true); }}
+          />
+        )}
 
         <footer className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
           <button onClick={onClose} disabled={busy}
             className="rounded-md border border-border bg-background px-4 py-2 font-body text-sm">Cancel</button>
+          <button onClick={() => setShowPreview(true)} disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-4 py-2 font-body text-sm hover:border-primary/40">
+            <Eye size={14} /> Preview
+          </button>
           <button onClick={() => save(false)} disabled={busy}
             className="rounded-md border border-border bg-background px-4 py-2 font-body text-sm hover:border-primary/40">
             Save as Draft
@@ -688,12 +698,16 @@ function ContractViewer({ contract, ctx, onClose }: {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {sigs.length > 0 && (
-              <button onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
-                <Download size={13} /> Download Signed PDF
-              </button>
-            )}
+            <button
+              onClick={() => downloadContractPdf({
+                contract: { title: contract.title, document_type: contract.document_type, status, content_hash: contract.content_hash },
+                text: rendered,
+                signatures: sigs,
+                preview: status === "draft",
+              })}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-primary/40">
+              <Download size={13} /> {sigs.length > 0 ? "Download signed PDF" : "Download PDF"}
+            </button>
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
           </div>
         </header>
@@ -701,8 +715,8 @@ function ContractViewer({ contract, ctx, onClose }: {
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
           <section>
             <p className="font-display text-base text-foreground mb-2">Agreement</p>
-            <div className="rounded-lg border border-border bg-background p-5 font-body text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-              {rendered}
+            <div className="rounded-lg border border-border bg-background p-5 sm:p-8">
+              <ContractDocument text={rendered} />
             </div>
           </section>
 

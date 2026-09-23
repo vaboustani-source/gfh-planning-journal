@@ -9,6 +9,8 @@ import {
   type ContractContext, type ContractFields,
 } from "@/lib/contractTemplate";
 import { loadContractContext } from "@/lib/contractContext";
+import ContractDocument from "@/components/contracts/ContractDocument";
+import { downloadContractPdf } from "@/lib/contractPdf";
 import SignedCertificate, { ELECTRONIC_SIGNATURE_CONSENT } from "@/components/contracts/SignedCertificate";
 
 type Contract = {
@@ -333,16 +335,16 @@ function ContractDetail({ contract, ctx, mySigs, requests, onRequested, onBack }
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 pb-32">
-      <button onClick={onBack} className="inline-flex items-center gap-1.5 font-body text-sm text-muted-foreground hover:text-foreground mb-6">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-32">
+      <button onClick={onBack} className="inline-flex items-center gap-1.5 font-body text-sm text-muted-foreground hover:text-foreground mb-4 sm:mb-6">
         <ArrowLeft size={14} /> Back to agreements
       </button>
 
-      <article className="bg-white rounded-xl border border-border p-8 md:p-12 shadow-sm">
-        <header className="border-b border-border pb-6 mb-6 flex items-start justify-between gap-4">
-          <div>
+      <article className="bg-white rounded-xl border border-border px-4 py-6 sm:p-8 md:p-12 shadow-sm">
+        <header className="border-b border-border pb-6 mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0">
             <p className="font-body text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{docTypeLabel(contract.document_type)}</p>
-            <h1 className="font-display text-3xl text-foreground mt-2">{contract.title}</h1>
+            <h1 className="font-display text-2xl sm:text-3xl text-foreground mt-2 leading-tight">{contract.title}</h1>
             <div className="flex items-center gap-2 mt-3 flex-wrap">
               <span className={`font-body text-[11px] rounded-full px-2 py-0.5 border ${statusPillClass(contractStatus)}`}>{statusLabel(contractStatus)}</span>
               {(contractStatus === "fully_signed" || contractStatus === "executed") && (
@@ -350,17 +352,18 @@ function ContractDetail({ contract, ctx, mySigs, requests, onRequested, onBack }
               )}
             </div>
           </div>
-          {allSigs.length > 0 && (
-            <button onClick={() => window.print()}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 font-body text-xs hover:border-sage/40">
-              <Download size={13} /> Download Signed PDF
-            </button>
-          )}
+          <button
+            onClick={() => downloadContractPdf({
+              contract: { title: contract.title, document_type: contract.document_type, status: contractStatus, content_hash: contract.content_hash },
+              text: rendered,
+              signatures: allSigs,
+            })}
+            className="shrink-0 self-start inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 font-body text-xs hover:border-sage/40">
+            <Download size={13} /> {allSigs.length > 0 ? "Download signed PDF" : "Download PDF"}
+          </button>
         </header>
 
-        <div className="font-body text-[15px] text-foreground whitespace-pre-wrap leading-[1.75]">
-          {rendered}
-        </div>
+        <ContractDocument text={rendered} />
 
         <div className="mt-10 pt-6 border-t border-border">
           {alreadySigned ? (
@@ -397,10 +400,10 @@ function ContractDetail({ contract, ctx, mySigs, requests, onRequested, onBack }
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                 <p className="font-body text-xs text-muted-foreground">Today: {today}</p>
                 <button onClick={sign} disabled={!canSign || busy}
-                  className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-6 py-3 font-body text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-6 py-3 font-body text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
                   <ShieldCheck size={15} /> {busy ? "Recording…" : "Sign Agreement"}
                 </button>
               </div>
@@ -450,10 +453,7 @@ function SignedReceipt({ sigs }: { sigs: Signature[] }) {
         Signed as <span className="italic" style={{ fontFamily: "Cormorant Garamond, serif" }}>{s.typed_name}</span>.
         A copy is saved in your portal for your records.
       </p>
-      <button onClick={() => window.print()}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-body text-xs hover:border-sage/40">
-        Download / Print
-      </button>
+      <p className="font-body text-xs text-muted-foreground mt-3">Use Download signed PDF at the top to save a copy with your signature certificate.</p>
     </div>
   );
 }
